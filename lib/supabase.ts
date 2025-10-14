@@ -54,11 +54,13 @@ function getSupabaseClient(): SupabaseClient {
     console.error('[Supabase]   EXPO_PUBLIC_SUPABASE_URL=your-url');
     console.error('[Supabase]   EXPO_PUBLIC_SUPABASE_ANON_KEY=your-key');
     console.error('[Supabase] Then restart with: npx expo start -c');
+    
+    throw new Error('Missing Supabase environment variables. Please add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to your .env file');
   }
 
   _supabaseClient = createClient(
-    supabaseUrl || 'https://placeholder.supabase.co',
-    supabaseAnonKey || 'placeholder-key',
+    supabaseUrl,
+    supabaseAnonKey,
     {
       auth: {
         storage: SecureStoreAdapter,

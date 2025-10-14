@@ -1,0 +1,40 @@
+═══════════════════════════════════════════════════════════════
+  🚨 QUICK FIX: "Class extends value undefined" Error
+═══════════════════════════════════════════════════════════════
+
+PROBLEM:
+  Line 59 in package.json has invalid Zod version (4.x doesn't exist)
+
+FIX (3 steps):
+
+  1. Edit package.json line 59:
+     Change: "zod": "^4.1.12"
+     To:     "zod": "^3.23.8"
+
+  2. Clean install:
+     rm -rf node_modules bun.lock && bun install
+
+  3. Restart:
+     npx expo start -c
+
+EXPECTED RESULT:
+  ✅ No "Class extends value undefined" error
+  ✅ Server starts successfully
+  ✅ App loads and authentication works
+
+═══════════════════════════════════════════════════════════════
+
+ALREADY FIXED IN CODE:
+  ✅ backend/hono.ts - CORS middleware
+  ✅ lib/supabase.ts - Error handling
+
+WHAT YOU NEED TO DO:
+  ⚠️  Fix Zod version in package.json (see step 1 above)
+
+═══════════════════════════════════════════════════════════════
+
+For detailed explanation, see: ERROR_ANALYSIS.md
+For step-by-step guide, see: URGENT_FIX_INSTRUCTIONS.md
+To diagnose issues, run: node diagnose.js
+
+═══════════════════════════════════════════════════════════════
