@@ -31,25 +31,40 @@ export default function ReviewProgrammeScreen() {
   const days: TrainingDay[] = JSON.parse(params.days as string || '[]');
 
   const handleSave = async () => {
-    await new Promise(res => setTimeout(res, 800));
-    
-    await addProgramme({
-      name: programmeName,
-      frequency,
-      duration,
-      days: days.map(day => ({
-        name: day.name,
-        exercises: day.exercises.map(ex => ({
-          id: ex.id,
-          name: ex.name,
-          sets: ex.sets,
-          reps: ex.reps,
-          rest: ex.rest,
-        })),
-      })),
-    });
-    
-    router.push('/(tabs)/home');
+    try {
+      const exercises: any[] = [];
+      
+      days.forEach((day, dayIndex) => {
+        day.exercises.forEach(exercise => {
+          exercises.push({
+            day: dayIndex + 1,
+            exerciseId: exercise.id,
+            sets: exercise.sets,
+            reps: exercise.reps.toString(),
+            rest: exercise.rest,
+          });
+        });
+      });
+
+      console.log('Creating programme:', {
+        name: programmeName,
+        days: frequency,
+        weeks: duration,
+        exercises,
+      });
+
+      await addProgramme({
+        name: programmeName,
+        days: frequency,
+        weeks: duration,
+        exercises,
+      });
+      
+      router.push('/(tabs)/home');
+    } catch (error) {
+      console.error('Failed to save programme:', error);
+      alert('Failed to save programme. Please try again.');
+    }
   };
 
   return (
