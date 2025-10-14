@@ -9,10 +9,13 @@ rm -f bun.lock
 # Remove node_modules
 rm -rf node_modules
 
-# Clear bun cache
-bun pm cache rm
+# Clear bun cache completely
+rm -rf ~/.bun/install/cache
 
-# Reinstall everything fresh
+# Force install with exact version
+bun add zod@3.23.8 --exact
+
+# Reinstall everything else
 bun install
 
 echo "✅ Done! Now run: npx rork start"
