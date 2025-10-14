@@ -10,7 +10,12 @@ const SecureStoreAdapter = {
       }
       return null;
     }
-    return await SecureStore.getItemAsync(key);
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch (error) {
+      console.warn('[SecureStore] Failed to get item:', error);
+      return null;
+    }
   },
   setItem: async (key: string, value: string) => {
     if (Platform.OS === 'web') {
@@ -19,7 +24,11 @@ const SecureStoreAdapter = {
       }
       return;
     }
-    await SecureStore.setItemAsync(key, value);
+    try {
+      await SecureStore.setItemAsync(key, value);
+    } catch (error) {
+      console.warn('[SecureStore] Failed to set item:', error);
+    }
   },
   removeItem: async (key: string) => {
     if (Platform.OS === 'web') {
@@ -28,7 +37,11 @@ const SecureStoreAdapter = {
       }
       return;
     }
-    await SecureStore.deleteItemAsync(key);
+    try {
+      await SecureStore.deleteItemAsync(key);
+    } catch (error) {
+      console.warn('[SecureStore] Failed to remove item:', error);
+    }
   },
 };
 

@@ -25,22 +25,44 @@ export const trpcClient = trpc.createClient({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
       async headers() {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        
-        console.log('[TRPC] Request headers - Token present:', !!token);
-        
-        return {
-          authorization: token ? `Bearer ${token}` : '',
-        };
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const token = session?.access_token;
+          
+          console.log('[TRPC] Request headers - Token present:', !!token);
+          
+          return {
+            authorization: token ? `Bearer ${token}` : '',
+          };
+        } catch (error) {
+          console.warn('[TRPC] Failed to get session for headers:', error);
+          return {
+            authorization: '',
+          };
+        }
       },
-      fetch(url, options) {
+      async fetch(url, options) {
         console.log('[TRPC] Making request to:', url);
-        return fetch(url, options).catch((error) => {
-          console.error('[TRPC] Network error:', error.message);
+        try {
+          const response = await fetch(url, options);
+          
+          if (!response.ok) {
+            const text = await response.text();
+            console.error('[TRPC] HTTP error:', response.status, response.statusText);
+            console.error('[TRPC] Response body:', text.substring(0, 200));
+            
+            if (text.startsWith('<')) {
+              throw new Error(`Server returned HTML instead of JSON. Status: ${response.status}. Check if backend is running at ${getBaseUrl()}`);
+            }
+          }
+          
+          return response;
+        } catch (error) {
+          console.error('[TRPC] Network error:', error instanceof Error ? error.message : String(error));
           console.error('[TRPC] Base URL:', getBaseUrl());
+          console.error('[TRPC] Make sure the backend server is running and EXPO_PUBLIC_RORK_API_BASE_URL is correct');
           throw error;
-        });
+        }
       },
     }),
   ],

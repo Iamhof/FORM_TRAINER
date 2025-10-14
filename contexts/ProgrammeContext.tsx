@@ -36,6 +36,11 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
     }
     if (programmesQuery.error) {
       console.error('Failed to load programmes:', programmesQuery.error);
+      console.error('Error details:', programmesQuery.error.message);
+      if (programmesQuery.error.message.includes('HTML instead of JSON')) {
+        console.error('Backend server is not running or URL is incorrect');
+        console.error('Please check EXPO_PUBLIC_RORK_API_BASE_URL in .env');
+      }
       setIsLoading(false);
     }
   }, [programmesQuery.data, programmesQuery.error]);
