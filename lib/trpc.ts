@@ -27,6 +27,14 @@ export const trpcClient = trpc.createClient({
           authorization: token ? `Bearer ${token}` : '',
         };
       },
+      fetch(url, options) {
+        console.log('[TRPC] Making request to:', url);
+        return fetch(url, options).catch((error) => {
+          console.error('[TRPC] Network error:', error.message);
+          console.error('[TRPC] Base URL:', getBaseUrl());
+          throw error;
+        });
+      },
     }),
   ],
 });
