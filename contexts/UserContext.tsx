@@ -1,14 +1,13 @@
 import createContextHook from '@nkzw/create-context-hook';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { trpcClient } from '@/lib/trpc';
-
-const AUTH_TOKEN_KEY = 'auth_token';
+import { supabase } from '@/lib/supabase';
+import type { Session, User } from '@supabase/supabase-js';
 
 export type UserProfile = {
   id: string;
   email: string;
   name: string;
+  is_pt: boolean;
   selectedColor?: string;
 };
 
@@ -21,6 +20,7 @@ export type UserStats = {
 
 export const [UserProvider, useUser] = createContextHook(() => {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [stats, setStats] = useState<UserStats>({
     currentStreak: 0,
     totalVolume: 0,
@@ -28,28 +28,71 @@ export const [UserProvider, useUser] = createContextHook(() => {
     weekTotal: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [authToken, setAuthToken] = useState<string | null>(null);
 
   useEffect(() => {
-    loadUser();
+    console.log('[UserContext] Initializing auth state...');
+    
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('[UserContext] Initial session:', session ? 'Found' : 'None');
+      setSession(session);
+      if (session?.user) {
+        loadUserProfile(session.user);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('[UserContext] Auth state changed:', _event, session ? 'Session exists' : 'No session');
+      setSession(session);
+      if (session?.user) {
+        loadUserProfile(session.user);
+      } else {
+        setUser(null);
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const loadUser = async () => {
+  const loadUserProfile = async (authUser: User) => {
     try {
-      const token = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
-      if (token) {
-        setAuthToken(token);
-        const userData = await trpcClient.auth.me.query();
+      console.log('[UserContext] Loading profile for user:', authUser.id);
+      
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('name, role, is_pt')
+        .eq('user_id', authUser.id)
+        .single();
+
+      if (error) {
+        console.error('[UserContext] Error loading profile:', error);
         setUser({
-          id: userData.id,
-          email: userData.email,
-          name: userData.name,
+          id: authUser.id,
+          email: authUser.email || '',
+          name: '',
+          is_pt: false,
+        });
+      } else {
+        console.log('[UserContext] Profile loaded:', profile);
+        setUser({
+          id: authUser.id,
+          email: authUser.email || '',
+          name: profile?.name || '',
+          is_pt: profile?.is_pt || false,
         });
       }
     } catch (error) {
-      console.error('Failed to load user:', error);
-      await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-      setAuthToken(null);
+      console.error('[UserContext] Failed to load profile:', error);
+      setUser({
+        id: authUser.id,
+        email: authUser.email || '',
+        name: '',
+        is_pt: false,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -57,37 +100,82 @@ export const [UserProvider, useUser] = createContextHook(() => {
 
   const signin = useCallback(async (email: string, password: string) => {
     try {
-      const response = await trpcClient.auth.signin.mutate({ email, password });
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token);
-      setAuthToken(response.token);
-      setUser({
-        id: response.user.id,
-        email: response.user.email,
-        name: response.user.name,
+      console.log('[UserContext] Signing in:', email);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.toLowerCase(),
+        password,
       });
+
+      if (error) {
+        console.error('[UserContext] Sign in error:', error.message);
+        return { success: false, error: error.message };
+      }
+
+      console.log('[UserContext] Sign in successful');
       return { success: true };
     } catch (error: any) {
-      console.error('Sign in failed:', error);
+      console.error('[UserContext] Sign in failed:', error);
       return { success: false, error: error.message || 'Sign in failed' };
     }
   }, []);
 
   const signup = useCallback(async (email: string, password: string, name: string) => {
     try {
-      const response = await trpcClient.auth.signup.mutate({ email, password, name });
-      await AsyncStorage.setItem(AUTH_TOKEN_KEY, response.token);
-      setAuthToken(response.token);
-      setUser({
-        id: response.user.id,
-        email: response.user.email,
-        name: response.user.name,
+      console.log('[UserContext] Signing up:', email);
+      const { data, error } = await supabase.auth.signUp({
+        email: email.toLowerCase(),
+        password,
       });
+
+      if (error) {
+        console.error('[UserContext] Sign up error:', error.message);
+        return { success: false, error: error.message };
+      }
+
+      if (!data.user) {
+        return { success: false, error: 'Failed to create user' };
+      }
+
+      console.log('[UserContext] User created, updating profile with name:', name);
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ name })
+        .eq('user_id', data.user.id);
+
+      if (profileError) {
+        console.error('[UserContext] Profile update error:', profileError);
+      }
+
+      console.log('[UserContext] Sign up successful');
       return { success: true };
     } catch (error: any) {
-      console.error('Sign up failed:', error);
+      console.error('[UserContext] Sign up failed:', error);
       return { success: false, error: error.message || 'Sign up failed' };
     }
   }, []);
+
+  const updateProfile = useCallback(async (updates: Partial<Pick<UserProfile, 'name' | 'is_pt'>>) => {
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    try {
+      console.log('[UserContext] Updating profile:', updates);
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('[UserContext] Profile update error:', error);
+        return { success: false, error: error.message };
+      }
+
+      setUser((prev) => prev ? { ...prev, ...updates } : null);
+      return { success: true };
+    } catch (error: any) {
+      console.error('[UserContext] Profile update failed:', error);
+      return { success: false, error: error.message || 'Update failed' };
+    }
+  }, [user]);
 
   const updateStats = useCallback((newStats: Partial<UserStats>) => {
     setStats((prev) => ({ ...prev, ...newStats }));
@@ -95,9 +183,10 @@ export const [UserProvider, useUser] = createContextHook(() => {
 
   const signout = useCallback(async () => {
     try {
-      await AsyncStorage.removeItem(AUTH_TOKEN_KEY);
-      setAuthToken(null);
+      console.log('[UserContext] Signing out');
+      await supabase.auth.signOut();
       setUser(null);
+      setSession(null);
       setStats({
         currentStreak: 0,
         totalVolume: 0,
@@ -105,21 +194,24 @@ export const [UserProvider, useUser] = createContextHook(() => {
         weekTotal: 0,
       });
     } catch (error) {
-      console.error('Failed to sign out:', error);
+      console.error('[UserContext] Failed to sign out:', error);
     }
   }, []);
 
-  const isAuthenticated = useMemo(() => !!authToken && !!user, [authToken, user]);
+  const isAuthenticated = useMemo(() => !!session && !!user, [session, user]);
+  const accessToken = useMemo(() => session?.access_token || null, [session]);
 
   return useMemo(() => ({
     user,
+    session,
     stats,
     isLoading,
     isAuthenticated,
-    authToken,
+    accessToken,
     signin,
     signup,
     signout,
+    updateProfile,
     updateStats,
-  }), [user, stats, isLoading, isAuthenticated, authToken, signin, signup, signout, updateStats]);
+  }), [user, session, stats, isLoading, isAuthenticated, accessToken, signin, signup, signout, updateProfile, updateStats]);
 });

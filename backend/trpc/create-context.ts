@@ -1,7 +1,7 @@
 import { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
-import { verifyToken } from "../lib/auth";
+import { verifySupabaseToken } from "../lib/auth";
 
 export const createContext = async (opts: FetchCreateContextFnOptions) => {
   const authHeader = opts.req.headers.get('authorization');
@@ -11,10 +11,10 @@ export const createContext = async (opts: FetchCreateContextFnOptions) => {
   let userEmail: string | null = null;
   
   if (token) {
-    const payload = verifyToken(token);
-    if (payload) {
-      userId = payload.userId;
-      userEmail = payload.email;
+    const user = await verifySupabaseToken(token);
+    if (user) {
+      userId = user.id;
+      userEmail = user.email;
     }
   }
   
