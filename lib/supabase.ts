@@ -1,13 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to your .env file');
-}
 
 const SecureStoreAdapter = {
   getItem: async (key: string) => {
@@ -39,11 +32,44 @@ const SecureStoreAdapter = {
   },
 };
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: SecureStoreAdapter,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+let _supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient {
+  if (_supabaseClient) {
+    return _supabaseClient;
+  }
+
+  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+  const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+
+  console.log('[Supabase] Creating client with:', {
+    url: supabaseUrl || 'MISSING',
+    keyPresent: !!supabaseAnonKey,
+    platform: Platform.OS,
+  });
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('[Supabase] ⚠️  Missing environment variables!');
+    console.error('[Supabase] Please ensure your .env file contains:');
+    console.error('[Supabase]   EXPO_PUBLIC_SUPABASE_URL=your-url');
+    console.error('[Supabase]   EXPO_PUBLIC_SUPABASE_ANON_KEY=your-key');
+    console.error('[Supabase] Then restart with: npx expo start -c');
+  }
+
+  _supabaseClient = createClient(
+    supabaseUrl || 'https://placeholder.supabase.co',
+    supabaseAnonKey || 'placeholder-key',
+    {
+      auth: {
+        storage: SecureStoreAdapter,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    }
+  );
+
+  return _supabaseClient;
+}
+
+export const supabase = getSupabaseClient();
