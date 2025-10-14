@@ -1,7 +1,6 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 
 const SecureStoreAdapter = {
   getItem: async (key: string) => {
@@ -33,71 +32,20 @@ const SecureStoreAdapter = {
   },
 };
 
-let _supabaseClient: SupabaseClient | null = null;
+const supabaseUrl = 'https://yshbcfifmkflhahjengk.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzaGJjZmlmbWtmbGhhaGplbmdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NjI3NjcsImV4cCI6MjA3NTIzODc2N30.ide524ouRN9wDvl3gdcqL0QVEShOJpM720FNisSj-CQ';
 
-function getEnvVar(key: string): string {
-  if (key === 'EXPO_PUBLIC_SUPABASE_URL') {
-    return process.env.EXPO_PUBLIC_SUPABASE_URL || 
-           Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_URL || 
-           'https://yshbcfifmkflhahjengk.supabase.co';
+console.log('[Supabase] Initializing client with URL:', supabaseUrl.substring(0, 30) + '...');
+
+export const supabase = createClient(
+  supabaseUrl,
+  supabaseAnonKey,
+  {
+    auth: {
+      storage: SecureStoreAdapter,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+    },
   }
-  if (key === 'EXPO_PUBLIC_SUPABASE_ANON_KEY') {
-    return process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 
-           Constants.expoConfig?.extra?.EXPO_PUBLIC_SUPABASE_ANON_KEY || 
-           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzaGJjZmlmbWtmbGhhaGplbmdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NjI3NjcsImV4cCI6MjA3NTIzODc2N30.ide524ouRN9wDvl3gdcqL0QVEShOJpM720FNisSj-CQ';
-  }
-  return '';
-}
-
-function getSupabaseClient(): SupabaseClient {
-  if (_supabaseClient) {
-    return _supabaseClient;
-  }
-
-  const supabaseUrl = getEnvVar('EXPO_PUBLIC_SUPABASE_URL');
-  const supabaseAnonKey = getEnvVar('EXPO_PUBLIC_SUPABASE_ANON_KEY');
-
-  console.log('[Supabase] Environment check:', {
-    processEnvKeys: Object.keys(process.env).filter(k => k.includes('SUPABASE')),
-    constantsExtra: Constants.expoConfig?.extra ? Object.keys(Constants.expoConfig.extra) : 'none',
-    url: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'MISSING',
-    keyPresent: !!supabaseAnonKey,
-    platform: Platform.OS,
-  });
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('[Supabase] ⚠️  Missing environment variables!');
-    console.error('[Supabase] Checked locations:');
-    console.error('[Supabase]   1. process.env.EXPO_PUBLIC_SUPABASE_URL');
-    console.error('[Supabase]   2. Constants.expoConfig.extra.EXPO_PUBLIC_SUPABASE_URL');
-    console.error('[Supabase] Please ensure your .env file contains:');
-    console.error('[Supabase]   EXPO_PUBLIC_SUPABASE_URL=your-url');
-    console.error('[Supabase]   EXPO_PUBLIC_SUPABASE_ANON_KEY=your-key');
-    console.error('[Supabase] Then restart with: npx expo start -c');
-    
-    throw new Error('Missing Supabase environment variables. Please add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to your .env file');
-  }
-
-  _supabaseClient = createClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      auth: {
-        storage: SecureStoreAdapter,
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-      },
-    }
-  );
-
-  return _supabaseClient;
-}
-
-export const supabase = new Proxy({} as SupabaseClient, {
-  get(target, prop) {
-    const client = getSupabaseClient();
-    const value = (client as any)[prop];
-    return typeof value === 'function' ? value.bind(client) : value;
-  },
-});
+);
