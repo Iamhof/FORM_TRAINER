@@ -66,27 +66,30 @@ export const [UserProvider, useUser] = createContextHook(() => {
         .from('profiles')
         .select('name, role, is_pt')
         .eq('user_id', authUser.id)
-        .single();
+        .maybeSingle();
 
       if (error) {
-        console.error('[UserContext] Error loading profile:', error);
-        setUser({
-          id: authUser.id,
-          email: authUser.email || '',
-          name: '',
-          is_pt: false,
-        });
-      } else {
-        console.log('[UserContext] Profile loaded:', profile);
-        setUser({
-          id: authUser.id,
-          email: authUser.email || '',
-          name: profile?.name || '',
-          is_pt: profile?.is_pt || false,
-        });
+        console.error('[UserContext] Error loading profile:');
+        console.error('[UserContext] Error code:', error.code);
+        console.error('[UserContext] Error message:', error.message);
+        console.error('[UserContext] Error details:', error.details);
+        console.error('[UserContext] Error hint:', error.hint);
       }
+
+      if (!profile) {
+        console.warn('[UserContext] No profile found for user, creating default user object');
+      } else {
+        console.log('[UserContext] Profile loaded successfully:', { name: profile.name, is_pt: profile.is_pt });
+      }
+
+      setUser({
+        id: authUser.id,
+        email: authUser.email || '',
+        name: profile?.name || '',
+        is_pt: profile?.is_pt || false,
+      });
     } catch (error) {
-      console.error('[UserContext] Failed to load profile:', error);
+      console.error('[UserContext] Exception while loading profile:', error instanceof Error ? error.message : String(error));
       setUser({
         id: authUser.id,
         email: authUser.email || '',
