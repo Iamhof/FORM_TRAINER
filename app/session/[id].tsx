@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { X, Check } from 'lucide-react-native';
 import Card from '@/components/Card';
 import RestTimerModal from '@/components/RestTimerModal';
@@ -41,6 +41,7 @@ const MOCK_WORKOUT = {
 export default function SessionScreen() {
   const { accent } = useTheme();
   const router = useRouter();
+  const { id } = useLocalSearchParams();
   const [exercises, setExercises] = useState(MOCK_WORKOUT.exercises);
   const [currentExerciseIndex] = useState(0);
   const [showRestTimer, setShowRestTimer] = useState(false);
@@ -49,6 +50,12 @@ export default function SessionScreen() {
   const currentExercise = exercises[currentExerciseIndex];
   const totalSets = currentExercise.targetSets;
   const progress = (completedSets / totalSets) * 100;
+
+  const allSetsCompleted = useMemo(() => {
+    return exercises.every(exercise => 
+      exercise.sets.every(set => set.completed)
+    );
+  }, [exercises]);
 
   const handleSetComplete = (exerciseIndex: number, setIndex: number) => {
     const newExercises = [...exercises];
@@ -72,6 +79,11 @@ export default function SessionScreen() {
     const newExercises = [...exercises];
     newExercises[exerciseIndex].sets[setIndex].reps = value;
     setExercises(newExercises);
+  };
+
+  const handleCompleteWorkout = () => {
+    console.log('Workout completed for programme:', id);
+    router.back();
   };
 
   return (
@@ -182,6 +194,16 @@ export default function SessionScreen() {
               </View>
             </Card>
           ))}
+
+          {allSetsCompleted && (
+            <Pressable
+              style={[styles.completeButton, { backgroundColor: accent }]}
+              onPress={handleCompleteWorkout}
+            >
+              <Check size={24} color={COLORS.background} strokeWidth={3} />
+              <Text style={styles.completeButtonText}>Complete Workout</Text>
+            </Pressable>
+          )}
         </ScrollView>
       </SafeAreaView>
 
@@ -319,5 +341,19 @@ const styles = StyleSheet.create({
   },
   checkButtonDisabled: {
     opacity: 0.3,
+  },
+  completeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SPACING.sm,
+    paddingVertical: SPACING.lg,
+    borderRadius: 16,
+    marginTop: SPACING.lg,
+  },
+  completeButtonText: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: COLORS.background,
   },
 });
