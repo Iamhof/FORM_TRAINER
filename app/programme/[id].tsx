@@ -15,7 +15,7 @@ export default function ProgrammeOverviewScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { programmes, isLoading: programmesLoading } = useProgrammes();
+  const { programmes, isLoading: programmesLoading, isSessionCompleted } = useProgrammes();
   
   const programmeId = params.id as string;
   const programme = programmes.find(p => p.id === programmeId);
@@ -72,13 +72,6 @@ export default function ProgrammeOverviewScreen() {
     });
 
     const workoutsList = workouts || [];
-    const completedSessionsMap = new Map<string, boolean>();
-    workoutsList.forEach(workout => {
-      const sessionKey = `${workout.day}-${workout.week}`;
-      completedSessionsMap.set(sessionKey, true);
-    });
-
-    console.log('[ProgrammeOverview] Completed sessions map:', Array.from(completedSessionsMap.entries()));
 
     const sessions: {
       id: string;
@@ -92,9 +85,8 @@ export default function ProgrammeOverviewScreen() {
 
     for (let week = 1; week <= programme.weeks; week++) {
       for (let day = 1; day <= programme.days; day++) {
-        const sessionKey = `${day}-${week}`;
         const dayExercises = exercisesByDay.get(day) || [];
-        const isCompleted = completedSessionsMap.has(sessionKey);
+        const isCompleted = isSessionCompleted(programmeId, day, week);
         
         sessions.push({
           id: `${programmeId}-${day}-${week}`,
@@ -134,7 +126,7 @@ export default function ProgrammeOverviewScreen() {
         totalSessions,
       },
     };
-  }, [programme, workouts, programmeId]);
+  }, [programme, workouts, programmeId, isSessionCompleted]);
 
   function getDayName(day: number, totalDays: number): string {
     if (totalDays === 2) {

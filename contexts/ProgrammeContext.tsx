@@ -25,6 +25,7 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [completedSessions, setCompletedSessions] = useState<Map<string, number>>(new Map());
+  const [completedSessionKeys, setCompletedSessionKeys] = useState<Set<string>>(new Set());
 
   const loadProgrammes = useCallback(async () => {
     if (!isAuthenticated || !user) {
@@ -54,24 +55,33 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
 
       const { data: workoutsData, error: workoutsError } = await supabase
         .from('workouts')
-        .select('programme_id')
+        .select('programme_id, day, week')
         .eq('user_id', user.id);
 
       if (workoutsError) {
         console.error('[ProgrammeContext] Error loading workouts:', workoutsError);
       } else {
         const sessionsMap = new Map<string, number>();
+        const sessionKeysSet = new Set<string>();
+        
         workoutsData?.forEach(workout => {
           const count = sessionsMap.get(workout.programme_id) || 0;
           sessionsMap.set(workout.programme_id, count + 1);
+          
+          const sessionKey = `${workout.programme_id}-${workout.day}-${workout.week}`;
+          sessionKeysSet.add(sessionKey);
         });
+        
         console.log('[ProgrammeContext] Completed sessions by programme:', Array.from(sessionsMap.entries()));
+        console.log('[ProgrammeContext] Completed session keys:', Array.from(sessionKeysSet));
         setCompletedSessions(sessionsMap);
+        setCompletedSessionKeys(sessionKeysSet);
       }
     } catch (error) {
       console.error('[ProgrammeContext] Failed to load programmes:', error);
       setProgrammes([]);
       setCompletedSessions(new Map());
+      setCompletedSessionKeys(new Set());
     } finally {
       setIsLoading(false);
     }
@@ -192,6 +202,11 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
     };
   }, [programmes, completedSessions]);
 
+  const isSessionCompleted = useCallback((programmeId: string, day: number, week: number) => {
+    const sessionKey = `${programmeId}-${day}-${week}`;
+    return completedSessionKeys.has(sessionKey);
+  }, [completedSessionKeys]);
+
   return useMemo(
     () => ({
       programmes,
@@ -201,9 +216,11 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
       getProgramme,
       activeProgramme,
       completedSessions,
+      completedSessionKeys,
       getProgrammeProgress,
+      isSessionCompleted,
       refetch: loadProgrammes,
     }),
-    [programmes, isLoading, addProgramme, deleteProgramme, getProgramme, activeProgramme, completedSessions, getProgrammeProgress, loadProgrammes]
+    [programmes, isLoading, addProgramme, deleteProgramme, getProgramme, activeProgramme, completedSessions, completedSessionKeys, getProgrammeProgress, isSessionCompleted, loadProgrammes]
   );
 });
