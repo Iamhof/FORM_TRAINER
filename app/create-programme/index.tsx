@@ -335,15 +335,19 @@ const styles = StyleSheet.create({
     position: 'relative' as const,
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
   },
   picker: {
     width: SCREEN_WIDTH,
+    height: 200,
   },
   pickerContent: {
     paddingHorizontal: (SCREEN_WIDTH / 2) - (ITEM_WIDTH / 2),
+    alignItems: 'center',
   },
   pickerItem: {
     width: ITEM_WIDTH,
+    height: 200,
     justifyContent: 'center',
     alignItems: 'center',
   },
