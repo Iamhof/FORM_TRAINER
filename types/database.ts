@@ -87,3 +87,19 @@ export interface SharedProgramme {
   shared_at: string;
   created_at: string;
 }
+
+export interface Schedule {
+  id: string;
+  user_id: string;
+  programme_id: string | null;
+  week_start: string;
+  schedule: ScheduleDay[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScheduleDay {
+  dayOfWeek: number;
+  status: 'scheduled' | 'completed' | 'rest' | 'empty';
+  weekStart: string;
+}

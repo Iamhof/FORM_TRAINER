@@ -1,0 +1,203 @@
+import createContextHook from '@nkzw/create-context-hook';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useUser } from './UserContext';
+import { useProgrammes } from './ProgrammeContext';
+
+export type DayStatus = 'scheduled' | 'completed' | 'rest' | 'empty';
+
+export type ScheduleDay = {
+  dayOfWeek: number;
+  status: DayStatus;
+  weekStart: string;
+};
+
+export type WeekSchedule = {
+  id?: string;
+  userId: string;
+  programmeId: string | null;
+  weekStart: string;
+  schedule: ScheduleDay[];
+};
+
+function getWeekStart(date: Date = new Date()): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday.toISOString().split('T')[0];
+}
+
+function getInitialSchedule(weekStart: string): ScheduleDay[] {
+  return Array.from({ length: 7 }, (_, i) => ({
+    dayOfWeek: i,
+    status: 'empty' as DayStatus,
+    weekStart,
+  }));
+}
+
+export const [ScheduleProvider, useSchedule] = createContextHook(() => {
+  const { user, isAuthenticated } = useUser();
+  const { activeProgramme } = useProgrammes();
+  const [currentWeekStart, setCurrentWeekStart] = useState(getWeekStart());
+  const [schedule, setSchedule] = useState<ScheduleDay[]>(getInitialSchedule(currentWeekStart));
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadSchedule = useCallback(async () => {
+    if (!isAuthenticated || !user) {
+      setSchedule(getInitialSchedule(currentWeekStart));
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      console.log('[ScheduleContext] Loading schedule for week:', currentWeekStart);
+      setIsLoading(true);
+
+      const { data, error } = await supabase
+        .from('schedules')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('week_start', currentWeekStart)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('[ScheduleContext] Error loading schedule:', error);
+        throw error;
+      }
+
+      if (data) {
+        console.log('[ScheduleContext] Loaded schedule:', data);
+        setSchedule(data.schedule as ScheduleDay[]);
+      } else {
+        console.log('[ScheduleContext] No schedule found, using empty schedule');
+        setSchedule(getInitialSchedule(currentWeekStart));
+      }
+    } catch (error) {
+      console.error('[ScheduleContext] Failed to load schedule:', error);
+      setSchedule(getInitialSchedule(currentWeekStart));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, user, currentWeekStart]);
+
+  useEffect(() => {
+    loadSchedule();
+  }, [loadSchedule]);
+
+  const saveSchedule = useCallback(
+    async (newSchedule: ScheduleDay[]) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      try {
+        console.log('[ScheduleContext] Saving schedule:', newSchedule);
+
+        const { data: existing } = await supabase
+          .from('schedules')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('week_start', currentWeekStart)
+          .maybeSingle();
+
+        if (existing) {
+          const { error } = await supabase
+            .from('schedules')
+            .update({
+              schedule: newSchedule,
+              programme_id: activeProgramme?.id || null,
+            })
+            .eq('id', existing.id);
+
+          if (error) {
+            console.error('[ScheduleContext] Error updating schedule:', error);
+            throw error;
+          }
+        } else {
+          const { error } = await supabase
+            .from('schedules')
+            .insert({
+              user_id: user.id,
+              programme_id: activeProgramme?.id || null,
+              week_start: currentWeekStart,
+              schedule: newSchedule,
+            });
+
+          if (error) {
+            console.error('[ScheduleContext] Error creating schedule:', error);
+            throw error;
+          }
+        }
+
+        console.log('[ScheduleContext] Schedule saved successfully');
+        setSchedule(newSchedule);
+      } catch (error) {
+        console.error('[ScheduleContext] Failed to save schedule:', error);
+        throw error;
+      }
+    },
+    [user, currentWeekStart, activeProgramme]
+  );
+
+  const toggleDay = useCallback(
+    async (dayIndex: number) => {
+      if (!activeProgramme) {
+        console.log('[ScheduleContext] No active programme');
+        return;
+      }
+
+      const scheduledCount = schedule.filter((d) => d.status === 'scheduled').length;
+      const requiredSessions = activeProgramme.days;
+      const currentStatus = schedule[dayIndex].status;
+
+      let newStatus: DayStatus;
+
+      if (currentStatus === 'empty') {
+        if (scheduledCount < requiredSessions) {
+          newStatus = 'scheduled';
+        } else {
+          console.log('[ScheduleContext] Max sessions reached');
+          return;
+        }
+      } else if (currentStatus === 'scheduled') {
+        newStatus = 'rest';
+      } else if (currentStatus === 'rest') {
+        newStatus = 'empty';
+      } else {
+        return;
+      }
+
+      const newSchedule = schedule.map((day, idx) =>
+        idx === dayIndex ? { ...day, status: newStatus } : day
+      );
+
+      setSchedule(newSchedule);
+      await saveSchedule(newSchedule);
+    },
+    [schedule, activeProgramme, saveSchedule]
+  );
+
+  const scheduledCount = useMemo(() => {
+    return schedule.filter((d) => d.status === 'scheduled' || d.status === 'completed').length;
+  }, [schedule]);
+
+  const canScheduleMore = useMemo(() => {
+    if (!activeProgramme) return false;
+    return scheduledCount < activeProgramme.days;
+  }, [scheduledCount, activeProgramme]);
+
+  return useMemo(
+    () => ({
+      schedule,
+      isLoading,
+      scheduledCount,
+      canScheduleMore,
+      currentWeekStart,
+      toggleDay,
+      loadSchedule,
+    }),
+    [schedule, isLoading, scheduledCount, canScheduleMore, currentWeekStart, toggleDay, loadSchedule]
+  );
+});
