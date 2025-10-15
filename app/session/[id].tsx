@@ -8,8 +8,9 @@ import RestTimerModal from '@/components/RestTimerModal';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
-import { trpc } from '@/lib/trpc';
 import { EXERCISES } from '@/constants/exercises';
+import { supabase } from '@/lib/supabase';
+import { useUser } from '@/contexts/UserContext';
 
 type SetData = {
   weight: string;
@@ -28,7 +29,8 @@ export default function SessionScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { programmes } = useProgrammes();
+  const { programmes, refetch } = useProgrammes();
+  const { user } = useUser();
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [currentExerciseIndex] = useState(0);
   const [showRestTimer, setShowRestTimer] = useState(false);
@@ -42,7 +44,7 @@ export default function SessionScreen() {
     week: number;
   } | null>(null);
 
-  const logWorkoutMutation = trpc.workouts.log.useMutation();
+
 
   useEffect(() => {
     if (!id) {
@@ -133,8 +135,8 @@ export default function SessionScreen() {
   };
 
   const handleCompleteWorkout = async () => {
-    if (!sessionData) {
-      console.error('[SessionScreen] No session data available');
+    if (!sessionData || !user) {
+      console.error('[SessionScreen] No session data or user available');
       Alert.alert(
         'Error',
         'Session data is missing. Please try starting the workout again.',
@@ -146,7 +148,6 @@ export default function SessionScreen() {
     try {
       setIsSaving(true);
       console.log('[SessionScreen] Completing workout...', sessionData);
-      console.log('[SessionScreen] Backend URL:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
 
       const workoutExercises = exercises.map(exercise => ({
         exerciseId: exercise.exerciseId,
@@ -157,23 +158,34 @@ export default function SessionScreen() {
         })),
       }));
 
-      console.log('[SessionScreen] Sending workout data:', {
+      console.log('[SessionScreen] Saving workout to Supabase:', {
         programmeId: sessionData.programmeId,
         day: sessionData.day,
         week: sessionData.week,
         exerciseCount: workoutExercises.length,
       });
 
-      await logWorkoutMutation.mutateAsync({
-        programmeId: sessionData.programmeId,
-        programmeName: sessionData.programmeName,
-        day: sessionData.day,
-        week: sessionData.week,
-        exercises: workoutExercises,
-        completedAt: new Date().toISOString(),
-      });
+      const { error } = await supabase
+        .from('workouts')
+        .insert({
+          user_id: user.id,
+          programme_id: sessionData.programmeId,
+          programme_name: sessionData.programmeName,
+          day: sessionData.day,
+          week: sessionData.week,
+          exercises: workoutExercises,
+          completed_at: new Date().toISOString(),
+        });
+
+      if (error) {
+        console.error('[SessionScreen] Supabase error:', error);
+        throw new Error(`Failed to save workout: ${error.message}`);
+      }
 
       console.log('[SessionScreen] Workout logged successfully');
+      
+      await refetch();
+      
       Alert.alert(
         'Session Complete!',
         'Your workout has been saved successfully.',
@@ -188,13 +200,10 @@ export default function SessionScreen() {
       console.error('[SessionScreen] Error completing workout:', error);
       
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('Network');
       
       Alert.alert(
         'Error Saving Workout',
-        isNetworkError 
-          ? 'Cannot connect to server. Please check your internet connection and try again.'
-          : `Failed to save workout: ${errorMessage}`,
+        `Failed to save workout: ${errorMessage}`,
         [
           { text: 'Try Again', onPress: () => handleCompleteWorkout() },
           { text: 'Cancel', style: 'cancel' }
