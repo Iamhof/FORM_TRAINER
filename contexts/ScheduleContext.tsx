@@ -198,6 +198,6 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
       toggleDay,
       loadSchedule,
     }),
-    [schedule, isLoading, scheduledCount, canScheduleMore, currentWeekStart, toggleDay, loadSchedule]
+    [schedule, isLoading, scheduledCount, canScheduleMore, currentWeekStart, toggleDay]
   );
 });
