@@ -111,12 +111,6 @@ export default function SessionScreen() {
     return allCompleted;
   }, [currentExercise]);
 
-  const allExercisesCompleted = useMemo(() => {
-    return exercises.every(exercise => 
-      exercise.sets.every(set => set.completed)
-    );
-  }, [exercises]);
-
   const isLastExercise = currentExerciseIndex === exercises.length - 1;
 
   const handleSetComplete = (exerciseIndex: number, setIndex: number) => {
@@ -397,7 +391,7 @@ export default function SessionScreen() {
               >
                 <Text style={styles.completeButtonText}>Next Exercise</Text>
               </Pressable>
-            ) : allExercisesCompleted ? (
+            ) : (
               <Pressable
                 style={[styles.completeButton, { backgroundColor: accent }, isSaving && styles.completeButtonDisabled]}
                 onPress={handleCompleteWorkout}
@@ -412,7 +406,7 @@ export default function SessionScreen() {
                   </>
                 )}
               </Pressable>
-            ) : null}
+            )}
           </View>
         )}
       </SafeAreaView>
