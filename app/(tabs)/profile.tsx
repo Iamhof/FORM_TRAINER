@@ -7,15 +7,14 @@ import Card from '@/components/Card';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
-import { trpc } from '@/lib/trpc';
+
 
 export default function ProfileScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const { user, signout } = useUser();
 
-  const meQuery = trpc.auth.me.useQuery();
-  const isPT = meQuery.data?.is_pt || false;
+  const isPT = user?.is_pt || false;
 
   const handleSignOut = async () => {
     await signout();
