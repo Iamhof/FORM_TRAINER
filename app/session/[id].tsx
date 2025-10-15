@@ -32,7 +32,7 @@ export default function SessionScreen() {
   const { programmes, refetch } = useProgrammes();
   const { user } = useUser();
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
-  const [currentExerciseIndex] = useState(0);
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [completedSets, setCompletedSets] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,11 +104,18 @@ export default function SessionScreen() {
   const totalSets = currentExercise?.targetSets || 0;
   const progress = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
-  const allSetsCompleted = useMemo(() => {
+  const currentExerciseSetsCompleted = useMemo(() => {
+    if (!currentExercise) return false;
+    return currentExercise.sets.every(set => set.completed);
+  }, [currentExercise]);
+
+  const allExercisesCompleted = useMemo(() => {
     return exercises.every(exercise => 
       exercise.sets.every(set => set.completed)
     );
   }, [exercises]);
+
+  const isLastExercise = currentExerciseIndex === exercises.length - 1;
 
   const handleSetComplete = (exerciseIndex: number, setIndex: number) => {
     const newExercises = [...exercises];
@@ -118,7 +125,21 @@ export default function SessionScreen() {
       set.completed = true;
       setExercises(newExercises);
       setCompletedSets(completedSets + 1);
-      setShowRestTimer(true);
+      
+      const isLastSetOfExercise = setIndex === newExercises[exerciseIndex].sets.length - 1;
+      const allSetsCompleted = newExercises[exerciseIndex].sets.every(s => s.completed);
+      
+      if (!isLastSetOfExercise || !allSetsCompleted) {
+        setShowRestTimer(true);
+      }
+    }
+  };
+
+  const handleNextExercise = () => {
+    if (currentExerciseIndex < exercises.length - 1) {
+      console.log('[SessionScreen] Moving to next exercise:', currentExerciseIndex + 1);
+      setCurrentExerciseIndex(currentExerciseIndex + 1);
+      setCompletedSets(0);
     }
   };
 
@@ -255,7 +276,7 @@ export default function SessionScreen() {
           headerShown: true,
           headerStyle: { backgroundColor: COLORS.background },
           headerTintColor: COLORS.textPrimary,
-          headerTitle: `Exercise 1 of ${exercises.length}`,
+          headerTitle: `Exercise ${currentExerciseIndex + 1} of ${exercises.length}`,
           headerTitleStyle: { fontSize: 14, fontWeight: '500' as const, color: COLORS.textSecondary },
           headerLeft: () => (
             <Pressable onPress={() => router.back()} style={styles.closeButton} disabled={isSaving}>
@@ -300,7 +321,7 @@ export default function SessionScreen() {
                   </View>
                 ) : (
                   <Text style={styles.waitingText}>
-                    {setIndex === 0 || exercises[0].sets[setIndex - 1].completed
+                    {setIndex === 0 || currentExercise.sets[setIndex - 1].completed
                       ? ''
                       : 'Waiting...'}
                   </Text>
@@ -316,7 +337,7 @@ export default function SessionScreen() {
                       set.completed && styles.inputDisabled,
                     ]}
                     value={set.weight}
-                    onChangeText={(value) => handleWeightChange(0, setIndex, value)}
+                    onChangeText={(value) => handleWeightChange(currentExerciseIndex, setIndex, value)}
                     keyboardType="numeric"
                     placeholder="0"
                     placeholderTextColor={COLORS.textTertiary}
@@ -332,7 +353,7 @@ export default function SessionScreen() {
                       set.completed && styles.inputDisabled,
                     ]}
                     value={set.reps}
-                    onChangeText={(value) => handleRepsChange(0, setIndex, value)}
+                    onChangeText={(value) => handleRepsChange(currentExerciseIndex, setIndex, value)}
                     keyboardType="numeric"
                     placeholder="0"
                     placeholderTextColor={COLORS.textTertiary}
@@ -347,7 +368,7 @@ export default function SessionScreen() {
                       { backgroundColor: accent },
                       (!set.weight || !set.reps) && styles.checkButtonDisabled,
                     ]}
-                    onPress={() => handleSetComplete(0, setIndex)}
+                    onPress={() => handleSetComplete(currentExerciseIndex, setIndex)}
                     disabled={!set.weight || !set.reps}
                   >
                     <Check size={20} color={COLORS.background} strokeWidth={3} />
@@ -358,22 +379,31 @@ export default function SessionScreen() {
           ))}
         </ScrollView>
 
-        {allSetsCompleted && (
+        {currentExerciseSetsCompleted && (
           <View style={styles.stickyFooter}>
-            <Pressable
-              style={[styles.completeButton, { backgroundColor: accent }, isSaving && styles.completeButtonDisabled]}
-              onPress={handleCompleteWorkout}
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <ActivityIndicator size="small" color={COLORS.background} />
-              ) : (
-                <>
-                  <Check size={24} color={COLORS.background} strokeWidth={3} />
-                  <Text style={styles.completeButtonText}>Complete Workout</Text>
-                </>
-              )}
-            </Pressable>
+            {!isLastExercise ? (
+              <Pressable
+                style={[styles.completeButton, { backgroundColor: accent }]}
+                onPress={handleNextExercise}
+              >
+                <Text style={styles.completeButtonText}>Next Exercise</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={[styles.completeButton, { backgroundColor: accent }, isSaving && styles.completeButtonDisabled]}
+                onPress={handleCompleteWorkout}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <ActivityIndicator size="small" color={COLORS.background} />
+                ) : (
+                  <>
+                    <Check size={24} color={COLORS.background} strokeWidth={3} />
+                    <Text style={styles.completeButtonText}>Complete Workout</Text>
+                  </>
+                )}
+              </Pressable>
+            )}
           </View>
         )}
       </SafeAreaView>
