@@ -100,12 +100,6 @@ export default function DashboardScreen() {
                           borderWidth: 1,
                           borderColor: COLORS.cardBorder,
                         },
-                        item.status === 'empty' && {
-                          backgroundColor: 'transparent',
-                          borderWidth: 1,
-                          borderColor: COLORS.cardBorder,
-                          opacity: 0.3,
-                        },
                       ]}
                     >
                       {item.status === 'completed' && (
@@ -123,9 +117,7 @@ export default function DashboardScreen() {
                         ? 'Done'
                         : item.status === 'scheduled'
                         ? 'Workout'
-                        : item.status === 'rest'
-                        ? 'Rest'
-                        : ''}
+                        : 'Rest'}
                     </Text>
                   </Pressable>
                 );

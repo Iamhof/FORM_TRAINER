@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useUser } from './UserContext';
 import { useProgrammes } from './ProgrammeContext';
 
-export type DayStatus = 'scheduled' | 'completed' | 'rest' | 'empty';
+export type DayStatus = 'scheduled' | 'completed' | 'rest';
 
 export type ScheduleDay = {
   dayOfWeek: number;
@@ -32,7 +32,7 @@ function getWeekStart(date: Date = new Date()): string {
 function getInitialSchedule(weekStart: string): ScheduleDay[] {
   return Array.from({ length: 7 }, (_, i) => ({
     dayOfWeek: i,
-    status: 'empty' as DayStatus,
+    status: 'rest' as DayStatus,
     weekStart,
   }));
 }
@@ -154,7 +154,7 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
 
       let newStatus: DayStatus;
 
-      if (currentStatus === 'empty') {
+      if (currentStatus === 'rest') {
         if (scheduledCount < requiredSessions) {
           newStatus = 'scheduled';
         } else {
@@ -163,8 +163,6 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
         }
       } else if (currentStatus === 'scheduled') {
         newStatus = 'rest';
-      } else if (currentStatus === 'rest') {
-        newStatus = 'empty';
       } else {
         return;
       }
