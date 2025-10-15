@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
@@ -8,7 +8,7 @@ import Button from '@/components/Button';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
-import { trpc } from '@/lib/trpc';
+import { supabase } from '@/lib/supabase';
 import { EXERCISES } from '@/constants/exercises';
 
 export default function ProgrammeOverviewScreen() {
@@ -20,10 +20,37 @@ export default function ProgrammeOverviewScreen() {
   const programmeId = params.id as string;
   const programme = programmes.find(p => p.id === programmeId);
   
-  const workoutsQuery = trpc.workouts.history.useQuery(
-    { programmeId },
-    { enabled: !!programmeId }
-  );
+  const [workouts, setWorkouts] = useState<any[]>([]);
+  const [workoutsLoading, setWorkoutsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!programmeId) return;
+
+    async function loadWorkouts() {
+      try {
+        setWorkoutsLoading(true);
+        const { data, error } = await supabase
+          .from('workouts')
+          .select('*')
+          .eq('programme_id', programmeId)
+          .order('completed_at', { ascending: false });
+
+        if (error) {
+          console.error('[ProgrammeOverview] Error loading workouts:', error);
+          setWorkouts([]);
+        } else {
+          setWorkouts(data || []);
+        }
+      } catch (error) {
+        console.error('[ProgrammeOverview] Failed to load workouts:', error);
+        setWorkouts([]);
+      } finally {
+        setWorkoutsLoading(false);
+      }
+    }
+
+    loadWorkouts();
+  }, [programmeId]);
 
   const transformedProgramme = useMemo(() => {
     if (!programme) return null;
@@ -35,9 +62,9 @@ export default function ProgrammeOverviewScreen() {
       exercisesByDay.set(ex.day, dayExercises);
     });
 
-    const workouts = workoutsQuery.data || [];
+    const workoutsList = workouts || [];
     const completedSessionsMap = new Map<string, boolean>();
-    workouts.forEach(workout => {
+    workoutsList.forEach(workout => {
       const sessionKey = `${workout.day}-${workout.week}`;
       completedSessionsMap.set(sessionKey, true);
     });
@@ -78,7 +105,7 @@ export default function ProgrammeOverviewScreen() {
     }
 
     const totalSessions = programme.days * programme.weeks;
-    const completedSessions = workouts.length;
+    const completedSessions = workoutsList.length;
 
     return {
       ...programme,
@@ -89,7 +116,7 @@ export default function ProgrammeOverviewScreen() {
         totalSessions,
       },
     };
-  }, [programme, workoutsQuery.data, programmeId]);
+  }, [programme, workouts, programmeId]);
 
   function getDayName(day: number, totalDays: number): string {
     if (totalDays === 2) {
@@ -105,7 +132,7 @@ export default function ProgrammeOverviewScreen() {
     }
   }
   
-  if (programmesLoading || workoutsQuery.isLoading) {
+  if (programmesLoading || workoutsLoading) {
     return (
       <View style={styles.background}>
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
