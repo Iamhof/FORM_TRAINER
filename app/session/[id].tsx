@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   exerciseTitle: {
     fontSize: 28,
@@ -349,7 +349,8 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     paddingVertical: SPACING.lg,
     borderRadius: 16,
-    marginTop: SPACING.lg,
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.xl,
   },
   completeButtonText: {
     fontSize: 18,
