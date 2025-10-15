@@ -1,7 +1,7 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnalyticsData, MonthlyDataPoint } from '@/types/analytics';
-import { trpc } from '@/lib/trpc';
+import { supabase } from '@/lib/supabase';
 import { useUser } from './UserContext';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -22,7 +22,7 @@ function generateEmptyMonthlyData(): MonthlyDataPoint[] {
 }
 
 export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
-  const { isAuthenticated } = useUser();
+  const { user, isAuthenticated } = useUser();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
     sessionsCompleted: generateEmptyMonthlyData(),
     sessionsMissed: generateEmptyMonthlyData(),
@@ -36,23 +36,8 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
     },
   });
 
-  const analyticsQuery = trpc.analytics.get.useQuery(
-    {},
-    {
-      enabled: isAuthenticated,
-    }
-  );
-
-  const syncMutation = trpc.analytics.sync.useMutation();
-
-  useEffect(() => {
-    if (analyticsQuery.data && analyticsQuery.data.length > 0) {
-      console.log('Analytics data loaded:', analyticsQuery.data);
-    }
-  }, [analyticsQuery.data]);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
+  const loadAnalytics = useCallback(async () => {
+    if (!isAuthenticated || !user) {
       setAnalyticsData({
         sessionsCompleted: generateEmptyMonthlyData(),
         sessionsMissed: generateEmptyMonthlyData(),
@@ -65,8 +50,34 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
           average: 0,
         },
       });
+      return;
     }
-  }, [isAuthenticated]);
+
+    try {
+      console.log('[AnalyticsContext] Loading analytics for user:', user.id);
+      
+      const { data, error } = await supabase
+        .from('analytics')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
+
+      if (error) {
+        console.error('[AnalyticsContext] Error loading analytics:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        console.log('[AnalyticsContext] Analytics data loaded:', data.length, 'records');
+      }
+    } catch (error) {
+      console.error('[AnalyticsContext] Failed to load analytics:', error);
+    }
+  }, [isAuthenticated, user]);
+
+  useEffect(() => {
+    loadAnalytics();
+  }, [loadAnalytics]);
 
   const syncAnalytics = useCallback(
     async (data: {
@@ -76,14 +87,41 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
       totalVolume: number;
       totalReps: number;
     }[]) => {
+      if (!user) {
+        console.error('[AnalyticsContext] Cannot sync analytics: not authenticated');
+        return;
+      }
+
       try {
-        await syncMutation.mutateAsync(data);
-        analyticsQuery.refetch();
+        console.log('[AnalyticsContext] Syncing analytics:', data.length, 'records');
+        
+        const records = data.map((item) => ({
+          user_id: user.id,
+          exercise_id: item.exerciseId,
+          date: item.date,
+          max_weight: item.maxWeight,
+          total_volume: item.totalVolume,
+          total_reps: item.totalReps,
+        }));
+
+        const { error } = await supabase
+          .from('analytics')
+          .upsert(records, {
+            onConflict: 'user_id,exercise_id,date',
+          });
+
+        if (error) {
+          console.error('[AnalyticsContext] Error syncing analytics:', error);
+          throw error;
+        }
+
+        console.log('[AnalyticsContext] Analytics synced successfully');
+        await loadAnalytics();
       } catch (error) {
-        console.error('Failed to sync analytics:', error);
+        console.error('[AnalyticsContext] Failed to sync analytics:', error);
       }
     },
-    [syncMutation, analyticsQuery]
+    [user, loadAnalytics]
   );
 
   const calculateCompletionPercentage = useMemo(() => {
@@ -110,6 +148,6 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
     totalSessionsThisMonth,
     totalVolumeThisMonth,
     syncAnalytics,
-    refetch: analyticsQuery.refetch,
-  }), [analyticsData, calculateCompletionPercentage, totalSessionsThisMonth, totalVolumeThisMonth, syncAnalytics, analyticsQuery.refetch]);
+    refetch: loadAnalytics,
+  }), [analyticsData, calculateCompletionPercentage, totalSessionsThisMonth, totalVolumeThisMonth, syncAnalytics, loadAnalytics]);
 });

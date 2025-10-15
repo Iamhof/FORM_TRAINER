@@ -1,6 +1,6 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import { supabase } from '@/lib/supabase';
 import { useUser } from './UserContext';
 
 export type ProgrammeExercise = {
@@ -21,74 +21,111 @@ export type Programme = {
 };
 
 export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
-  const { isAuthenticated } = useUser();
+  const { user, isAuthenticated } = useUser();
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const programmesQuery = trpc.programmes.list.useQuery(undefined, {
-    enabled: isAuthenticated,
-  });
-
-  useEffect(() => {
-    if (programmesQuery.data) {
-      setProgrammes(programmesQuery.data);
-      setIsLoading(false);
-    }
-    if (programmesQuery.error) {
-      console.error('Failed to load programmes:', programmesQuery.error);
-      console.error('Error details:', programmesQuery.error.message);
-      if (programmesQuery.error.message.includes('HTML instead of JSON')) {
-        console.error('Backend server is not running or URL is incorrect');
-        console.error('Please check EXPO_PUBLIC_RORK_API_BASE_URL in .env');
-      }
-      setIsLoading(false);
-    }
-  }, [programmesQuery.data, programmesQuery.error]);
-
-  const createMutation = trpc.programmes.create.useMutation({
-    onSuccess: (newProgramme) => {
-      setProgrammes((prev) => [...prev, newProgramme]);
-      programmesQuery.refetch();
-    },
-  });
-
-  const deleteMutation = trpc.programmes.delete.useMutation({
-    onSuccess: (_, variables) => {
-      setProgrammes((prev) => prev.filter((p) => p.id !== variables.id));
-      programmesQuery.refetch();
-    },
-  });
-
-  useEffect(() => {
-    if (!isAuthenticated) {
+  const loadProgrammes = useCallback(async () => {
+    if (!isAuthenticated || !user) {
       setProgrammes([]);
       setIsLoading(false);
+      return;
     }
-  }, [isAuthenticated]);
+
+    try {
+      console.log('[ProgrammeContext] Loading programmes for user:', user.id);
+      setIsLoading(true);
+      
+      const { data, error } = await supabase
+        .from('programmes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[ProgrammeContext] Error loading programmes:', error);
+        throw error;
+      }
+
+      console.log('[ProgrammeContext] Loaded programmes:', data?.length || 0);
+      setProgrammes(data || []);
+    } catch (error) {
+      console.error('[ProgrammeContext] Failed to load programmes:', error);
+      setProgrammes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, user]);
+
+  useEffect(() => {
+    loadProgrammes();
+  }, [loadProgrammes]);
 
   const addProgramme = useCallback(
     async (programme: { name: string; days: number; weeks: number; exercises: ProgrammeExercise[] }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
       try {
-        const newProgramme = await createMutation.mutateAsync(programme);
-        return newProgramme;
+        console.log('[ProgrammeContext] Creating programme:', programme.name);
+        
+        const { data, error } = await supabase
+          .from('programmes')
+          .insert({
+            user_id: user.id,
+            name: programme.name,
+            days: programme.days,
+            weeks: programme.weeks,
+            exercises: programme.exercises,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('[ProgrammeContext] Error creating programme:', error);
+          throw error;
+        }
+
+        console.log('[ProgrammeContext] Programme created successfully');
+        setProgrammes((prev) => [data, ...prev]);
+        return data;
       } catch (error) {
-        console.error('Failed to create programme:', error);
+        console.error('[ProgrammeContext] Failed to create programme:', error);
         throw error;
       }
     },
-    [createMutation]
+    [user]
   );
 
   const deleteProgramme = useCallback(
     async (id: string) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
       try {
-        await deleteMutation.mutateAsync({ id });
+        console.log('[ProgrammeContext] Deleting programme:', id);
+        
+        const { error } = await supabase
+          .from('programmes')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('[ProgrammeContext] Error deleting programme:', error);
+          throw error;
+        }
+
+        console.log('[ProgrammeContext] Programme deleted successfully');
+        setProgrammes((prev) => prev.filter((p) => p.id !== id));
       } catch (error) {
-        console.error('Failed to delete programme:', error);
+        console.error('[ProgrammeContext] Failed to delete programme:', error);
         throw error;
       }
     },
-    [deleteMutation]
+    [user]
   );
 
   const getProgramme = useCallback(
@@ -101,12 +138,12 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
   return useMemo(
     () => ({
       programmes,
-      isLoading: isLoading || programmesQuery.isLoading,
+      isLoading,
       addProgramme,
       deleteProgramme,
       getProgramme,
-      refetch: programmesQuery.refetch,
+      refetch: loadProgrammes,
     }),
-    [programmes, isLoading, programmesQuery.isLoading, addProgramme, deleteProgramme, getProgramme, programmesQuery.refetch]
+    [programmes, isLoading, addProgramme, deleteProgramme, getProgramme, loadProgrammes]
   );
 });
