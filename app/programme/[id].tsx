@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
+import React, { useMemo } from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, BarChart3 } from 'lucide-react-native';
@@ -8,17 +8,79 @@ import Button from '@/components/Button';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
+import { trpc } from '@/lib/trpc';
+import { EXERCISES } from '@/constants/exercises';
 
 export default function ProgrammeOverviewScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { programmes } = useProgrammes();
+  const { programmes, isLoading: programmesLoading } = useProgrammes();
   
   const programmeId = params.id as string;
   const programme = programmes.find(p => p.id === programmeId);
   
-  if (!programme) {
+  const workoutsQuery = trpc.workouts.history.useQuery(
+    { programmeId },
+    { enabled: !!programmeId }
+  );
+
+  const transformedProgramme = useMemo(() => {
+    if (!programme) return null;
+
+    const exercisesByDay = new Map<number, typeof programme.exercises>();
+    programme.exercises.forEach(ex => {
+      const dayExercises = exercisesByDay.get(ex.day) || [];
+      dayExercises.push(ex);
+      exercisesByDay.set(ex.day, dayExercises);
+    });
+
+    const days = Array.from({ length: programme.days }, (_, i) => {
+      const dayNumber = i + 1;
+      const dayExercises = exercisesByDay.get(dayNumber) || [];
+      
+      return {
+        name: `Day ${dayNumber}`,
+        exercises: dayExercises.map(ex => {
+          const exerciseData = EXERCISES.find(e => e.id === ex.exerciseId);
+          return {
+            name: exerciseData?.name || 'Unknown Exercise',
+            sets: ex.sets,
+            reps: ex.reps,
+            rest: ex.rest,
+          };
+        }),
+      };
+    });
+
+    const workouts = workoutsQuery.data || [];
+    const totalSessions = programme.days * programme.weeks;
+    const completedSessions = workouts.length;
+
+    return {
+      ...programme,
+      frequency: programme.days,
+      days,
+      progress: {
+        completedSessions,
+        totalSessions,
+      },
+    };
+  }, [programme, workoutsQuery.data]);
+  
+  if (programmesLoading || workoutsQuery.isLoading) {
+    return (
+      <View style={styles.background}>
+        <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={accent} />
+          </View>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  if (!transformedProgramme) {
     return (
       <View style={styles.background}>
         <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -28,7 +90,9 @@ export default function ProgrammeOverviewScreen() {
     );
   }
   
-  const overallProgress = Math.round((programme.progress.completedSessions / programme.progress.totalSessions) * 100);
+  const overallProgress = transformedProgramme.progress.totalSessions > 0
+    ? Math.round((transformedProgramme.progress.completedSessions / transformedProgramme.progress.totalSessions) * 100)
+    : 0;
 
   return (
     <View style={styles.background}>
@@ -53,8 +117,8 @@ export default function ProgrammeOverviewScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>{programme.name}</Text>
-          <Text style={styles.subtitle}>{programme.frequency} days per week</Text>
+          <Text style={styles.title}>{transformedProgramme.name}</Text>
+          <Text style={styles.subtitle}>{transformedProgramme.frequency} days per week</Text>
 
           <Card style={styles.progressCard}>
             <View style={styles.progressHeader}>
@@ -71,13 +135,13 @@ export default function ProgrammeOverviewScreen() {
               />
             </View>
             <Text style={styles.progressSubtext}>
-              {programme.progress.completedSessions} of {programme.progress.totalSessions} sessions completed
+              {transformedProgramme.progress.completedSessions} of {transformedProgramme.progress.totalSessions} sessions completed
             </Text>
           </Card>
 
           <Text style={styles.sectionTitle}>Training Split</Text>
 
-          {programme.days.map((day, index) => (
+          {transformedProgramme.days.map((day, index) => (
             <Card key={index} style={styles.workoutCard}>
               <View style={styles.workoutHeader}>
                 <View style={styles.workoutTitleRow}>
@@ -253,5 +317,10 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center' as const,
     marginTop: SPACING.xl,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
 });
