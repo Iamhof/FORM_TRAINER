@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { COLORS, SPACING } from '@/constants/theme';
 import { MonthlyDataPoint } from '@/types/analytics';
 
@@ -85,22 +86,22 @@ export default function LineChart({
   return (
     <View style={[styles.container, { height }]}>
       <View style={styles.chartArea}>
-        <svg width={CHART_WIDTH} height={height - 40} style={styles.svg}>
-          <defs>
-            <linearGradient id={`gradient-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-              <stop offset="100%" stopColor={color} stopOpacity="0.05" />
-            </linearGradient>
-          </defs>
+        <Svg width={CHART_WIDTH} height={height - 40} style={styles.svg}>
+          <Defs>
+            <LinearGradient id={`gradient-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
+              <Stop offset="0%" stopColor={color} stopOpacity="0.3" />
+              <Stop offset="100%" stopColor={color} stopOpacity="0.05" />
+            </LinearGradient>
+          </Defs>
 
-          <path d={gradientPath} fill={`url(#gradient-${color})`} />
+          <Path d={gradientPath} fill={`url(#gradient-${color})`} />
 
-          <path d={pathD} stroke={color} strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          <Path d={pathD} stroke={color} strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
 
           {chartData.points.map((point, index) => (
-            <circle key={index} cx={point.x} cy={point.y} r="5" fill={color} stroke={COLORS.background} strokeWidth="2" />
+            <Circle key={index} cx={point.x} cy={point.y} r="5" fill={color} stroke={COLORS.background} strokeWidth="2" />
           ))}
-        </svg>
+        </Svg>
 
         {showValues && (
           <View style={styles.valuesContainer}>
