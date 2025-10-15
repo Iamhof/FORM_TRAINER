@@ -8,7 +8,6 @@ import { ProgrammeProvider } from "@/contexts/ProgrammeContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { AnalyticsProvider } from "@/contexts/AnalyticsContext";
 import { ScheduleProvider } from "@/contexts/ScheduleContext";
-import { trpc, trpcClient } from "@/lib/trpc";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -47,22 +46,20 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <UserProvider>
-            <ProgrammeProvider>
-              <AnalyticsProvider>
-                <ScheduleProvider>
-                  <GestureHandlerRootView style={{ flex: 1 }}>
-                    <RootLayoutNav />
-                  </GestureHandlerRootView>
-                </ScheduleProvider>
-              </AnalyticsProvider>
-            </ProgrammeProvider>
-          </UserProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </trpc.Provider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <UserProvider>
+          <ProgrammeProvider>
+            <AnalyticsProvider>
+              <ScheduleProvider>
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <RootLayoutNav />
+                </GestureHandlerRootView>
+              </ScheduleProvider>
+            </AnalyticsProvider>
+          </ProgrammeProvider>
+        </UserProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
