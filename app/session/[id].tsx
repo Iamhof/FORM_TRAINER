@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, TextInput } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { X, Check } from 'lucide-react-native';
@@ -7,6 +7,9 @@ import Card from '@/components/Card';
 import RestTimerModal from '@/components/RestTimerModal';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useProgrammes } from '@/contexts/ProgrammeContext';
+import { trpc } from '@/lib/trpc';
+import { EXERCISES } from '@/constants/exercises';
 
 type SetData = {
   weight: string;
@@ -15,41 +18,89 @@ type SetData = {
 };
 
 type ExerciseData = {
-  id: string;
+  exerciseId: string;
   name: string;
   targetSets: number;
   sets: SetData[];
 };
 
-const MOCK_WORKOUT = {
-  name: 'Barbell Bench Press',
-  exercises: [
-    {
-      id: '1',
-      name: 'Barbell Bench Press',
-      targetSets: 4,
-      sets: [
-        { weight: '', reps: '', completed: false },
-        { weight: '', reps: '', completed: false },
-        { weight: '', reps: '', completed: false },
-        { weight: '', reps: '', completed: false },
-      ],
-    },
-  ] as ExerciseData[],
-};
-
 export default function SessionScreen() {
   const { accent } = useTheme();
   const router = useRouter();
-  const { id } = useLocalSearchParams();
-  const [exercises, setExercises] = useState(MOCK_WORKOUT.exercises);
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { programmes } = useProgrammes();
+  const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [currentExerciseIndex] = useState(0);
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [completedSets, setCompletedSets] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [sessionData, setSessionData] = useState<{
+    programmeId: string;
+    programmeName: string;
+    day: number;
+    week: number;
+  } | null>(null);
+
+  const logWorkoutMutation = trpc.workouts.log.useMutation();
+
+  useEffect(() => {
+    if (!id) {
+      console.error('[SessionScreen] No session ID provided');
+      setIsLoading(false);
+      return;
+    }
+
+    const parts = id.split('-');
+    if (parts.length < 4) {
+      console.error('[SessionScreen] Invalid session ID format:', id);
+      setIsLoading(false);
+      return;
+    }
+
+    const programmeId = parts.slice(0, -2).join('-');
+    const day = parseInt(parts[parts.length - 2], 10);
+    const week = parseInt(parts[parts.length - 1], 10);
+
+    console.log('[SessionScreen] Parsed session:', { programmeId, day, week });
+
+    const programme = programmes.find(p => p.id === programmeId);
+    if (!programme) {
+      console.error('[SessionScreen] Programme not found:', programmeId);
+      setIsLoading(false);
+      return;
+    }
+
+    const dayExercises = programme.exercises.filter(ex => ex.day === day);
+    console.log('[SessionScreen] Found exercises for day', day, ':', dayExercises.length);
+
+    const mappedExercises: ExerciseData[] = dayExercises.map(ex => {
+      const exerciseData = EXERCISES.find(e => e.id === ex.exerciseId);
+      return {
+        exerciseId: ex.exerciseId,
+        name: exerciseData?.name || 'Unknown Exercise',
+        targetSets: ex.sets,
+        sets: Array.from({ length: ex.sets }, () => ({
+          weight: '',
+          reps: '',
+          completed: false,
+        })),
+      };
+    });
+
+    setExercises(mappedExercises);
+    setSessionData({
+      programmeId,
+      programmeName: programme.name,
+      day,
+      week,
+    });
+    setIsLoading(false);
+  }, [id, programmes]);
 
   const currentExercise = exercises[currentExerciseIndex];
-  const totalSets = currentExercise.targetSets;
-  const progress = (completedSets / totalSets) * 100;
+  const totalSets = currentExercise?.targetSets || 0;
+  const progress = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
 
   const allSetsCompleted = useMemo(() => {
     return exercises.every(exercise => 
@@ -81,10 +132,83 @@ export default function SessionScreen() {
     setExercises(newExercises);
   };
 
-  const handleCompleteWorkout = () => {
-    console.log('Workout completed for programme:', id);
-    router.back();
+  const handleCompleteWorkout = async () => {
+    if (!sessionData) {
+      console.error('[SessionScreen] No session data available');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      console.log('[SessionScreen] Completing workout...', sessionData);
+
+      const workoutExercises = exercises.map(exercise => ({
+        exerciseId: exercise.exerciseId,
+        sets: exercise.sets.map(set => ({
+          weight: parseFloat(set.weight) || 0,
+          reps: parseInt(set.reps, 10) || 0,
+          completed: set.completed,
+        })),
+      }));
+
+      await logWorkoutMutation.mutateAsync({
+        programmeId: sessionData.programmeId,
+        programmeName: sessionData.programmeName,
+        day: sessionData.day,
+        week: sessionData.week,
+        exercises: workoutExercises,
+        completedAt: new Date().toISOString(),
+      });
+
+      console.log('[SessionScreen] Workout logged successfully');
+      Alert.alert(
+        'Session Complete!',
+        'Your workout has been saved successfully.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.back(),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('[SessionScreen] Error completing workout:', error);
+      Alert.alert(
+        'Error',
+        'Failed to save workout. Please try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.background}>
+        <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
+          <ActivityIndicator size="large" color={accent} />
+          <Text style={styles.loadingText}>Loading session...</Text>
+        </SafeAreaView>
+      </View>
+    );
+  }
+
+  if (!currentExercise || !sessionData) {
+    return (
+      <View style={styles.background}>
+        <SafeAreaView style={styles.loadingContainer} edges={['top', 'bottom']}>
+          <Text style={styles.errorText}>Session not found</Text>
+          <Pressable
+            style={[styles.backButton, { backgroundColor: accent }]}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </Pressable>
+        </SafeAreaView>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.background}>
@@ -96,7 +220,7 @@ export default function SessionScreen() {
           headerTitle: `Exercise 1 of ${exercises.length}`,
           headerTitleStyle: { fontSize: 14, fontWeight: '500' as const, color: COLORS.textSecondary },
           headerLeft: () => (
-            <Pressable onPress={() => router.back()} style={styles.closeButton}>
+            <Pressable onPress={() => router.back()} style={styles.closeButton} disabled={isSaving}>
               <X size={24} color={COLORS.textPrimary} strokeWidth={2} />
               <Text style={styles.closeText}>End Workout</Text>
             </Pressable>
@@ -197,11 +321,18 @@ export default function SessionScreen() {
 
           {allSetsCompleted && (
             <Pressable
-              style={[styles.completeButton, { backgroundColor: accent }]}
+              style={[styles.completeButton, { backgroundColor: accent }, isSaving && styles.completeButtonDisabled]}
               onPress={handleCompleteWorkout}
+              disabled={isSaving}
             >
-              <Check size={24} color={COLORS.background} strokeWidth={3} />
-              <Text style={styles.completeButtonText}>Complete Workout</Text>
+              {isSaving ? (
+                <ActivityIndicator size="small" color={COLORS.background} />
+              ) : (
+                <>
+                  <Check size={24} color={COLORS.background} strokeWidth={3} />
+                  <Text style={styles.completeButtonText}>Complete Workout</Text>
+                </>
+              )}
             </Pressable>
           )}
         </ScrollView>
@@ -354,6 +485,36 @@ const styles = StyleSheet.create({
   },
   completeButtonText: {
     fontSize: 18,
+    fontWeight: '700' as const,
+    color: COLORS.background,
+  },
+  completeButtonDisabled: {
+    opacity: 0.5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    padding: SPACING.xl,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.md,
+  },
+  errorText: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    textAlign: 'center' as const,
+    marginBottom: SPACING.xl,
+  },
+  backButton: {
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: 12,
+  },
+  backButtonText: {
+    fontSize: 16,
     fontWeight: '700' as const,
     color: COLORS.background,
   },

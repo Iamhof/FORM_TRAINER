@@ -1,7 +1,7 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
+import { useRouter, Stack, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ChevronLeft, BarChart3, Check } from 'lucide-react-native';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
@@ -23,34 +23,43 @@ export default function ProgrammeOverviewScreen() {
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [workoutsLoading, setWorkoutsLoading] = useState(true);
 
-  useEffect(() => {
+  const loadWorkouts = useCallback(async () => {
     if (!programmeId) return;
 
-    async function loadWorkouts() {
-      try {
-        setWorkoutsLoading(true);
-        const { data, error } = await supabase
-          .from('workouts')
-          .select('*')
-          .eq('programme_id', programmeId)
-          .order('completed_at', { ascending: false });
+    try {
+      console.log('[ProgrammeOverview] Loading workouts for programme:', programmeId);
+      setWorkoutsLoading(true);
+      const { data, error } = await supabase
+        .from('workouts')
+        .select('*')
+        .eq('programme_id', programmeId)
+        .order('completed_at', { ascending: false });
 
-        if (error) {
-          console.error('[ProgrammeOverview] Error loading workouts:', error);
-          setWorkouts([]);
-        } else {
-          setWorkouts(data || []);
-        }
-      } catch (error) {
-        console.error('[ProgrammeOverview] Failed to load workouts:', error);
+      if (error) {
+        console.error('[ProgrammeOverview] Error loading workouts:', error);
         setWorkouts([]);
-      } finally {
-        setWorkoutsLoading(false);
+      } else {
+        console.log('[ProgrammeOverview] Loaded workouts:', data?.length || 0);
+        setWorkouts(data || []);
       }
+    } catch (error) {
+      console.error('[ProgrammeOverview] Failed to load workouts:', error);
+      setWorkouts([]);
+    } finally {
+      setWorkoutsLoading(false);
     }
-
-    loadWorkouts();
   }, [programmeId]);
+
+  useEffect(() => {
+    loadWorkouts();
+  }, [loadWorkouts]);
+
+  useFocusEffect(
+    useCallback(() => {
+      console.log('[ProgrammeOverview] Screen focused, refreshing workouts');
+      loadWorkouts();
+    }, [loadWorkouts])
+  );
 
   const transformedProgramme = useMemo(() => {
     if (!programme) return null;
@@ -69,6 +78,8 @@ export default function ProgrammeOverviewScreen() {
       completedSessionsMap.set(sessionKey, true);
     });
 
+    console.log('[ProgrammeOverview] Completed sessions map:', Array.from(completedSessionsMap.entries()));
+
     const sessions: {
       id: string;
       name: string;
@@ -83,6 +94,7 @@ export default function ProgrammeOverviewScreen() {
       for (let day = 1; day <= programme.days; day++) {
         const sessionKey = `${day}-${week}`;
         const dayExercises = exercisesByDay.get(day) || [];
+        const isCompleted = completedSessionsMap.has(sessionKey);
         
         sessions.push({
           id: `${programmeId}-${day}-${week}`,
@@ -98,14 +110,20 @@ export default function ProgrammeOverviewScreen() {
               rest: ex.rest,
             };
           }),
-          completed: completedSessionsMap.has(sessionKey),
-          dayBadge: `Day ${day}`,
+          completed: isCompleted,
+          dayBadge: `Week ${week}`,
         });
       }
     }
 
     const totalSessions = programme.days * programme.weeks;
     const completedSessions = workoutsList.length;
+
+    console.log('[ProgrammeOverview] Sessions:', {
+      total: totalSessions,
+      completed: completedSessions,
+      progress: Math.round((completedSessions / totalSessions) * 100),
+    });
 
     return {
       ...programme,
@@ -212,9 +230,12 @@ export default function ProgrammeOverviewScreen() {
             ]}>
               <View style={styles.workoutHeader}>
                 <View style={styles.workoutTitleRow}>
-                  <Text style={styles.workoutName}>{session.name}</Text>
+                  <Text style={[
+                    styles.workoutName,
+                    session.completed && styles.completedText,
+                  ]}>{session.name}</Text>
                   {session.completed && (
-                    <View style={styles.checkmark}>
+                    <View style={[styles.checkmark, { backgroundColor: accent }]}>
                       <Check size={16} color={COLORS.background} strokeWidth={3} />
                     </View>
                   )}
@@ -226,7 +247,10 @@ export default function ProgrammeOverviewScreen() {
                   <Text style={[styles.dayBadgeText, { color: accent }]}>{session.dayBadge}</Text>
                 </View>
               </View>
-              <Text style={styles.exerciseCount}>{session.exercises.length} exercises</Text>
+              <Text style={[
+                styles.exerciseCount,
+                session.completed && styles.completedText,
+              ]}>{session.exercises.length} exercises</Text>
 
               <View style={styles.exerciseList}>
                 {session.exercises.map((exercise, exerciseIndex) => (
@@ -243,7 +267,12 @@ export default function ProgrammeOverviewScreen() {
                 ))}
               </View>
 
-              {!session.completed && (
+              {session.completed ? (
+                <View style={[styles.completedBadge, { backgroundColor: `${accent}20` }]}>
+                  <Check size={18} color={accent} strokeWidth={2.5} />
+                  <Text style={[styles.completedBadgeText, { color: accent }]}>Completed</Text>
+                </View>
+              ) : (
                 <Button
                   title="▶ Start Session"
                   onPress={() => router.push(`/session/${session.id}` as any)}
@@ -405,10 +434,22 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: COLORS.success,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
     marginLeft: SPACING.xs,
+  },
+  completedBadge: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: SPACING.xs,
+    paddingVertical: SPACING.md,
+    borderRadius: 12,
+    marginTop: SPACING.sm,
+  },
+  completedBadgeText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
   },
   errorText: {
     fontSize: 16,

@@ -24,10 +24,12 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
   const { user, isAuthenticated } = useUser();
   const [programmes, setProgrammes] = useState<Programme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [completedSessions, setCompletedSessions] = useState<Map<string, number>>(new Map());
 
   const loadProgrammes = useCallback(async () => {
     if (!isAuthenticated || !user) {
       setProgrammes([]);
+      setCompletedSessions(new Map());
       setIsLoading(false);
       return;
     }
@@ -36,22 +38,40 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
       console.log('[ProgrammeContext] Loading programmes for user:', user.id);
       setIsLoading(true);
       
-      const { data, error } = await supabase
+      const { data: programmesData, error: programmesError } = await supabase
         .from('programmes')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('[ProgrammeContext] Error loading programmes:', error);
-        throw error;
+      if (programmesError) {
+        console.error('[ProgrammeContext] Error loading programmes:', programmesError);
+        throw programmesError;
       }
 
-      console.log('[ProgrammeContext] Loaded programmes:', data?.length || 0);
-      setProgrammes(data || []);
+      console.log('[ProgrammeContext] Loaded programmes:', programmesData?.length || 0);
+      setProgrammes(programmesData || []);
+
+      const { data: workoutsData, error: workoutsError } = await supabase
+        .from('workouts')
+        .select('programme_id')
+        .eq('user_id', user.id);
+
+      if (workoutsError) {
+        console.error('[ProgrammeContext] Error loading workouts:', workoutsError);
+      } else {
+        const sessionsMap = new Map<string, number>();
+        workoutsData?.forEach(workout => {
+          const count = sessionsMap.get(workout.programme_id) || 0;
+          sessionsMap.set(workout.programme_id, count + 1);
+        });
+        console.log('[ProgrammeContext] Completed sessions by programme:', Array.from(sessionsMap.entries()));
+        setCompletedSessions(sessionsMap);
+      }
     } catch (error) {
       console.error('[ProgrammeContext] Failed to load programmes:', error);
       setProgrammes([]);
+      setCompletedSessions(new Map());
     } finally {
       setIsLoading(false);
     }
@@ -157,6 +177,21 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
     return programmes.length > 0 ? programmes[0] : null;
   }, [programmes]);
 
+  const getProgrammeProgress = useCallback((programmeId: string) => {
+    const programme = programmes.find(p => p.id === programmeId);
+    if (!programme) return { completed: 0, total: 0, percentage: 0 };
+
+    const totalSessions = programme.days * programme.weeks;
+    const completedCount = completedSessions.get(programmeId) || 0;
+    const percentage = totalSessions > 0 ? Math.round((completedCount / totalSessions) * 100) : 0;
+
+    return {
+      completed: completedCount,
+      total: totalSessions,
+      percentage,
+    };
+  }, [programmes, completedSessions]);
+
   return useMemo(
     () => ({
       programmes,
@@ -165,8 +200,10 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
       deleteProgramme,
       getProgramme,
       activeProgramme,
+      completedSessions,
+      getProgrammeProgress,
       refetch: loadProgrammes,
     }),
-    [programmes, isLoading, addProgramme, deleteProgramme, getProgramme, activeProgramme, loadProgrammes]
+    [programmes, isLoading, addProgramme, deleteProgramme, getProgramme, activeProgramme, completedSessions, getProgrammeProgress, loadProgrammes]
   );
 });
