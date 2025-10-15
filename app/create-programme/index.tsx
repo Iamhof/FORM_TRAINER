@@ -227,8 +227,7 @@ export default function CreateProgrammeScreen() {
                         style={styles.pickerItem}
                         onPress={() => {
                           const targetIndex = DURATION_OPTIONS.indexOf(option);
-                          const centerOffset = (SCREEN_WIDTH / 2) - (ITEM_WIDTH / 2);
-                          const targetX = (targetIndex * ITEM_WIDTH) - centerOffset + (ITEM_WIDTH / 2);
+                          const targetX = targetIndex * ITEM_WIDTH;
                           
                           setSelectedDuration(option);
                           setCenterDuration(option);
