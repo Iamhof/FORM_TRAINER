@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { X, Check } from 'lucide-react-native';
@@ -297,89 +297,96 @@ export default function SessionScreen() {
           <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: accent }]} />
         </View>
 
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={true}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardAvoid}
+          keyboardVerticalOffset={100}
         >
-          <Text style={styles.exerciseTitle}>{currentExercise.name}</Text>
-          <Text style={styles.exerciseSubtitle}>
-            {completedSets} of {totalSets} sets completed
-          </Text>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={true}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Text style={styles.exerciseTitle}>{currentExercise.name}</Text>
+            <Text style={styles.exerciseSubtitle}>
+              {completedSets} of {totalSets} sets completed
+            </Text>
 
-          {currentExercise.sets.map((set, setIndex) => (
-            <Card
-              key={setIndex}
-              style={[
-                styles.setCard,
-                set.completed && { borderColor: accent, borderWidth: 2 },
-              ]}
-            >
-              <View style={styles.setHeader}>
-                <Text style={styles.setNumber}>{setIndex + 1}</Text>
-                {set.completed ? (
-                  <View style={[styles.completedBadge, { backgroundColor: accent }]}>
-                    <Check size={16} color={COLORS.background} strokeWidth={3} />
+            {currentExercise.sets.map((set, setIndex) => (
+              <Card
+                key={setIndex}
+                style={[
+                  styles.setCard,
+                  set.completed && { borderColor: accent, borderWidth: 2 },
+                ]}
+              >
+                <View style={styles.setHeader}>
+                  <Text style={styles.setNumber}>{setIndex + 1}</Text>
+                  {set.completed ? (
+                    <View style={[styles.completedBadge, { backgroundColor: accent }]}>
+                      <Check size={16} color={COLORS.background} strokeWidth={3} />
+                    </View>
+                  ) : (
+                    <Text style={styles.waitingText}>
+                      {setIndex === 0 || currentExercise.sets[setIndex - 1].completed
+                        ? ''
+                        : 'Waiting...'}
+                    </Text>
+                  )}
+                </View>
+
+                <View style={styles.inputRow}>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Weight (kg)</Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        set.completed && styles.inputDisabled,
+                      ]}
+                      value={set.weight}
+                      onChangeText={(value) => handleWeightChange(currentExerciseIndex, setIndex, value)}
+                      keyboardType="numeric"
+                      placeholder="0"
+                      placeholderTextColor={COLORS.textTertiary}
+                      editable={!set.completed}
+                    />
                   </View>
-                ) : (
-                  <Text style={styles.waitingText}>
-                    {setIndex === 0 || currentExercise.sets[setIndex - 1].completed
-                      ? ''
-                      : 'Waiting...'}
-                  </Text>
-                )}
-              </View>
 
-              <View style={styles.inputRow}>
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Weight (kg)</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      set.completed && styles.inputDisabled,
-                    ]}
-                    value={set.weight}
-                    onChangeText={(value) => handleWeightChange(currentExerciseIndex, setIndex, value)}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor={COLORS.textTertiary}
-                    editable={!set.completed}
-                  />
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Reps</Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        set.completed && styles.inputDisabled,
+                      ]}
+                      value={set.reps}
+                      onChangeText={(value) => handleRepsChange(currentExerciseIndex, setIndex, value)}
+                      keyboardType="numeric"
+                      placeholder="0"
+                      placeholderTextColor={COLORS.textTertiary}
+                      editable={!set.completed}
+                    />
+                  </View>
+
+                  {!set.completed && (
+                    <Pressable
+                      style={[
+                        styles.checkButton,
+                        { backgroundColor: accent },
+                        (!set.weight || !set.reps) && styles.checkButtonDisabled,
+                      ]}
+                      onPress={() => handleSetComplete(currentExerciseIndex, setIndex)}
+                      disabled={!set.weight || !set.reps}
+                    >
+                      <Check size={20} color={COLORS.background} strokeWidth={3} />
+                    </Pressable>
+                  )}
                 </View>
-
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Reps</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      set.completed && styles.inputDisabled,
-                    ]}
-                    value={set.reps}
-                    onChangeText={(value) => handleRepsChange(currentExerciseIndex, setIndex, value)}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor={COLORS.textTertiary}
-                    editable={!set.completed}
-                  />
-                </View>
-
-                {!set.completed && (
-                  <Pressable
-                    style={[
-                      styles.checkButton,
-                      { backgroundColor: accent },
-                      (!set.weight || !set.reps) && styles.checkButtonDisabled,
-                    ]}
-                    onPress={() => handleSetComplete(currentExerciseIndex, setIndex)}
-                    disabled={!set.weight || !set.reps}
-                  >
-                    <Check size={20} color={COLORS.background} strokeWidth={3} />
-                  </Pressable>
-                )}
-              </View>
-            </Card>
-          ))}
-        </ScrollView>
+              </Card>
+            ))}
+          </ScrollView>
+        </KeyboardAvoidingView>
 
         {currentExerciseSetsCompleted && (
           <View style={styles.stickyFooter}>
@@ -464,6 +471,9 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   scroll: {
     flex: 1,
