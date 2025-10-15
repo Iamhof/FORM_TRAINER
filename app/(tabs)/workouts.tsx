@@ -57,47 +57,20 @@ export default function WorkoutsScreen() {
                     <View style={styles.programmeHeader}>
                       <View style={styles.programmeTitleRow}>
                         <Text style={styles.programmeName}>{programme.name}</Text>
-                        {programme.isActive && (
-                          <View style={[styles.activeBadge, { backgroundColor: `${accent}30` }]}>
-                            <Text style={[styles.activeBadgeText, { color: accent }]}>Active</Text>
-                          </View>
-                        )}
                       </View>
                     </View>
                     <Text style={styles.programmeDetails}>
-                      {programme.frequency} days per week • {programme.duration} weeks
+                      {programme.days} days per week • {programme.weeks} weeks
                     </Text>
-
-                    <View style={styles.progressSection}>
-                      <View style={styles.progressHeader}>
-                        <Text style={styles.progressLabel}>Programme Progress</Text>
-                        <Text style={[styles.progressValue, { color: accent }]}>
-                          Week {programme.progress.currentWeek} of {programme.duration}
-                        </Text>
-                      </View>
-                      <View style={styles.progressBar}>
-                        <View
-                          style={[
-                            styles.progressFill,
-                            {
-                              width: `${(programme.progress.currentWeek / programme.duration) * 100}%`,
-                              backgroundColor: accent,
-                            },
-                          ]}
-                        />
-                      </View>
-                    </View>
 
                     <View style={styles.statsRow}>
                       <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>This Week</Text>
-                        <Text style={styles.statValue}>
-                          {programme.progress.completedSessions}/{programme.frequency} sessions
-                        </Text>
+                        <Text style={styles.statLabel}>Total Exercises</Text>
+                        <Text style={styles.statValue}>{programme.exercises?.length || 0}</Text>
                       </View>
                       <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Total Days</Text>
-                        <Text style={styles.statValue}>{programme.days.length}</Text>
+                        <Text style={styles.statLabel}>Duration</Text>
+                        <Text style={styles.statValue}>{programme.weeks} weeks</Text>
                       </View>
                     </View>
                   </Card>

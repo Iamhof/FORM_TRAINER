@@ -135,6 +135,10 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
     [programmes]
   );
 
+  const activeProgramme = useMemo(() => {
+    return programmes.length > 0 ? programmes[0] : null;
+  }, [programmes]);
+
   return useMemo(
     () => ({
       programmes,
@@ -142,8 +146,9 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
       addProgramme,
       deleteProgramme,
       getProgramme,
+      activeProgramme,
       refetch: loadProgrammes,
     }),
-    [programmes, isLoading, addProgramme, deleteProgramme, getProgramme, loadProgrammes]
+    [programmes, isLoading, addProgramme, deleteProgramme, getProgramme, activeProgramme, loadProgrammes]
   );
 });

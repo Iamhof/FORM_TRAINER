@@ -61,7 +61,7 @@ export default function DashboardScreen() {
           <View style={styles.header}>
             <View>
               <Text style={styles.greeting}>
-                Welcome back, <Text style={[styles.greetingName, { color: accent }]}>{user?.firstName || 'User'}</Text>
+                Welcome back, <Text style={[styles.greetingName, { color: accent }]}>{user?.name || 'User'}</Text>
               </Text>
               <Text style={styles.subtitle}>Ready to crush your goals today?</Text>
             </View>
@@ -71,7 +71,7 @@ export default function DashboardScreen() {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>This Week</Text>
               {scheduledCount > 0 && (
-                <Text style={styles.scheduledText}>{scheduledCount}/{activeProgramme?.frequency || 0} scheduled</Text>
+                <Text style={styles.scheduledText}>{scheduledCount}/{activeProgramme?.days || 0} scheduled</Text>
               )}
             </View>
             <Pressable style={styles.viewCalendarButton}>
@@ -88,7 +88,7 @@ export default function DashboardScreen() {
             ) : (
               <View style={styles.noticeBox}>
                 <Text style={styles.noticeText}>
-                  Tap days to schedule your <Text style={{ color: accent }}>{activeProgramme.frequency} weekly sessions</Text>
+                  Tap days to schedule your <Text style={{ color: accent }}>{activeProgramme.days} weekly sessions</Text>
                 </Text>
               </View>
             )}
@@ -165,52 +165,12 @@ export default function DashboardScreen() {
                     </View>
                   </View>
                   <Text style={styles.programmeSubtitle}>
-                    {activeProgramme.frequency} days per week • {activeProgramme.duration} weeks
+                    {activeProgramme.days} days per week • {activeProgramme.weeks} weeks
                   </Text>
 
-                  <View style={styles.progressSection}>
-                    <View style={styles.progressHeader}>
-                      <Text style={styles.progressLabel}>Programme Progress</Text>
-                      <Text style={[styles.progressValue, { color: accent }]}>
-                        Week {activeProgramme.progress.currentWeek} of {activeProgramme.duration}
-                      </Text>
-                    </View>
-                    <View style={styles.progressBar}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          {
-                            width: `${(activeProgramme.progress.currentWeek / activeProgramme.duration) * 100}%`,
-                            backgroundColor: accent,
-                          },
-                        ]}
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.progressSection}>
-                    <View style={styles.progressHeader}>
-                      <Text style={styles.progressLabel}>This Week</Text>
-                      <Text style={[styles.progressValue, { color: accent }]}>
-                        {activeProgramme.progress.completedSessions}/{activeProgramme.frequency} sessions
-                      </Text>
-                    </View>
-                    <View style={styles.progressBar}>
-                      <View
-                        style={[
-                          styles.progressFill,
-                          {
-                            width: `${(activeProgramme.progress.completedSessions / activeProgramme.frequency) * 100}%`,
-                            backgroundColor: accent,
-                          },
-                        ]}
-                      />
-                    </View>
-                  </View>
-
                   <View style={styles.totalDaysRow}>
-                    <Text style={styles.totalDaysLabel}>Total Days</Text>
-                    <Text style={styles.totalDaysValue}>{activeProgramme.days.length}</Text>
+                    <Text style={styles.totalDaysLabel}>Total Exercises</Text>
+                    <Text style={styles.totalDaysValue}>{activeProgramme.exercises?.length || 0}</Text>
                   </View>
                 </Card>
               </Pressable>
@@ -231,7 +191,7 @@ export default function DashboardScreen() {
             <Card style={styles.statCard}>
               <Text style={styles.statLabel}>Workouts This Week</Text>
               <View style={styles.statRow}>
-                <Text style={styles.statValue}>{stats.weekWorkouts}/{stats.weekTotal || activeProgramme?.frequency || 0}</Text>
+                <Text style={styles.statValue}>{stats.weekWorkouts}/{stats.weekTotal || activeProgramme?.days || 0}</Text>
                 <View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>
                   <Target size={28} color={accent} strokeWidth={2} />
                 </View>
