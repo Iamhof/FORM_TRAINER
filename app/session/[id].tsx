@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: 120,
+    paddingBottom: 200,
   },
   exerciseTitle: {
     fontSize: 28,
