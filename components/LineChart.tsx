@@ -89,8 +89,8 @@ export default function LineChart({
         <Svg width={CHART_WIDTH} height={height - 40} style={styles.svg}>
           <Defs>
             <LinearGradient id={`gradient-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor={color} stopOpacity="0.3" />
-              <Stop offset="100%" stopColor={color} stopOpacity="0.05" />
+              <Stop offset="0%" stopColor={color} stopOpacity={0.3} />
+              <Stop offset="100%" stopColor={color} stopOpacity={0.05} />
             </LinearGradient>
           </Defs>
 
