@@ -1,8 +1,8 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { ChevronLeft, BarChart3, Check } from 'lucide-react-native';
+import { ChevronLeft, BarChart3, Check, ChevronRight } from 'lucide-react-native';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
 import { COLORS, SPACING } from '@/constants/theme';
@@ -22,6 +22,9 @@ export default function ProgrammeOverviewScreen() {
   
   const [workouts, setWorkouts] = useState<any[]>([]);
   const [workoutsLoading, setWorkoutsLoading] = useState(true);
+  const [currentWeek, setCurrentWeek] = useState(0);
+  const weekScrollRef = useRef<ScrollView>(null);
+  const screenWidth = Dimensions.get('window').width;
 
   const loadWorkouts = useCallback(async () => {
     if (!programmeId) return;
@@ -73,22 +76,26 @@ export default function ProgrammeOverviewScreen() {
 
     const workoutsList = workouts || [];
 
-    const sessions: {
-      id: string;
-      name: string;
-      day: number;
+    const sessionsByWeek: Array<{
       week: number;
-      exercises: { name: string; sets: number; reps: string; rest: number }[];
-      completed: boolean;
-      dayBadge: string;
-    }[] = [];
+      sessions: Array<{
+        id: string;
+        name: string;
+        day: number;
+        week: number;
+        exercises: { name: string; sets: number; reps: string; rest: number }[];
+        completed: boolean;
+        dayBadge: string;
+      }>;
+    }> = [];
 
     for (let week = 1; week <= programme.weeks; week++) {
+      const weekSessions = [];
       for (let day = 1; day <= programme.days; day++) {
         const dayExercises = exercisesByDay.get(day) || [];
         const isCompleted = isSessionCompleted(programmeId, day, week);
         
-        sessions.push({
+        weekSessions.push({
           id: `${programmeId}-${day}-${week}`,
           name: getDayName(day, programme.days),
           day,
@@ -103,9 +110,10 @@ export default function ProgrammeOverviewScreen() {
             };
           }),
           completed: isCompleted,
-          dayBadge: `Week ${week}`,
+          dayBadge: `Day ${day}`,
         });
       }
+      sessionsByWeek.push({ week, sessions: weekSessions });
     }
 
     const totalSessions = programme.days * programme.weeks;
@@ -120,7 +128,7 @@ export default function ProgrammeOverviewScreen() {
     return {
       ...programme,
       frequency: programme.days,
-      sessions,
+      sessionsByWeek,
       progress: {
         completedSessions,
         totalSessions,
@@ -168,6 +176,22 @@ export default function ProgrammeOverviewScreen() {
     ? Math.round((transformedProgramme.progress.completedSessions / transformedProgramme.progress.totalSessions) * 100)
     : 0;
 
+  const currentWeekData = transformedProgramme.sessionsByWeek[currentWeek];
+  const completedInCurrentWeek = currentWeekData?.sessions.filter(s => s.completed).length || 0;
+
+  const handleWeekDotPress = (weekIndex: number) => {
+    setCurrentWeek(weekIndex);
+    weekScrollRef.current?.scrollTo({ x: weekIndex * screenWidth, animated: true });
+  };
+
+  const handleScroll = (event: any) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const newWeekIndex = Math.round(offsetX / screenWidth);
+    if (newWeekIndex !== currentWeek && newWeekIndex >= 0 && newWeekIndex < transformedProgramme.sessionsByWeek.length) {
+      setCurrentWeek(newWeekIndex);
+    }
+  };
+
   return (
     <View style={styles.background}>
       <Stack.Screen
@@ -186,20 +210,20 @@ export default function ProgrammeOverviewScreen() {
         }}
       />
       <SafeAreaView style={styles.container} edges={['bottom']}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.title}>{transformedProgramme.name}</Text>
-          <Text style={styles.subtitle}>{transformedProgramme.frequency} days per week</Text>
+        <View style={styles.headerSection}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>{transformedProgramme.name}</Text>
+            <Text style={styles.subtitle}>{transformedProgramme.frequency} days per week</Text>
+          </View>
 
           <Card style={styles.progressCard}>
             <View style={styles.progressHeader}>
-              <Text style={styles.progressTitle}>Overall Progress</Text>
-              <BarChart3 size={24} color={accent} strokeWidth={2} />
+              <View>
+                <Text style={styles.progressTitle}>Week {currentWeek + 1} of {transformedProgramme.weeks}</Text>
+                <Text style={styles.progressPercentage}>{overallProgress}%</Text>
+              </View>
+              <BarChart3 size={32} color={accent} strokeWidth={2} />
             </View>
-            <Text style={styles.progressPercentage}>{overallProgress}%</Text>
             <View style={styles.progressBar}>
               <View
                 style={[
@@ -209,70 +233,142 @@ export default function ProgrammeOverviewScreen() {
               />
             </View>
             <Text style={styles.progressSubtext}>
-              {transformedProgramme.progress.completedSessions} of {transformedProgramme.progress.totalSessions} sessions completed
+              {transformedProgramme.progress.completedSessions} of {transformedProgramme.progress.totalSessions} sessions • {completedInCurrentWeek} of {currentWeekData?.sessions.length || 0} this week
             </Text>
           </Card>
 
-          <Text style={styles.sectionTitle}>Training Split</Text>
-
-          {transformedProgramme.sessions.map((session) => (
-            <Card key={session.id} style={[
-              styles.workoutCard,
-              session.completed && styles.completedCard,
-            ]}>
-              <View style={styles.workoutHeader}>
-                <View style={styles.workoutTitleRow}>
-                  <Text style={[
-                    styles.workoutName,
-                    session.completed && styles.completedText,
-                  ]}>{session.name}</Text>
-                  {session.completed && (
-                    <View style={[styles.checkmark, { backgroundColor: accent }]}>
-                      <Check size={16} color={COLORS.background} strokeWidth={3} />
+          <View style={styles.weekTimeline}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.weekDotsContainer}
+            >
+              {transformedProgramme.sessionsByWeek.map((weekData, index) => {
+                const weekCompleted = weekData.sessions.every(s => s.completed);
+                const weekPartial = weekData.sessions.some(s => s.completed) && !weekCompleted;
+                return (
+                  <Pressable
+                    key={index}
+                    onPress={() => handleWeekDotPress(index)}
+                    style={styles.weekDotWrapper}
+                  >
+                    <View
+                      style={[
+                        styles.weekDot,
+                        index === currentWeek && styles.weekDotActive,
+                        weekCompleted && { backgroundColor: accent },
+                        weekPartial && { backgroundColor: `${accent}50` },
+                      ]}
+                    >
+                      {weekCompleted && <Check size={12} color={COLORS.background} strokeWidth={3} />}
                     </View>
-                  )}
-                </View>
-                <View style={[
-                  styles.dayBadge,
-                  { backgroundColor: session.completed ? `${accent}40` : `${accent}20` }
+                    <Text style={[
+                      styles.weekDotLabel,
+                      index === currentWeek && { color: accent, fontWeight: '700' as const },
+                    ]}>W{index + 1}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+
+        <ScrollView
+          ref={weekScrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+          style={styles.weekScroller}
+        >
+          {transformedProgramme.sessionsByWeek.map((weekData, weekIndex) => (
+            <ScrollView
+              key={weekIndex}
+              style={[styles.weekPage, { width: screenWidth }]}
+              contentContainerStyle={styles.weekPageContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <View style={styles.weekHeader}>
+                <Text style={styles.weekTitle}>Week {weekData.week}</Text>
+                {weekIndex > 0 && (
+                  <Pressable
+                    onPress={() => handleWeekDotPress(weekIndex - 1)}
+                    style={styles.weekNav}
+                  >
+                    <ChevronLeft size={20} color={accent} strokeWidth={2.5} />
+                  </Pressable>
+                )}
+                {weekIndex < transformedProgramme.sessionsByWeek.length - 1 && (
+                  <Pressable
+                    onPress={() => handleWeekDotPress(weekIndex + 1)}
+                    style={[styles.weekNav, { marginLeft: 8 }]}
+                  >
+                    <ChevronRight size={20} color={accent} strokeWidth={2.5} />
+                  </Pressable>
+                )}
+              </View>
+
+              {weekData.sessions.map((session) => (
+                <Card key={session.id} style={[
+                  styles.workoutCard,
+                  session.completed && styles.completedCard,
                 ]}>
-                  <Text style={[styles.dayBadgeText, { color: accent }]}>{session.dayBadge}</Text>
-                </View>
-              </View>
-              <Text style={[
-                styles.exerciseCount,
-                session.completed && styles.completedText,
-              ]}>{session.exercises.length} exercises</Text>
-
-              <View style={styles.exerciseList}>
-                {session.exercises.map((exercise, exerciseIndex) => (
-                  <View key={exerciseIndex} style={styles.exerciseRow}>
-                    <Text style={[
-                      styles.exerciseName,
-                      session.completed && styles.completedText,
-                    ]}>{exercise.name}</Text>
-                    <Text style={[
-                      styles.exerciseSets,
-                      session.completed && styles.completedText,
-                    ]}>{exercise.sets} × {exercise.reps}</Text>
+                  <View style={styles.workoutHeader}>
+                    <View style={styles.workoutTitleRow}>
+                      <Text style={[
+                        styles.workoutName,
+                        session.completed && styles.completedText,
+                      ]}>{session.name}</Text>
+                      {session.completed && (
+                        <View style={[styles.checkmark, { backgroundColor: accent }]}>
+                          <Check size={16} color={COLORS.background} strokeWidth={3} />
+                        </View>
+                      )}
+                    </View>
+                    <View style={[
+                      styles.dayBadge,
+                      { backgroundColor: session.completed ? `${accent}40` : `${accent}20` }
+                    ]}>
+                      <Text style={[styles.dayBadgeText, { color: accent }]}>{session.dayBadge}</Text>
+                    </View>
                   </View>
-                ))}
-              </View>
+                  <Text style={[
+                    styles.exerciseCount,
+                    session.completed && styles.completedText,
+                  ]}>{session.exercises.length} exercises</Text>
 
-              {session.completed ? (
-                <View style={[styles.completedBadge, { backgroundColor: `${accent}20` }]}>
-                  <Check size={18} color={accent} strokeWidth={2.5} />
-                  <Text style={[styles.completedBadgeText, { color: accent }]}>Completed</Text>
-                </View>
-              ) : (
-                <Button
-                  title="▶ Start Session"
-                  onPress={() => router.push(`/session/${session.id}` as any)}
-                  variant="primary"
-                  style={styles.startButton}
-                />
-              )}
-            </Card>
+                  <View style={styles.exerciseList}>
+                    {session.exercises.map((exercise, exerciseIndex) => (
+                      <View key={exerciseIndex} style={styles.exerciseRow}>
+                        <Text style={[
+                          styles.exerciseName,
+                          session.completed && styles.completedText,
+                        ]}>{exercise.name}</Text>
+                        <Text style={[
+                          styles.exerciseSets,
+                          session.completed && styles.completedText,
+                        ]}>{exercise.sets} × {exercise.reps}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  {session.completed ? (
+                    <View style={[styles.completedBadge, { backgroundColor: `${accent}20` }]}>
+                      <Check size={18} color={accent} strokeWidth={2.5} />
+                      <Text style={[styles.completedBadgeText, { color: accent }]}>Completed</Text>
+                    </View>
+                  ) : (
+                    <Button
+                      title="▶ Start Session"
+                      onPress={() => router.push(`/session/${session.id}` as any)}
+                      variant="primary"
+                      style={styles.startButton}
+                    />
+                  )}
+                </Card>
+              ))}
+            </ScrollView>
           ))}
         </ScrollView>
       </SafeAreaView>
@@ -288,12 +384,73 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scroll: {
+  headerSection: {
+    backgroundColor: COLORS.background,
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.cardBorder,
+  },
+  titleContainer: {
+    marginBottom: SPACING.md,
+  },
+  weekScroller: {
     flex: 1,
   },
-  scrollContent: {
+  weekPage: {
+    flex: 1,
+  },
+  weekPageContent: {
     padding: SPACING.md,
     paddingBottom: 100,
+  },
+  weekTimeline: {
+    marginTop: SPACING.md,
+  },
+  weekDotsContainer: {
+    flexDirection: 'row' as const,
+    gap: SPACING.sm,
+    paddingVertical: SPACING.xs,
+  },
+  weekDotWrapper: {
+    alignItems: 'center' as const,
+    gap: 4,
+  },
+  weekDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.cardBorder,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
+  weekDotActive: {
+    borderWidth: 2,
+    borderColor: COLORS.textPrimary,
+  },
+  weekDotLabel: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: '500' as const,
+  },
+  weekHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginBottom: SPACING.md,
+  },
+  weekTitle: {
+    fontSize: 24,
+    fontWeight: '800' as const,
+    color: COLORS.textPrimary,
+    flex: 1,
+  },
+  weekNav: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.cardBackground,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   backButton: {
     flexDirection: 'row',
@@ -307,71 +464,64 @@ const styles = StyleSheet.create({
     fontWeight: '500' as const,
   },
   title: {
+    fontSize: 24,
+    fontWeight: '800' as const,
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+  progressCard: {
+    padding: SPACING.md,
+    marginBottom: 0,
+  },
+  progressHeader: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: SPACING.xs,
+  },
+  progressTitle: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '500' as const,
+    marginBottom: 2,
+  },
+  progressPercentage: {
     fontSize: 32,
     fontWeight: '800' as const,
     color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.lg,
-  },
-  progressCard: {
-    padding: SPACING.lg,
-    marginBottom: SPACING.lg,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-  },
-  progressTitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    fontWeight: '500' as const,
-  },
-  progressPercentage: {
-    fontSize: 48,
-    fontWeight: '800' as const,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
   },
   progressBar: {
-    height: 8,
+    height: 6,
     backgroundColor: COLORS.cardBorder,
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: SPACING.sm,
+    borderRadius: 3,
+    overflow: 'hidden' as const,
+    marginBottom: SPACING.xs,
   },
   progressFill: {
     height: '100%',
     borderRadius: 4,
   },
   progressSubtext: {
-    fontSize: 12,
+    fontSize: 11,
     color: COLORS.textSecondary,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700' as const,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
   },
   workoutCard: {
     padding: SPACING.lg,
     marginBottom: SPACING.md,
   },
   workoutHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'flex-start' as const,
     marginBottom: SPACING.xs,
   },
   workoutTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: SPACING.sm,
     flex: 1,
   },
@@ -399,9 +549,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   exerciseRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
   },
   exerciseName: {
     fontSize: 14,
