@@ -1,18 +1,18 @@
 #!/bin/bash
 
-# Add Bun to PATH for this session
-export PATH="$HOME/.bun/bin:$PATH"
+# Use full path to Bun
+BUN_PATH="$HOME/.bun/bin/bun"
 
 # Verify Bun is accessible
 echo "Checking Bun installation..."
-if ! command -v bun &> /dev/null; then
-    echo "❌ Bun not found in PATH"
+if [ ! -f "$BUN_PATH" ]; then
+    echo "❌ Bun not found at $BUN_PATH"
     exit 1
 fi
 
-echo "✅ Bun found: $(bun --version)"
+echo "✅ Bun found: $($BUN_PATH --version)"
 
-# Start the server
+# Start the server using full path
 echo "Starting server..."
 cd /home/user/rork-app
-bun run start
+$BUN_PATH x rork start -p mv67vqriwoe5fscxfu5r0 --tunnel
