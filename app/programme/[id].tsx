@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, BarChart3 } from 'lucide-react-native';
+import { ChevronLeft, BarChart3, Check } from 'lucide-react-native';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
 import { COLORS, SPACING } from '@/constants/theme';
@@ -35,38 +35,75 @@ export default function ProgrammeOverviewScreen() {
       exercisesByDay.set(ex.day, dayExercises);
     });
 
-    const days = Array.from({ length: programme.days }, (_, i) => {
-      const dayNumber = i + 1;
-      const dayExercises = exercisesByDay.get(dayNumber) || [];
-      
-      return {
-        name: `Day ${dayNumber}`,
-        exercises: dayExercises.map(ex => {
-          const exerciseData = EXERCISES.find(e => e.id === ex.exerciseId);
-          return {
-            name: exerciseData?.name || 'Unknown Exercise',
-            sets: ex.sets,
-            reps: ex.reps,
-            rest: ex.rest,
-          };
-        }),
-      };
+    const workouts = workoutsQuery.data || [];
+    const completedSessionsMap = new Map<string, boolean>();
+    workouts.forEach(workout => {
+      const sessionKey = `${workout.day}-${workout.week}`;
+      completedSessionsMap.set(sessionKey, true);
     });
 
-    const workouts = workoutsQuery.data || [];
+    const sessions: {
+      id: string;
+      name: string;
+      day: number;
+      week: number;
+      exercises: { name: string; sets: number; reps: string; rest: number }[];
+      completed: boolean;
+      dayBadge: string;
+    }[] = [];
+
+    for (let week = 1; week <= programme.weeks; week++) {
+      for (let day = 1; day <= programme.days; day++) {
+        const sessionKey = `${day}-${week}`;
+        const dayExercises = exercisesByDay.get(day) || [];
+        
+        sessions.push({
+          id: `${programmeId}-${day}-${week}`,
+          name: getDayName(day, programme.days),
+          day,
+          week,
+          exercises: dayExercises.map(ex => {
+            const exerciseData = EXERCISES.find(e => e.id === ex.exerciseId);
+            return {
+              name: exerciseData?.name || 'Unknown Exercise',
+              sets: ex.sets,
+              reps: ex.reps,
+              rest: ex.rest,
+            };
+          }),
+          completed: completedSessionsMap.has(sessionKey),
+          dayBadge: `Day ${day}`,
+        });
+      }
+    }
+
     const totalSessions = programme.days * programme.weeks;
     const completedSessions = workouts.length;
 
     return {
       ...programme,
       frequency: programme.days,
-      days,
+      sessions,
       progress: {
         completedSessions,
         totalSessions,
       },
     };
-  }, [programme, workoutsQuery.data]);
+  }, [programme, workoutsQuery.data, programmeId]);
+
+  function getDayName(day: number, totalDays: number): string {
+    if (totalDays === 2) {
+      return day === 1 ? 'Upper Body' : 'Lower Body';
+    } else if (totalDays === 3) {
+      const names = ['Push', 'Pull', 'Legs'];
+      return names[day - 1] || `Day ${day}`;
+    } else if (totalDays === 4) {
+      const names = ['Upper Body A', 'Lower Body A', 'Upper Body B', 'Lower Body B'];
+      return names[day - 1] || `Day ${day}`;
+    } else {
+      return `Day ${day}`;
+    }
+  }
   
   if (programmesLoading || workoutsQuery.isLoading) {
     return (
@@ -141,33 +178,52 @@ export default function ProgrammeOverviewScreen() {
 
           <Text style={styles.sectionTitle}>Training Split</Text>
 
-          {transformedProgramme.days.map((day, index) => (
-            <Card key={index} style={styles.workoutCard}>
+          {transformedProgramme.sessions.map((session) => (
+            <Card key={session.id} style={[
+              styles.workoutCard,
+              session.completed && styles.completedCard,
+            ]}>
               <View style={styles.workoutHeader}>
                 <View style={styles.workoutTitleRow}>
-                  <Text style={styles.workoutName}>{day.name}</Text>
+                  <Text style={styles.workoutName}>{session.name}</Text>
+                  {session.completed && (
+                    <View style={styles.checkmark}>
+                      <Check size={16} color={COLORS.background} strokeWidth={3} />
+                    </View>
+                  )}
                 </View>
-                <View style={[styles.dayBadge, { backgroundColor: `${accent}20` }]}>
-                  <Text style={[styles.dayBadgeText, { color: accent }]}>Day {index + 1}</Text>
+                <View style={[
+                  styles.dayBadge,
+                  { backgroundColor: session.completed ? `${accent}40` : `${accent}20` }
+                ]}>
+                  <Text style={[styles.dayBadgeText, { color: accent }]}>{session.dayBadge}</Text>
                 </View>
               </View>
-              <Text style={styles.exerciseCount}>{day.exercises.length} exercises</Text>
+              <Text style={styles.exerciseCount}>{session.exercises.length} exercises</Text>
 
               <View style={styles.exerciseList}>
-                {day.exercises.map((exercise, exerciseIndex) => (
+                {session.exercises.map((exercise, exerciseIndex) => (
                   <View key={exerciseIndex} style={styles.exerciseRow}>
-                    <Text style={styles.exerciseName}>{exercise.name}</Text>
-                    <Text style={styles.exerciseSets}>{exercise.sets} × {exercise.reps}</Text>
+                    <Text style={[
+                      styles.exerciseName,
+                      session.completed && styles.completedText,
+                    ]}>{exercise.name}</Text>
+                    <Text style={[
+                      styles.exerciseSets,
+                      session.completed && styles.completedText,
+                    ]}>{exercise.sets} × {exercise.reps}</Text>
                   </View>
                 ))}
               </View>
 
-              <Button
-                title="Start Session"
-                onPress={() => router.push(`/session/${programmeId}-${index}` as any)}
-                variant="primary"
-                style={styles.startButton}
-              />
+              {!session.completed && (
+                <Button
+                  title="▶ Start Session"
+                  onPress={() => router.push(`/session/${session.id}` as any)}
+                  variant="primary"
+                  style={styles.startButton}
+                />
+              )}
             </Card>
           ))}
         </ScrollView>
@@ -311,6 +367,21 @@ const styles = StyleSheet.create({
   },
   startButton: {
     marginTop: SPACING.sm,
+  },
+  completedCard: {
+    opacity: 0.7,
+  },
+  completedText: {
+    opacity: 0.6,
+  },
+  checkmark: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.success,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    marginLeft: SPACING.xs,
   },
   errorText: {
     fontSize: 16,
