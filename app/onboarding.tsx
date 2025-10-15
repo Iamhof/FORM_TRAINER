@@ -1,227 +1,87 @@
-import React, { useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Dimensions,
-  Animated,
-  TouchableOpacity,
-  Image,
-  PanResponder,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { COLORS, TYPOGRAPHY, SPACING } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
-import { ChevronRight } from 'lucide-react-native';
+import { Dumbbell, Target, TrendingUp } from 'lucide-react-native';
+import { COLORS, SPACING } from '@/constants/theme';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-interface OnboardingSlide {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-}
-
-const slides: OnboardingSlide[] = [
+const slides = [
   {
-    id: '1',
+    id: 1,
+    title: 'Track Your Workouts',
+    description: 'Log your exercises, sets, and reps to monitor your progress over time',
+    icon: Dumbbell,
+  },
+  {
+    id: 2,
+    title: 'Set Your Goals',
+    description: 'Create custom training programmes tailored to your fitness objectives',
+    icon: Target,
+  },
+  {
+    id: 3,
     title: 'See Your Progress',
-    description: 'Watch your strength grow with detailed analytics and progress tracking',
-    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80',
-  },
-  {
-    id: '2',
-    title: 'Build Your Perfect Programme',
-    description: 'Create custom training programmes tailored to your goals with our step-by-step builder',
-    image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&q=80',
-  },
-  {
-    id: '3',
-    title: 'Track Every Rep',
-    description: 'Log your workouts with precision and let our smart rest timer keep you on track',
-    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=80',
-  },
-  {
-    id: '4',
-    title: 'Fitness, Just the Way You Like It',
-    description: 'Tailored routines, exciting moves, and the tools to crush your goals—every step of the way',
-    image: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=800&q=80',
+    description: 'Visualize your strength gains and stay motivated on your fitness journey',
+    icon: TrendingUp,
   },
 ];
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { accent } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const slideX = useRef(new Animated.Value(0)).current;
-  const [isSliding, setIsSliding] = useState(false);
 
-  const handleSkip = () => {
-    router.replace('/auth');
-  };
-
-  const handleContinue = () => {
+  const handleNext = () => {
     if (currentIndex < slides.length - 1) {
-      flatListRef.current?.scrollToIndex({
-        index: currentIndex + 1,
-        animated: true,
-      });
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      router.replace('/auth' as any);
     }
   };
 
-  const SLIDE_THRESHOLD = SCREEN_WIDTH - 64 - 56;
-
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        setIsSliding(true);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        const newValue = Math.max(0, Math.min(gestureState.dx, SLIDE_THRESHOLD));
-        slideX.setValue(newValue);
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx > SLIDE_THRESHOLD * 0.7) {
-          Animated.spring(slideX, {
-            toValue: SLIDE_THRESHOLD,
-            useNativeDriver: true,
-          }).start(() => {
-            router.replace('/auth');
-          });
-        } else {
-          Animated.spring(slideX, {
-            toValue: 0,
-            tension: 50,
-            friction: 7,
-            useNativeDriver: true,
-          }).start(() => {
-            setIsSliding(false);
-          });
-        }
-      },
-    })
-  ).current;
-
-  const renderSlide = ({ item, index }: { item: OnboardingSlide; index: number }) => {
-    return (
-      <View style={styles.slide}>
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: item.image }} style={styles.image} />
-          <View style={styles.imageOverlay} />
-        </View>
-        <View style={styles.content}>
-          <Text style={[styles.title, { color: COLORS.textPrimary }]}>{item.title}</Text>
-          <Text style={[styles.description, { color: COLORS.textSecondary }]}>
-            {item.description}
-          </Text>
-        </View>
-      </View>
-    );
+  const handleSkip = () => {
+    router.replace('/auth' as any);
   };
 
-  const renderPagination = () => {
-    return (
-      <View style={styles.pagination}>
-        {slides.map((_, index) => {
-          const inputRange = [
-            (index - 1) * SCREEN_WIDTH,
-            index * SCREEN_WIDTH,
-            (index + 1) * SCREEN_WIDTH,
-          ];
-
-          const dotWidth = scrollX.interpolate({
-            inputRange,
-            outputRange: [8, 24, 8],
-            extrapolate: 'clamp',
-          });
-
-          const opacity = scrollX.interpolate({
-            inputRange,
-            outputRange: [0.3, 1, 0.3],
-            extrapolate: 'clamp',
-          });
-
-          return (
-            <Animated.View
-              key={index}
-              style={[
-                styles.dot,
-                {
-                  width: dotWidth,
-                  opacity,
-                  backgroundColor: index === currentIndex ? accent : COLORS.textSecondary,
-                },
-              ]}
-            />
-          );
-        })}
-      </View>
-    );
-  };
-
-
+  const currentSlide = slides[currentIndex];
+  const Icon = currentSlide.icon;
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-        <Text style={[styles.skipText, { color: COLORS.textSecondary }]}>Skip</Text>
-      </TouchableOpacity>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Pressable onPress={handleSkip} style={styles.skipButton}>
+          <Text style={styles.skipText}>Skip</Text>
+        </Pressable>
 
-      <FlatList
-        ref={flatListRef}
-        data={slides}
-        renderItem={renderSlide}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-          useNativeDriver: false,
-        })}
-        onMomentumScrollEnd={(event) => {
-          const index = Math.round(event.nativeEvent.contentOffset.x / SCREEN_WIDTH);
-          setCurrentIndex(index);
-        }}
-        scrollEventThrottle={16}
-        keyExtractor={(item) => item.id}
-      />
-
-      {renderPagination()}
-
-      {currentIndex === slides.length - 1 ? (
-        <View style={[styles.slideContainer, { borderColor: accent }]}>
-          <Text style={[styles.slideText, { color: accent }]}>Slide to Get Started</Text>
-          <Animated.View
-            style={[
-              styles.slider,
-              { backgroundColor: accent, transform: [{ translateX: slideX }] },
-            ]}
-            {...panResponder.panHandlers}
-          >
-            <ChevronRight size={24} color={COLORS.background} />
-          </Animated.View>
-        </View>
-      ) : (
-        <TouchableOpacity
-          style={[styles.continueButton, { borderColor: accent }]}
-          onPress={handleContinue}
-        >
-          <View style={styles.continueButtonContent}>
-            <Text style={[styles.continueButtonText, { color: accent }]}>Continue</Text>
-            <ChevronRight size={18} color={accent} />
+        <View style={styles.slideContent}>
+          <View style={styles.iconContainer}>
+            <Icon size={80} color={COLORS.accents.orange} strokeWidth={2} />
           </View>
-        </TouchableOpacity>
-      )}
 
-      <Text style={styles.poweredBy}>
-        Powered by <Text style={{ color: accent }}>OJ Gyms</Text>
-      </Text>
-    </View>
+          <Text style={styles.title}>{currentSlide.title}</Text>
+          <Text style={styles.description}>{currentSlide.description}</Text>
+        </View>
+
+        <View style={styles.bottomSection}>
+          <View style={styles.pagination}>
+            {slides.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.paginationDot,
+                  index === currentIndex && styles.paginationDotActive,
+                ]}
+              />
+            ))}
+          </View>
+
+          <Pressable onPress={handleNext} style={styles.nextButton}>
+            <Text style={styles.nextButtonText}>
+              {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -230,117 +90,77 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  content: {
+    flex: 1,
+    paddingHorizontal: SPACING.xl,
+  },
   skipButton: {
-    position: 'absolute',
-    top: 60,
-    right: 24,
-    zIndex: 10,
-    padding: 8,
+    alignSelf: 'flex-end',
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
   },
   skipText: {
     fontSize: 16,
-    fontWeight: '500' as const,
+    fontWeight: '600' as const,
+    color: COLORS.textSecondary,
   },
-  slide: {
-    width: SCREEN_WIDTH,
+  slideContent: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
   },
-  imageContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  imageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-  },
-  content: {
-    position: 'absolute',
-    bottom: 280,
-    left: 32,
-    right: 32,
+  iconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: `${COLORS.accents.orange}20`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xl * 2,
   },
   title: {
-    ...TYPOGRAPHY.h1,
+    fontSize: 28,
+    fontWeight: '700' as const,
+    color: COLORS.textPrimary,
+    textAlign: 'center' as const,
     marginBottom: SPACING.md,
-    lineHeight: 56,
   },
   description: {
-    fontSize: 18,
-    lineHeight: 28,
-    fontWeight: '400' as const,
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    textAlign: 'center' as const,
+    lineHeight: 24,
+  },
+  bottomSection: {
+    paddingBottom: SPACING.xl,
   },
   pagination: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'absolute',
-    bottom: 200,
-    left: 0,
-    right: 0,
-    gap: 8,
+    marginBottom: SPACING.xl,
+    gap: SPACING.sm,
   },
-  dot: {
+  paginationDot: {
+    width: 8,
     height: 8,
     borderRadius: 4,
+    backgroundColor: COLORS.cardBorder,
   },
-  continueButton: {
-    position: 'absolute',
-    bottom: 120,
-    left: 32,
-    right: 32,
-    height: 56,
+  paginationDotActive: {
+    width: 24,
+    backgroundColor: COLORS.accents.orange,
+  },
+  nextButton: {
+    backgroundColor: COLORS.accents.orange,
+    paddingVertical: SPACING.md + 2,
     borderRadius: 12,
-    borderWidth: 2,
-    justifyContent: 'center',
     alignItems: 'center',
   },
-  continueButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  continueButtonText: {
-    fontSize: 18,
+  nextButtonText: {
+    fontSize: 16,
     fontWeight: '600' as const,
-  },
-  slideContainer: {
-    position: 'absolute',
-    bottom: 120,
-    left: 32,
-    right: 32,
-    height: 56,
-    borderRadius: 12,
-    borderWidth: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  slideText: {
-    fontSize: 18,
-    fontWeight: '600' as const,
-  },
-  slider: {
-    position: 'absolute',
-    left: 0,
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  poweredBy: {
-    position: 'absolute',
-    bottom: 60,
-    left: 0,
-    right: 0,
-    textAlign: 'center',
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    color: COLORS.background,
   },
 });
