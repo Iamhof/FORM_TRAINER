@@ -107,9 +107,13 @@ export default function SessionScreen() {
   const currentExerciseSetsCompleted = useMemo(() => {
     if (!currentExercise) return false;
     const allCompleted = currentExercise.sets.every(set => set.completed);
-    console.log('[SessionScreen] Current exercise sets completed:', allCompleted, currentExercise.sets);
+    console.log('[SessionScreen] Current exercise sets completed:', allCompleted, {
+      exerciseIndex: currentExerciseIndex,
+      exerciseName: currentExercise.name,
+      sets: currentExercise.sets.map(s => ({ completed: s.completed, weight: s.weight, reps: s.reps }))
+    });
     return allCompleted;
-  }, [currentExercise]);
+  }, [currentExercise, exercises, currentExerciseIndex]);
 
   const isLastExercise = currentExerciseIndex === exercises.length - 1;
 
@@ -124,6 +128,14 @@ export default function SessionScreen() {
       
       const isLastSetOfExercise = setIndex === newExercises[exerciseIndex].sets.length - 1;
       const allSetsCompleted = newExercises[exerciseIndex].sets.every(s => s.completed);
+      
+      console.log('[SessionScreen] Set completed:', {
+        setIndex,
+        isLastSetOfExercise,
+        allSetsCompleted,
+        exerciseIndex,
+        currentExerciseIndex
+      });
       
       if (!isLastSetOfExercise || !allSetsCompleted) {
         setShowRestTimer(true);
@@ -387,14 +399,24 @@ export default function SessionScreen() {
             {!isLastExercise ? (
               <Pressable
                 style={[styles.completeButton, { backgroundColor: accent }]}
-                onPress={handleNextExercise}
+                onPress={() => {
+                  console.log('[SessionScreen] Next Exercise pressed:', {
+                    currentIndex: currentExerciseIndex,
+                    nextIndex: currentExerciseIndex + 1,
+                    totalExercises: exercises.length
+                  });
+                  handleNextExercise();
+                }}
               >
                 <Text style={styles.completeButtonText}>Next Exercise</Text>
               </Pressable>
             ) : (
               <Pressable
                 style={[styles.completeButton, { backgroundColor: accent }, isSaving && styles.completeButtonDisabled]}
-                onPress={handleCompleteWorkout}
+                onPress={() => {
+                  console.log('[SessionScreen] Complete Workout pressed');
+                  handleCompleteWorkout();
+                }}
                 disabled={isSaving}
               >
                 {isSaving ? (
