@@ -220,18 +220,7 @@ export default function SessionScreen() {
       
       console.log('[SessionScreen] Programme context refreshed, navigating back');
       
-      Alert.alert(
-        'Workout Complete! 🎉',
-        'Great job! Your progress has been saved.',
-        [
-          {
-            text: 'View Progress',
-            onPress: () => {
-              router.back();
-            },
-          },
-        ]
-      );
+      router.back();
     } catch (error) {
       console.error('[SessionScreen] Error completing workout:', error);
       
