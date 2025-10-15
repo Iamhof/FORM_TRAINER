@@ -165,7 +165,7 @@ export default function SessionScreen() {
         exerciseCount: workoutExercises.length,
       });
 
-      const { error } = await supabase
+      const { data: insertedWorkout, error } = await supabase
         .from('workouts')
         .insert({
           user_id: user.id,
@@ -175,24 +175,31 @@ export default function SessionScreen() {
           week: sessionData.week,
           exercises: workoutExercises,
           completed_at: new Date().toISOString(),
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('[SessionScreen] Supabase error:', error);
         throw new Error(`Failed to save workout: ${error.message}`);
       }
 
-      console.log('[SessionScreen] Workout logged successfully');
+      console.log('[SessionScreen] Workout logged successfully:', insertedWorkout?.id);
+      console.log('[SessionScreen] Refreshing programme context...');
       
       await refetch();
       
+      console.log('[SessionScreen] Programme context refreshed, navigating back');
+      
       Alert.alert(
-        'Session Complete!',
-        'Your workout has been saved successfully.',
+        'Workout Complete! 🎉',
+        'Great job! Your progress has been saved.',
         [
           {
-            text: 'OK',
-            onPress: () => router.back(),
+            text: 'View Progress',
+            onPress: () => {
+              router.back();
+            },
           },
         ]
       );
@@ -203,7 +210,7 @@ export default function SessionScreen() {
       
       Alert.alert(
         'Error Saving Workout',
-        `Failed to save workout: ${errorMessage}`,
+        `Failed to save workout: ${errorMessage}\n\nYour progress was not saved. Please try again.`,
         [
           { text: 'Try Again', onPress: () => handleCompleteWorkout() },
           { text: 'Cancel', style: 'cancel' }
@@ -270,7 +277,7 @@ export default function SessionScreen() {
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={true}
         >
           <Text style={styles.exerciseTitle}>{currentExercise.name}</Text>
           <Text style={styles.exerciseSubtitle}>
@@ -349,8 +356,10 @@ export default function SessionScreen() {
               </View>
             </Card>
           ))}
+        </ScrollView>
 
-          {allSetsCompleted && (
+        {allSetsCompleted && (
+          <View style={styles.stickyFooter}>
             <Pressable
               style={[styles.completeButton, { backgroundColor: accent }, isSaving && styles.completeButtonDisabled]}
               onPress={handleCompleteWorkout}
@@ -365,8 +374,8 @@ export default function SessionScreen() {
                 </>
               )}
             </Pressable>
-          )}
-        </ScrollView>
+          </View>
+        )}
       </SafeAreaView>
 
       <RestTimerModal
@@ -429,7 +438,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: 200,
+    paddingBottom: 100,
   },
   exerciseTitle: {
     fontSize: 28,
@@ -504,6 +513,18 @@ const styles = StyleSheet.create({
   checkButtonDisabled: {
     opacity: 0.3,
   },
+  stickyFooter: {
+    position: 'absolute' as const,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: COLORS.background,
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
+    paddingBottom: SPACING.lg,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.cardBorder,
+  },
   completeButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -511,8 +532,6 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     paddingVertical: SPACING.lg,
     borderRadius: 16,
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.xl,
   },
   completeButtonText: {
     fontSize: 18,
