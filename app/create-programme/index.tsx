@@ -37,9 +37,11 @@ export default function CreateProgrammeScreen() {
       }, 100);
     } else if (step === 'duration' && durationScrollRef.current) {
       const index = DURATION_OPTIONS.indexOf(selectedDuration);
+      const centerOffset = (SCREEN_WIDTH / 2) - (ITEM_WIDTH / 2);
+      const targetX = (index * ITEM_WIDTH) - centerOffset + (ITEM_WIDTH / 2);
       setTimeout(() => {
         durationScrollRef.current?.scrollTo({
-          x: index * ITEM_WIDTH,
+          x: targetX,
           animated: false,
         });
       }, 100);
@@ -66,7 +68,9 @@ export default function CreateProgrammeScreen() {
 
   const handleDurationScroll = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / ITEM_WIDTH);
+    const centerOffset = (SCREEN_WIDTH / 2) - (ITEM_WIDTH / 2);
+    const adjustedOffset = offsetX + centerOffset;
+    const index = Math.round(adjustedOffset / ITEM_WIDTH);
     const centerValue = DURATION_OPTIONS[index];
     if (centerValue !== undefined) {
       setCenterDuration(centerValue);
@@ -80,6 +84,10 @@ export default function CreateProgrammeScreen() {
     if (selectedValue !== undefined && selectedValue !== selectedDuration) {
       setSelectedDuration(selectedValue);
     }
+    durationScrollRef.current?.scrollTo({
+      x: index * ITEM_WIDTH,
+      animated: true,
+    });
   };
 
   const handleContinue = () => {
@@ -204,10 +212,12 @@ export default function CreateProgrammeScreen() {
                   contentContainerStyle={styles.pickerContent}
                   showsHorizontalScrollIndicator={false}
                   snapToInterval={ITEM_WIDTH}
+                  snapToAlignment="center"
                   decelerationRate="fast"
                   onScroll={handleDurationScroll}
                   onMomentumScrollEnd={handleDurationScrollEnd}
                   scrollEventThrottle={16}
+                  pagingEnabled={false}
                 >
                   {DURATION_OPTIONS.map((option, index) => {
                     const isSelected = centerDuration === option;
@@ -216,10 +226,14 @@ export default function CreateProgrammeScreen() {
                         key={option}
                         style={styles.pickerItem}
                         onPress={() => {
+                          const targetIndex = DURATION_OPTIONS.indexOf(option);
+                          const centerOffset = (SCREEN_WIDTH / 2) - (ITEM_WIDTH / 2);
+                          const targetX = (targetIndex * ITEM_WIDTH) - centerOffset + (ITEM_WIDTH / 2);
+                          
                           setSelectedDuration(option);
                           setCenterDuration(option);
                           durationScrollRef.current?.scrollTo({
-                            x: index * ITEM_WIDTH,
+                            x: targetX,
                             animated: true,
                           });
                         }}
