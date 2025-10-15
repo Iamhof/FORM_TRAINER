@@ -135,12 +135,18 @@ export default function SessionScreen() {
   const handleCompleteWorkout = async () => {
     if (!sessionData) {
       console.error('[SessionScreen] No session data available');
+      Alert.alert(
+        'Error',
+        'Session data is missing. Please try starting the workout again.',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
       return;
     }
 
     try {
       setIsSaving(true);
       console.log('[SessionScreen] Completing workout...', sessionData);
+      console.log('[SessionScreen] Backend URL:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
 
       const workoutExercises = exercises.map(exercise => ({
         exerciseId: exercise.exerciseId,
@@ -150,6 +156,13 @@ export default function SessionScreen() {
           completed: set.completed,
         })),
       }));
+
+      console.log('[SessionScreen] Sending workout data:', {
+        programmeId: sessionData.programmeId,
+        day: sessionData.day,
+        week: sessionData.week,
+        exerciseCount: workoutExercises.length,
+      });
 
       await logWorkoutMutation.mutateAsync({
         programmeId: sessionData.programmeId,
@@ -173,10 +186,19 @@ export default function SessionScreen() {
       );
     } catch (error) {
       console.error('[SessionScreen] Error completing workout:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('Network');
+      
       Alert.alert(
-        'Error',
-        'Failed to save workout. Please try again.',
-        [{ text: 'OK' }]
+        'Error Saving Workout',
+        isNetworkError 
+          ? 'Cannot connect to server. Please check your internet connection and try again.'
+          : `Failed to save workout: ${errorMessage}`,
+        [
+          { text: 'Try Again', onPress: () => handleCompleteWorkout() },
+          { text: 'Cancel', style: 'cancel' }
+        ]
       );
     } finally {
       setIsSaving(false);
