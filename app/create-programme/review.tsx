@@ -46,12 +46,22 @@ export default function ReviewProgrammeScreen() {
         });
       });
 
-      console.log('Creating programme:', {
+      console.log('[ReviewScreen] Creating programme:', {
         name: programmeName,
         days: frequency,
         weeks: duration,
-        exercises,
+        exerciseCount: exercises.length,
       });
+
+      if (!programmeName || programmeName.trim() === '') {
+        alert('Please enter a programme name.');
+        return;
+      }
+
+      if (exercises.length === 0) {
+        alert('Please add at least one exercise to your programme.');
+        return;
+      }
 
       await addProgramme({
         name: programmeName,
@@ -60,10 +70,12 @@ export default function ReviewProgrammeScreen() {
         exercises,
       });
       
+      console.log('[ReviewScreen] Programme saved successfully, navigating home');
       router.push('/(tabs)/home');
     } catch (error) {
-      console.error('Failed to save programme:', error);
-      alert('Failed to save programme. Please try again.');
+      console.error('[ReviewScreen] Failed to save programme:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save programme. Please try again.';
+      alert(errorMessage);
     }
   };
 

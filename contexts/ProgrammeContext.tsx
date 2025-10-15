@@ -64,11 +64,25 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
   const addProgramme = useCallback(
     async (programme: { name: string; days: number; weeks: number; exercises: ProgrammeExercise[] }) => {
       if (!user) {
+        console.error('[ProgrammeContext] Cannot create programme - user not authenticated');
         throw new Error('Not authenticated');
       }
 
       try {
-        console.log('[ProgrammeContext] Creating programme:', programme.name);
+        console.log('[ProgrammeContext] Creating programme:', {
+          name: programme.name,
+          days: programme.days,
+          weeks: programme.weeks,
+          exerciseCount: programme.exercises.length,
+          userId: user.id
+        });
+        
+        const { data: sessionData } = await supabase.auth.getSession();
+        console.log('[ProgrammeContext] Current session:', sessionData.session ? 'Active' : 'None');
+        
+        if (!sessionData.session) {
+          throw new Error('No active session. Please sign in again.');
+        }
         
         const { data, error } = await supabase
           .from('programmes')
@@ -83,11 +97,15 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
           .single();
 
         if (error) {
-          console.error('[ProgrammeContext] Error creating programme:', error);
-          throw error;
+          console.error('[ProgrammeContext] Supabase error creating programme:');
+          console.error('[ProgrammeContext] Error code:', error.code);
+          console.error('[ProgrammeContext] Error message:', error.message);
+          console.error('[ProgrammeContext] Error details:', error.details);
+          console.error('[ProgrammeContext] Error hint:', error.hint);
+          throw new Error(`Failed to save programme: ${error.message}`);
         }
 
-        console.log('[ProgrammeContext] Programme created successfully');
+        console.log('[ProgrammeContext] Programme created successfully:', data.id);
         setProgrammes((prev) => [data, ...prev]);
         return data;
       } catch (error) {
