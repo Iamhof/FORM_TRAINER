@@ -180,17 +180,16 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
 
       let newStatus: DayStatus;
 
-      if (currentStatus === 'rest') {
-        if (scheduledCount < requiredSessions) {
-          newStatus = 'scheduled';
-          console.log('[ScheduleContext] Changing from rest to scheduled');
-        } else {
+      if (currentStatus === 'scheduled') {
+        newStatus = 'rest';
+        console.log('[ScheduleContext] Changing from scheduled to rest');
+      } else if (currentStatus === 'rest') {
+        if (scheduledCount >= requiredSessions) {
           console.log('[ScheduleContext] Max sessions reached, cannot schedule more');
           return;
         }
-      } else if (currentStatus === 'scheduled') {
-        newStatus = 'rest';
-        console.log('[ScheduleContext] Changing from scheduled to rest');
+        newStatus = 'scheduled';
+        console.log('[ScheduleContext] Changing from rest to scheduled');
       } else {
         console.log('[ScheduleContext] Unknown status:', currentStatus);
         return;

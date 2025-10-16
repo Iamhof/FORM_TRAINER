@@ -7,16 +7,23 @@ import { supabase } from '@/lib/supabase';
 export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
-  const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  const envBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  const toolkitUrl = process.env.EXPO_PUBLIC_TOOLKIT_URL;
   
-  if (!baseUrl) {
+  if (toolkitUrl && toolkitUrl.includes('rorktest.dev')) {
+    const baseUrl = toolkitUrl.replace('/toolkit', '');
+    console.log('[TRPC] Using Rork dev environment:', baseUrl);
+    return baseUrl;
+  }
+  
+  if (!envBaseUrl) {
     console.error('[TRPC] Missing EXPO_PUBLIC_RORK_API_BASE_URL');
     console.error('[TRPC] Using fallback URL. Please set EXPO_PUBLIC_RORK_API_BASE_URL in .env');
     return 'http://localhost:8081';
   }
   
-  console.log('[TRPC] Base URL:', baseUrl);
-  return baseUrl;
+  console.log('[TRPC] Base URL:', envBaseUrl);
+  return envBaseUrl;
 };
 
 export const trpcClient = trpc.createClient({

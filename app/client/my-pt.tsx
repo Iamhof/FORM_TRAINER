@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { UserCheck, Mail, Calendar, Dumbbell, ChevronRight } from 'lucide-react-native';
@@ -12,8 +12,23 @@ export default function MyPTScreen() {
   const { accent } = useTheme();
   const router = useRouter();
 
+  useEffect(() => {
+    console.log('[MyPT] Component mounted');
+    console.log('[MyPT] trpc object:', typeof trpc);
+    console.log('[MyPT] trpc.clients:', typeof trpc?.clients);
+  }, []);
+
   const ptQuery = trpc.clients.getMyPT.useQuery();
   const sharedProgrammesQuery = trpc.clients.listSharedProgrammes.useQuery();
+
+  useEffect(() => {
+    if (ptQuery.error) {
+      console.error('[MyPT] getMyPT error:', ptQuery.error);
+    }
+    if (sharedProgrammesQuery.error) {
+      console.error('[MyPT] listSharedProgrammes error:', sharedProgrammesQuery.error);
+    }
+  }, [ptQuery.error, sharedProgrammesQuery.error]);
 
   const pt = ptQuery.data;
   const sharedProgrammes = sharedProgrammesQuery.data || [];

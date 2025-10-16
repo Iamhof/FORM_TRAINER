@@ -115,13 +115,25 @@ export default function DashboardScreen() {
             ) : (
               <View style={styles.noticeBox}>
                 <Text style={styles.noticeText}>
-                  {scheduledCount === 0 ? (
-                    <>Tap days to schedule your <Text style={{ color: accent }}>{activeProgramme.days} weekly sessions</Text></>
-                  ) : scheduledCount < activeProgramme.days ? (
-                    <><Text style={{ color: accent }}>{scheduledCount}/{activeProgramme.days} sessions scheduled</Text> - Tap to schedule {activeProgramme.days - scheduledCount} more</>
-                  ) : (
-                    <><Text style={{ color: accent }}>All {activeProgramme.days} sessions scheduled!</Text> Ready to start your week</>
-                  )}
+                  {(() => {
+                    const actualScheduled = schedule.filter((d) => d.status === 'scheduled').length;
+                    const completed = schedule.filter((d) => d.status === 'completed').length;
+                    const total = actualScheduled + completed;
+                    
+                    if (total === 0) {
+                      return <>
+                        Tap days to schedule your <Text style={{ color: accent }}>{activeProgramme.days} weekly sessions</Text>
+                      </>;
+                    } else if (total < activeProgramme.days) {
+                      return <>
+                        <Text style={{ color: accent }}>{total}/{activeProgramme.days} sessions scheduled</Text> - Tap to schedule {activeProgramme.days - total} more
+                      </>;
+                    } else {
+                      return <>
+                        <Text style={{ color: accent }}>All {activeProgramme.days} sessions scheduled!</Text> Ready to start your week
+                      </>;
+                    }
+                  })()}
                 </Text>
               </View>
             )}
