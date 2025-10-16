@@ -147,6 +147,7 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
     async (dayIndex: number) => {
       console.log('[ScheduleContext] toggleDay called for index:', dayIndex);
       console.log('[ScheduleContext] Current schedule length:', schedule.length);
+      console.log('[ScheduleContext] Full schedule:', JSON.stringify(schedule));
       
       if (!activeProgramme) {
         console.log('[ScheduleContext] No active programme');
@@ -158,15 +159,22 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
         return;
       }
 
-      const currentStatus = schedule[dayIndex].status;
+      const dayData = schedule[dayIndex];
+      if (!dayData) {
+        console.error('[ScheduleContext] No data for day index:', dayIndex);
+        return;
+      }
+
+      const currentStatus = dayData.status;
       console.log('[ScheduleContext] Current status for day', dayIndex, ':', currentStatus);
+      console.log('[ScheduleContext] Day data:', JSON.stringify(dayData));
 
       if (currentStatus === 'completed') {
         console.log('[ScheduleContext] Cannot toggle completed day');
         return;
       }
 
-      const scheduledCount = schedule.filter((d) => d.status === 'scheduled').length;
+      const scheduledCount = schedule.filter((d) => d?.status === 'scheduled').length;
       const requiredSessions = activeProgramme.days;
       console.log('[ScheduleContext] Scheduled count:', scheduledCount, '/ Required:', requiredSessions);
 
@@ -175,13 +183,16 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
       if (currentStatus === 'rest') {
         if (scheduledCount < requiredSessions) {
           newStatus = 'scheduled';
+          console.log('[ScheduleContext] Changing from rest to scheduled');
         } else {
-          console.log('[ScheduleContext] Max sessions reached');
+          console.log('[ScheduleContext] Max sessions reached, cannot schedule more');
           return;
         }
       } else if (currentStatus === 'scheduled') {
         newStatus = 'rest';
+        console.log('[ScheduleContext] Changing from scheduled to rest');
       } else {
+        console.log('[ScheduleContext] Unknown status:', currentStatus);
         return;
       }
 
@@ -191,6 +202,7 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
         idx === dayIndex ? { ...day, status: newStatus } : day
       );
 
+      console.log('[ScheduleContext] New schedule:', JSON.stringify(newSchedule));
       setSchedule(newSchedule);
       await saveSchedule(newSchedule);
     },

@@ -136,9 +136,15 @@ export default function DashboardScreen() {
                     key={`day-${dayIndex}`}
                     style={styles.dayContainer}
                     onPress={() => {
-                      console.log(`[Home] Day ${dayIndex} (${dayLabel}) clicked, status: ${item?.status}`);
+                      console.log(`[Home] Day ${dayIndex} (${dayLabel}) clicked`);
+                      console.log('[Home] Item data:', JSON.stringify(item));
+                      console.log('[Home] Status:', item?.status || 'undefined');
+                      console.log('[Home] isInteractive:', isInteractive);
+                      console.log('[Home] scheduleLoading:', scheduleLoading);
                       if (isInteractive && !scheduleLoading && item) {
                         toggleDay(dayIndex);
+                      } else {
+                        console.log('[Home] Click blocked - interactive:', isInteractive, 'loading:', scheduleLoading, 'has item:', !!item);
                       }
                     }}
                     disabled={!isInteractive || scheduleLoading}
