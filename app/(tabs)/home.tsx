@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Animated, Platform } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Flame, Target, TrendingUp, Check, Moon, Calendar as CalendarIcon, ChevronRight, Dumbbell, User, Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -19,67 +19,14 @@ type ProgrammeCardWithGlowProps = {
 };
 
 function ProgrammeCardWithGlow({ accent, activeProgramme, router }: ProgrammeCardWithGlowProps) {
-  const glowOpacity = useRef(new Animated.Value(0)).current;
-  const glowScale = useRef(new Animated.Value(0.95)).current;
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.parallel([
-          Animated.timing(glowOpacity, {
-            toValue: 1,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowScale, {
-            toValue: 1,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.parallel([
-          Animated.timing(glowOpacity, {
-            toValue: 0.4,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowScale, {
-            toValue: 0.95,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-        ]),
-      ])
-    ).start();
-  }, [glowOpacity, glowScale]);
-
   return (
     <Pressable onPress={() => router.push(`/programme/${activeProgramme.id}` as any)}>
       <View style={styles.programmeCardWrapper}>
         {Platform.OS !== 'web' && (
-          <Animated.View
-            style={[
-              styles.glowContainer,
-              {
-                opacity: glowOpacity,
-                transform: [{ scale: glowScale }],
-              },
-            ]}
-          >
-            <View style={[styles.glowLayer, { backgroundColor: accent, shadowColor: accent }]} />
-          </Animated.View>
+          <View style={[styles.glowLayer, { backgroundColor: accent, shadowColor: accent }]} />
         )}
         {Platform.OS === 'web' && (
-          <Animated.View
-            style={[
-              styles.glowContainerWeb,
-              {
-                opacity: glowOpacity,
-                transform: [{ scale: glowScale }],
-                backgroundColor: accent,
-              },
-            ]}
-          />
+          <View style={[styles.glowLayerWeb, { backgroundColor: accent }]} />
         )}
         <Card style={styles.programmeCard}>
           <View style={styles.programmeHeader}>
@@ -495,36 +442,30 @@ const styles = StyleSheet.create({
   programmeCardWrapper: {
     position: 'relative' as const,
   },
-  glowContainer: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   glowLayer: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 16,
-    opacity: 0.3,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 40,
-    elevation: 20,
-  },
-  glowContainerWeb: {
     position: 'absolute' as const,
-    top: -20,
-    left: -20,
-    right: -20,
-    bottom: -20,
+    top: 4,
+    left: 4,
+    right: 4,
+    bottom: 4,
+    borderRadius: 16,
+    opacity: 0.25,
     zIndex: 0,
-    borderRadius: 40,
-    opacity: 0.15,
-    filter: 'blur(40px)',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  glowLayerWeb: {
+    position: 'absolute' as const,
+    top: 4,
+    left: 4,
+    right: 4,
+    bottom: 4,
+    borderRadius: 16,
+    opacity: 0.12,
+    zIndex: 0,
+    filter: 'blur(24px)',
   },
   programmeCard: {
     padding: SPACING.lg,
