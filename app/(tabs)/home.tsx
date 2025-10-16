@@ -1,5 +1,5 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable, Animated, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Flame, Target, TrendingUp, Check, Moon, Calendar as CalendarIcon, ChevronRight, Dumbbell, User, Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,96 @@ import { useUser } from '@/contexts/UserContext';
 import { useSchedule } from '@/contexts/ScheduleContext';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+type ProgrammeCardWithGlowProps = {
+  accent: string;
+  activeProgramme: any;
+  router: any;
+};
+
+function ProgrammeCardWithGlow({ accent, activeProgramme, router }: ProgrammeCardWithGlowProps) {
+  const glowOpacity = useRef(new Animated.Value(0)).current;
+  const glowScale = useRef(new Animated.Value(0.95)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(glowOpacity, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowScale, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(glowOpacity, {
+            toValue: 0.4,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(glowScale, {
+            toValue: 0.95,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ]),
+      ])
+    ).start();
+  }, [glowOpacity, glowScale]);
+
+  return (
+    <Pressable onPress={() => router.push(`/programme/${activeProgramme.id}` as any)}>
+      <View style={styles.programmeCardWrapper}>
+        {Platform.OS !== 'web' && (
+          <Animated.View
+            style={[
+              styles.glowContainer,
+              {
+                opacity: glowOpacity,
+                transform: [{ scale: glowScale }],
+              },
+            ]}
+          >
+            <View style={[styles.glowLayer, { backgroundColor: accent, shadowColor: accent }]} />
+          </Animated.View>
+        )}
+        {Platform.OS === 'web' && (
+          <Animated.View
+            style={[
+              styles.glowContainerWeb,
+              {
+                opacity: glowOpacity,
+                transform: [{ scale: glowScale }],
+                backgroundColor: accent,
+              },
+            ]}
+          />
+        )}
+        <Card style={styles.programmeCard}>
+          <View style={styles.programmeHeader}>
+            <Text style={styles.programmeTitle}>{activeProgramme.name}</Text>
+            <View style={[styles.activeBadge, { backgroundColor: `${accent}30` }]}>
+              <Text style={[styles.activeBadgeText, { color: accent }]}>Active</Text>
+            </View>
+          </View>
+          <Text style={styles.programmeSubtitle}>
+            {activeProgramme.days} days per week • {activeProgramme.weeks} weeks
+          </Text>
+
+          <View style={styles.totalDaysRow}>
+            <Text style={styles.totalDaysLabel}>Total Exercises</Text>
+            <Text style={styles.totalDaysValue}>{activeProgramme.exercises?.length || 0}</Text>
+          </View>
+        </Card>
+      </View>
+    </Pressable>
+  );
+}
 
 export default function DashboardScreen() {
   const { accent } = useTheme();
@@ -164,24 +254,7 @@ export default function DashboardScreen() {
                 </Card>
               </Pressable>
             ) : (
-              <Pressable onPress={() => router.push(`/programme/${activeProgramme.id}` as any)}>
-                <Card style={styles.programmeCard}>
-                  <View style={styles.programmeHeader}>
-                    <Text style={styles.programmeTitle}>{activeProgramme.name}</Text>
-                    <View style={[styles.activeBadge, { backgroundColor: `${accent}30` }]}>
-                      <Text style={[styles.activeBadgeText, { color: accent }]}>Active</Text>
-                    </View>
-                  </View>
-                  <Text style={styles.programmeSubtitle}>
-                    {activeProgramme.days} days per week • {activeProgramme.weeks} weeks
-                  </Text>
-
-                  <View style={styles.totalDaysRow}>
-                    <Text style={styles.totalDaysLabel}>Total Exercises</Text>
-                    <Text style={styles.totalDaysValue}>{activeProgramme.exercises?.length || 0}</Text>
-                  </View>
-                </Card>
-              </Pressable>
+              <ProgrammeCardWithGlow accent={accent} activeProgramme={activeProgramme} router={router} />
             )}
           </View>
 
@@ -419,8 +492,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600' as const,
   },
+  programmeCardWrapper: {
+    position: 'relative' as const,
+  },
+  glowContainer: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glowLayer: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+    opacity: 0.3,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 40,
+    elevation: 20,
+  },
+  glowContainerWeb: {
+    position: 'absolute' as const,
+    top: -20,
+    left: -20,
+    right: -20,
+    bottom: -20,
+    zIndex: 0,
+    borderRadius: 40,
+    opacity: 0.15,
+    filter: 'blur(40px)',
+  },
   programmeCard: {
     padding: SPACING.lg,
+    position: 'relative' as const,
+    zIndex: 1,
   },
   programmeHeader: {
     flexDirection: 'row',
