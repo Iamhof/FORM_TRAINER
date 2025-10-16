@@ -1,111 +1,221 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, Alert } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, Alert, TextInput, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { User, Briefcase } from 'lucide-react-native';
-import { COLORS, SPACING } from '@/constants/theme';
+import { COLORS, SPACING, AccentColor } from '@/constants/theme';
 import { useUser } from '@/contexts/UserContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
-const USER_TYPES = [
-  {
-    id: 'client',
-    label: 'I want to train',
-    description: 'Track your workouts and progress',
-    icon: User,
-    isPT: false,
-  },
-  {
-    id: 'pt',
-    label: 'I\'m a Personal Trainer',
-    description: 'Manage clients and programmes',
-    icon: Briefcase,
-    isPT: true,
-  },
+const COLOR_OPTIONS: { name: string; color: AccentColor; rgb: string }[] = [
+  { name: 'Red', color: 'red', rgb: COLORS.accents.red },
+  { name: 'Orange', color: 'orange', rgb: COLORS.accents.orange },
+  { name: 'Yellow', color: 'yellow', rgb: COLORS.accents.yellow },
+  { name: 'Green', color: 'green', rgb: COLORS.accents.green },
+  { name: 'Teal', color: 'teal', rgb: COLORS.accents.teal },
+  { name: 'Blue', color: 'blue', rgb: COLORS.accents.blue },
+  { name: 'Purple', color: 'purple', rgb: COLORS.accents.purple },
+  { name: 'Pink', color: 'pink', rgb: COLORS.accents.pink },
 ];
 
 export default function ProfileSetupScreen() {
   const router = useRouter();
   const { updateProfile } = useUser();
-  const [selectedType, setSelectedType] = useState<string | null>(null);
+  const { setAccentColor } = useTheme();
+  const scrollViewRef = useRef<ScrollView>(null);
   const [loading, setLoading] = useState(false);
+  
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [muscleMass, setMuscleMass] = useState('');
+  const [selectedColorIndex, setSelectedColorIndex] = useState(1);
 
   const handleContinue = async () => {
-    if (!selectedType) {
-      Alert.alert('Error', 'Please select an option');
+    if (!firstName || !lastName || !dateOfBirth) {
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
-
-    const isPT = selectedType === 'pt';
     
     setLoading(true);
     try {
-      const result = await updateProfile({ is_pt: isPT });
+      const fullName = `${firstName} ${lastName}`.trim();
+      const result = await updateProfile({ name: fullName });
       
       if (result.success) {
+        const selectedColor = COLOR_OPTIONS[selectedColorIndex].color;
+        await setAccentColor(selectedColor);
         router.replace('/(tabs)/home' as any);
       } else {
         Alert.alert('Error', result.error || 'Failed to update profile');
       }
-    } catch (error) {
-      Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const scrollToColor = (index: number) => {
+    scrollViewRef.current?.scrollTo({
+      x: index * 110 - 50,
+      animated: true,
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Tell us about yourself</Text>
-          <Text style={styles.subtitle}>
-            This helps us personalize your experience
-          </Text>
-        </View>
-
-        <View style={styles.options}>
-          {USER_TYPES.map((type) => {
-            const Icon = type.icon;
-            const isSelected = selectedType === type.id;
-
-            return (
-              <Pressable
-                key={type.id}
-                onPress={() => setSelectedType(type.id)}
-                style={[
-                  styles.option,
-                  isSelected && styles.optionSelected,
-                ]}
-              >
-                <View style={[
-                  styles.iconContainer,
-                  isSelected && styles.iconContainerSelected,
-                ]}>
-                  <Icon
-                    size={32}
-                    color={isSelected ? COLORS.background : COLORS.accents.orange}
-                    strokeWidth={2}
-                  />
-                </View>
-                <View style={styles.optionContent}>
-                  <Text style={styles.optionLabel}>{type.label}</Text>
-                  <Text style={styles.optionDescription}>{type.description}</Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <Pressable
-          onPress={handleContinue}
-          style={[styles.continueButton, loading && styles.continueButtonDisabled]}
-          disabled={loading || !selectedType}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardView}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.continueButtonText}>
-            {loading ? 'Setting up...' : 'Continue'}
-          </Text>
-        </Pressable>
-      </ScrollView>
+          <View style={styles.header}>
+            <View style={[
+              styles.colorPreview,
+              { backgroundColor: COLOR_OPTIONS[selectedColorIndex].rgb }
+            ]} />
+            <Text style={styles.title}>Complete Your Profile</Text>
+            <Text style={styles.subtitle}>
+              Tell us about yourself to personalize your experience
+            </Text>
+          </View>
+
+          <View style={styles.form}>
+            <View style={styles.row}>
+              <View style={[styles.inputGroup, styles.halfWidth]}>
+                <Text style={styles.label}>First Name*</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="First name"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  autoCapitalize="words"
+                />
+              </View>
+
+              <View style={[styles.inputGroup, styles.halfWidth]}>
+                <Text style={styles.label}>Last Name*</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Last name"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={lastName}
+                  onChangeText={setLastName}
+                  autoCapitalize="words"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Date of Birth*</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="DD/MM/YYYY"
+                placeholderTextColor={COLORS.textTertiary}
+                value={dateOfBirth}
+                onChangeText={setDateOfBirth}
+                keyboardType="numbers-and-punctuation"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Height (cm)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Optional"
+                placeholderTextColor={COLORS.textTertiary}
+                value={height}
+                onChangeText={setHeight}
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Weight (kg)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Optional"
+                placeholderTextColor={COLORS.textTertiary}
+                value={weight}
+                onChangeText={setWeight}
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Muscle Mass (%)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Optional"
+                placeholderTextColor={COLORS.textTertiary}
+                value={muscleMass}
+                onChangeText={setMuscleMass}
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.colorSection}>
+              <Text style={styles.label}>Select Theme Color</Text>
+              <Text style={styles.colorSubtitle}>
+                {COLOR_OPTIONS[selectedColorIndex].name}
+              </Text>
+              
+              <ScrollView
+                ref={scrollViewRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.colorCarousel}
+              >
+                {COLOR_OPTIONS.map((option, index) => {
+                  const isSelected = index === selectedColorIndex;
+                  const scaleAnim = new Animated.Value(isSelected ? 1 : 0.85);
+
+                  return (
+                    <Pressable
+                      key={option.color}
+                      onPress={() => {
+                        setSelectedColorIndex(index);
+                        scrollToColor(index);
+                      }}
+                      style={styles.colorOption}
+                    >
+                      <Animated.View
+                        style={[
+                          styles.colorCircle,
+                          { backgroundColor: option.rgb },
+                          isSelected && styles.colorCircleSelected,
+                          { transform: [{ scale: scaleAnim }] },
+                        ]}
+                      />
+                      {isSelected && (
+                        <View style={[styles.colorIndicator, { backgroundColor: option.rgb }]} />
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            <Pressable
+              onPress={handleContinue}
+              style={[
+                styles.continueButton,
+                { backgroundColor: COLOR_OPTIONS[selectedColorIndex].rgb },
+                loading && styles.continueButtonDisabled
+              ]}
+              disabled={loading}
+            >
+              <Text style={styles.continueButtonText}>
+                {loading ? 'Creating Profile...' : 'Get Started'}
+              </Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -115,71 +225,103 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  keyboardView: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: SPACING.xl,
     paddingTop: SPACING.xl * 2,
+    paddingBottom: SPACING.xl,
   },
   header: {
+    alignItems: 'center',
     marginBottom: SPACING.xl * 2,
+  },
+  colorPreview: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: SPACING.lg,
   },
   title: {
     fontSize: 28,
     fontWeight: '700' as const,
     color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.xs,
   },
   subtitle: {
     fontSize: 16,
     color: COLORS.textSecondary,
+    textAlign: 'center' as const,
+    paddingHorizontal: SPACING.md,
   },
-  options: {
-    gap: SPACING.md,
-    marginBottom: SPACING.xl * 2,
+  form: {
+    gap: SPACING.lg,
   },
-  option: {
+  row: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 16,
-    padding: SPACING.lg,
-    borderWidth: 2,
-    borderColor: COLORS.cardBorder,
+    gap: SPACING.md,
   },
-  optionSelected: {
-    borderColor: COLORS.accents.orange,
-    backgroundColor: `${COLORS.accents.orange}10`,
+  inputGroup: {
+    gap: SPACING.xs,
   },
-  iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: `${COLORS.accents.orange}20`,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING.md,
-  },
-  iconContainerSelected: {
-    backgroundColor: COLORS.accents.orange,
-  },
-  optionContent: {
+  halfWidth: {
     flex: 1,
   },
-  optionLabel: {
-    fontSize: 18,
+  label: {
+    fontSize: 14,
     fontWeight: '600' as const,
     color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
   },
-  optionDescription: {
-    fontSize: 14,
+  input: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 12,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md + 2,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+  },
+  colorSection: {
+    gap: SPACING.xs,
+    marginTop: SPACING.md,
+  },
+  colorSubtitle: {
+    fontSize: 16,
     color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+  },
+  colorCarousel: {
+    gap: SPACING.md,
+    paddingVertical: SPACING.md,
+  },
+  colorOption: {
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  colorCircle: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  colorCircleSelected: {
+    borderColor: COLORS.textPrimary,
+    borderWidth: 3,
+  },
+  colorIndicator: {
+    width: 30,
+    height: 4,
+    borderRadius: 2,
   },
   continueButton: {
-    backgroundColor: COLORS.accents.orange,
     paddingVertical: SPACING.md + 2,
     borderRadius: 12,
     alignItems: 'center',
+    marginTop: SPACING.md,
   },
   continueButtonDisabled: {
     opacity: 0.6,

@@ -12,7 +12,7 @@ export default function AuthScreen() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleAuth = async () => {
@@ -21,15 +21,21 @@ export default function AuthScreen() {
       return;
     }
 
-    if (isSignUp && !name) {
-      Alert.alert('Error', 'Please enter your name');
-      return;
+    if (isSignUp) {
+      if (!confirmPassword) {
+        Alert.alert('Error', 'Please confirm your password');
+        return;
+      }
+      if (password !== confirmPassword) {
+        Alert.alert('Error', 'Passwords do not match');
+        return;
+      }
     }
 
     setLoading(true);
     try {
       const result = isSignUp
-        ? await signup(email, password, name)
+        ? await signup(email, password, '')
         : await signin(email, password);
 
       if (result.success) {
@@ -73,20 +79,6 @@ export default function AuthScreen() {
           </View>
 
           <View style={styles.form}>
-            {isSignUp && (
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your name"
-                  placeholderTextColor={COLORS.textTertiary}
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                />
-              </View>
-            )}
-
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Email</Text>
               <TextInput
@@ -113,6 +105,21 @@ export default function AuthScreen() {
                 autoCapitalize="none"
               />
             </View>
+
+            {isSignUp && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Confirm Password</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirm your password"
+                  placeholderTextColor={COLORS.textTertiary}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                  autoCapitalize="none"
+                />
+              </View>
+            )}
 
             <Pressable
               onPress={handleAuth}

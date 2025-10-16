@@ -14,6 +14,7 @@ export const COLORS = {
     yellow: 'rgb(255, 193, 7)',
     green: 'rgb(76, 175, 80)',
     teal: 'rgb(0, 150, 136)',
+    pink: 'rgb(236, 64, 122)',
   },
   
   success: 'rgb(76, 175, 80)',

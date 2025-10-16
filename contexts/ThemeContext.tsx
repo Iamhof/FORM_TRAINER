@@ -16,7 +16,7 @@ export const [ThemeProvider, useTheme] = createContextHook(() => {
   const loadAccentColor = async () => {
     try {
       const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-      const validColors: AccentColor[] = ['orange', 'purple', 'blue', 'red', 'yellow', 'green', 'teal'];
+      const validColors: AccentColor[] = ['orange', 'purple', 'blue', 'red', 'yellow', 'green', 'teal', 'pink'];
       if (stored && validColors.includes(stored as AccentColor)) {
         setAccentColorState(stored as AccentColor);
       }
