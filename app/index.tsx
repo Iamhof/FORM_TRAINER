@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Dumbbell } from 'lucide-react-native';
 import { COLORS } from '@/constants/theme';
@@ -8,6 +8,7 @@ import { useUser } from '@/contexts/UserContext';
 export default function SplashScreen() {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useUser();
+  const [error, setError] = useState<string | null>(null);
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const screenOpacity = useRef(new Animated.Value(1)).current;
@@ -36,13 +37,18 @@ export default function SplashScreen() {
           duration: 500,
           useNativeDriver: true,
         }).start(() => {
-          if (isAuthenticated) {
-            router.replace('/(tabs)/home');
-          } else {
-            router.replace('/onboarding' as any);
+          try {
+            if (isAuthenticated) {
+              router.replace('/(tabs)/home');
+            } else {
+              router.replace('/onboarding' as any);
+            }
+          } catch (err) {
+            console.error('[Splash] Navigation error:', err);
+            setError('Failed to navigate. Please restart the app.');
           }
         });
-      }, 2500);
+      }, 1500);
 
       return () => clearTimeout(timer);
     }
@@ -54,9 +60,21 @@ export default function SplashScreen() {
         style={{
           transform: [{ scale: scaleAnim }],
           opacity: opacityAnim,
+          alignItems: 'center',
         }}
       >
         <Dumbbell size={80} color={COLORS.textPrimary} strokeWidth={2} />
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color={COLORS.textSecondary} style={styles.loader} />
+            <Text style={styles.loadingText}>Loading...</Text>
+          </View>
+        )}
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
       </Animated.View>
     </Animated.View>
   );
@@ -68,5 +86,25 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  loadingContainer: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  loader: {
+    marginBottom: 8,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+  },
+  errorContainer: {
+    marginTop: 24,
+    paddingHorizontal: 32,
+  },
+  errorText: {
+    fontSize: 14,
+    color: COLORS.error,
+    textAlign: 'center' as const,
   },
 });

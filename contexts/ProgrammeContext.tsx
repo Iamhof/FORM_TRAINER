@@ -46,7 +46,9 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
         .order('created_at', { ascending: false });
 
       if (programmesError) {
-        console.error('[ProgrammeContext] Error loading programmes:', programmesError);
+        console.error('[ProgrammeContext] Error loading programmes:');
+        console.error('[ProgrammeContext] Code:', programmesError.code);
+        console.error('[ProgrammeContext] Message:', programmesError.message);
         throw programmesError;
       }
 

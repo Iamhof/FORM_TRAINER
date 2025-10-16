@@ -1,6 +1,7 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { testSupabaseConnection } from '@/lib/connection-test';
 import type { Session, User } from '@supabase/supabase-js';
 
 export type UserProfile = {
@@ -32,15 +33,31 @@ export const [UserProvider, useUser] = createContextHook(() => {
   useEffect(() => {
     console.log('[UserContext] Initializing auth state...');
     
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[UserContext] Initial session:', session ? 'Found' : 'None');
-      setSession(session);
-      if (session?.user) {
-        loadUserProfile(session.user);
-      } else {
+    const initializeAuth = async () => {
+      const connectionTest = await testSupabaseConnection();
+      
+      if (!connectionTest.success) {
+        console.error('[UserContext] Connection test failed:', connectionTest.error);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('[UserContext] Initial session:', session ? 'Found' : 'None');
+        setSession(session);
+        if (session?.user) {
+          loadUserProfile(session.user);
+        } else {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('[UserContext] Failed to get initial session:', error);
         setIsLoading(false);
       }
-    });
+    };
+
+    initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('[UserContext] Auth state changed:', _event, session ? 'Session exists' : 'No session');

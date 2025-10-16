@@ -63,7 +63,9 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('[ScheduleContext] Error loading schedule:', error);
+        console.error('[ScheduleContext] Error loading schedule:');
+        console.error('[ScheduleContext] Code:', error.code);
+        console.error('[ScheduleContext] Message:', error.message);
         throw error;
       }
 

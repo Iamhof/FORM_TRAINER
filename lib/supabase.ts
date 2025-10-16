@@ -48,7 +48,9 @@ const SecureStoreAdapter = {
 const supabaseUrl = 'https://yshbcfifmkflhahjengk.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzaGJjZmlmbWtmbGhhaGplbmdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NjI3NjcsImV4cCI6MjA3NTIzODc2N30.ide524ouRN9wDvl3gdcqL0QVEShOJpM720FNisSj-CQ';
 
-console.log('[Supabase] Initializing client with URL:', supabaseUrl.substring(0, 30) + '...');
+console.log('[Supabase] Initializing client');
+console.log('[Supabase] URL:', supabaseUrl);
+console.log('[Supabase] Platform:', Platform.OS);
 
 export const supabase = createClient(
   supabaseUrl,
@@ -59,6 +61,14 @@ export const supabase = createClient(
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
+    },
+    global: {
+      headers: {
+        'X-Client-Info': `expo-${Platform.OS}`,
+      },
+    },
+    db: {
+      schema: 'public',
     },
   }
 );
