@@ -21,29 +21,35 @@ type ProgrammeCardWithGlowProps = {
 function ProgrammeCardWithGlow({ accent, activeProgramme, router }: ProgrammeCardWithGlowProps) {
   return (
     <Pressable onPress={() => router.push(`/programme/${activeProgramme.id}` as any)}>
-      <View style={styles.programmeCardWrapper}>
-        {Platform.OS !== 'web' && (
-          <View style={[styles.glowLayer, { backgroundColor: accent, shadowColor: accent }]} />
-        )}
-        {Platform.OS === 'web' && (
-          <View style={[styles.glowLayerWeb, { backgroundColor: accent }]} />
-        )}
-        <Card style={styles.programmeCard}>
-          <View style={styles.programmeHeader}>
-            <Text style={styles.programmeTitle}>{activeProgramme.name}</Text>
-            <View style={[styles.activeBadge, { backgroundColor: `${accent}30` }]}>
-              <Text style={[styles.activeBadgeText, { color: accent }]}>Active</Text>
-            </View>
+      <View
+        style={[
+          styles.programmeCardEnhanced,
+          Platform.OS !== 'web' && {
+            shadowColor: accent,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.25,
+            shadowRadius: 24,
+            elevation: 12,
+          },
+          Platform.OS === 'web' && {
+            boxShadow: `0 8px 32px ${accent}40`,
+          },
+        ]}
+      >
+        <View style={styles.programmeHeader}>
+          <Text style={styles.programmeTitle}>{activeProgramme.name}</Text>
+          <View style={[styles.activeBadge, { backgroundColor: `${accent}30` }]}>
+            <Text style={[styles.activeBadgeText, { color: accent }]}>Active</Text>
           </View>
-          <Text style={styles.programmeSubtitle}>
-            {activeProgramme.days} days per week • {activeProgramme.weeks} weeks
-          </Text>
+        </View>
+        <Text style={styles.programmeSubtitle}>
+          {activeProgramme.days} days per week • {activeProgramme.weeks} weeks
+        </Text>
 
-          <View style={styles.totalDaysRow}>
-            <Text style={styles.totalDaysLabel}>Total Exercises</Text>
-            <Text style={styles.totalDaysValue}>{activeProgramme.exercises?.length || 0}</Text>
-          </View>
-        </Card>
+        <View style={styles.totalDaysRow}>
+          <Text style={styles.totalDaysLabel}>Total Exercises</Text>
+          <Text style={styles.totalDaysValue}>{activeProgramme.exercises?.length || 0}</Text>
+        </View>
       </View>
     </Pressable>
   );
@@ -439,38 +445,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600' as const,
   },
-  programmeCardWrapper: {
-    position: 'relative' as const,
-  },
-  glowLayer: {
-    position: 'absolute' as const,
-    top: 8,
-    left: 8,
-    right: 8,
-    bottom: -4,
+  programmeCardEnhanced: {
+    backgroundColor: COLORS.cardBackground,
     borderRadius: 16,
-    opacity: 0.15,
-    zIndex: 0,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 32,
-    elevation: 8,
-  },
-  glowLayerWeb: {
-    position: 'absolute' as const,
-    top: 8,
-    left: 8,
-    right: 8,
-    bottom: -4,
-    borderRadius: 16,
-    opacity: 0.08,
-    zIndex: 0,
-    filter: 'blur(32px)',
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+    padding: SPACING.lg,
   },
   programmeCard: {
     padding: SPACING.lg,
-    position: 'relative' as const,
-    zIndex: 1,
   },
   programmeHeader: {
     flexDirection: 'row',
