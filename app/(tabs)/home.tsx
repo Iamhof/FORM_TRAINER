@@ -59,7 +59,7 @@ export default function DashboardScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const { activeProgramme } = useProgrammes();
-  const { user, stats } = useUser();
+  const { user, stats, isFirstVisit } = useUser();
   const { schedule, scheduledCount, toggleDay, isLoading: scheduleLoading } = useSchedule();
 
   return (
@@ -88,7 +88,7 @@ export default function DashboardScreen() {
           <View style={styles.header}>
             <View>
               <Text style={styles.greeting}>
-                Welcome back, <Text style={[styles.greetingName, { color: accent }]}>{user?.name || 'User'}</Text>
+                {isFirstVisit ? 'Welcome' : 'Welcome back'}, <Text style={[styles.greetingName, { color: accent }]}>{user?.name?.split(' ')[0] || 'User'}</Text>
               </Text>
               <Text style={styles.subtitle}>Ready to crush your goals today?</Text>
             </View>
