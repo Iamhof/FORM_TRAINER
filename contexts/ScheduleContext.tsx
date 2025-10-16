@@ -150,9 +150,15 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
         return;
       }
 
+      const currentStatus = schedule[dayIndex].status;
+
+      if (currentStatus === 'completed') {
+        console.log('[ScheduleContext] Cannot toggle completed day');
+        return;
+      }
+
       const scheduledCount = schedule.filter((d) => d.status === 'scheduled').length;
       const requiredSessions = activeProgramme.days;
-      const currentStatus = schedule[dayIndex].status;
 
       let newStatus: DayStatus;
 

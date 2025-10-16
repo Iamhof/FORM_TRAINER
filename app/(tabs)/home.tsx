@@ -115,7 +115,13 @@ export default function DashboardScreen() {
             ) : (
               <View style={styles.noticeBox}>
                 <Text style={styles.noticeText}>
-                  Tap days to schedule your <Text style={{ color: accent }}>{activeProgramme.days} weekly sessions</Text>
+                  {scheduledCount === 0 ? (
+                    <>Tap days to schedule your <Text style={{ color: accent }}>{activeProgramme.days} weekly sessions</Text></>
+                  ) : scheduledCount < activeProgramme.days ? (
+                    <><Text style={{ color: accent }}>{scheduledCount}/{activeProgramme.days} sessions scheduled</Text> - Tap to schedule {activeProgramme.days - scheduledCount} more</>
+                  ) : (
+                    <><Text style={{ color: accent }}>All {activeProgramme.days} sessions scheduled!</Text> Ready to start your week</>
+                  )}
                 </Text>
               </View>
             )}
@@ -123,13 +129,17 @@ export default function DashboardScreen() {
             <View style={styles.weekRow}>
               {schedule.map((item, index) => {
                 const dayLabel = DAY_LABELS[item.dayOfWeek];
-                const isInteractive = activeProgramme && item.status !== 'completed';
+                const isInteractive = activeProgramme !== null;
 
                 return (
                   <Pressable
                     key={`${item.dayOfWeek}-${item.weekStart}`}
                     style={styles.dayContainer}
-                    onPress={() => isInteractive && toggleDay(index)}
+                    onPress={() => {
+                      if (isInteractive && !scheduleLoading) {
+                        toggleDay(index);
+                      }
+                    }}
                     disabled={!isInteractive || scheduleLoading}
                   >
                     <Text style={styles.dayLabel}>{dayLabel}</Text>
