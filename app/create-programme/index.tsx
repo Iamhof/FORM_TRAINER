@@ -71,7 +71,7 @@ export default function CreateProgrammeScreen() {
     const centerOffset = (SCREEN_WIDTH / 2) - (ITEM_WIDTH / 2);
     const adjustedOffset = offsetX + centerOffset;
     const index = Math.round(adjustedOffset / ITEM_WIDTH);
-    const centerValue = DURATION_OPTIONS[index];
+    const centerValue = DURATION_OPTIONS[Math.min(Math.max(index, 0), DURATION_OPTIONS.length - 1)];
     if (centerValue !== undefined) {
       setCenterDuration(centerValue);
     }
@@ -79,13 +79,17 @@ export default function CreateProgrammeScreen() {
 
   const handleDurationScrollEnd = (event: any) => {
     const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / ITEM_WIDTH);
-    const selectedValue = DURATION_OPTIONS[index];
+    const centerOffset = (SCREEN_WIDTH / 2) - (ITEM_WIDTH / 2);
+    const adjustedOffset = offsetX + centerOffset;
+    const index = Math.round(adjustedOffset / ITEM_WIDTH);
+    const boundedIndex = Math.min(Math.max(index, 0), DURATION_OPTIONS.length - 1);
+    const selectedValue = DURATION_OPTIONS[boundedIndex];
     if (selectedValue !== undefined && selectedValue !== selectedDuration) {
       setSelectedDuration(selectedValue);
     }
+    const targetX = (boundedIndex * ITEM_WIDTH) - centerOffset;
     durationScrollRef.current?.scrollTo({
-      x: index * ITEM_WIDTH,
+      x: targetX,
       animated: true,
     });
   };
@@ -380,10 +384,10 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   topLine: {
-    top: 150 - (ITEM_HEIGHT / 2) - 2,
+    top: 150 - ITEM_HEIGHT,
   },
   bottomLine: {
-    bottom: 150 - ITEM_HEIGHT,
+    top: 150,
   },
   selectionLine: {
     position: 'absolute' as const,
