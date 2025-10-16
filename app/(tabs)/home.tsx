@@ -127,17 +127,18 @@ export default function DashboardScreen() {
             )}
 
             <View style={styles.weekRow}>
-              {schedule.map((item, index) => {
-                const dayLabel = DAY_LABELS[item.dayOfWeek];
+              {DAY_LABELS.map((dayLabel, dayIndex) => {
+                const item = schedule[dayIndex];
                 const isInteractive = activeProgramme !== null;
 
                 return (
                   <Pressable
-                    key={`${item.dayOfWeek}-${item.weekStart}`}
+                    key={`day-${dayIndex}`}
                     style={styles.dayContainer}
                     onPress={() => {
-                      if (isInteractive && !scheduleLoading) {
-                        toggleDay(index);
+                      console.log(`[Home] Day ${dayIndex} (${dayLabel}) clicked, status: ${item?.status}`);
+                      if (isInteractive && !scheduleLoading && item) {
+                        toggleDay(dayIndex);
                       }
                     }}
                     disabled={!isInteractive || scheduleLoading}
@@ -146,29 +147,29 @@ export default function DashboardScreen() {
                     <View
                       style={[
                         styles.dayBox,
-                        item.status === 'completed' && { backgroundColor: accent },
-                        item.status === 'scheduled' && { backgroundColor: COLORS.warning },
-                        item.status === 'rest' && {
+                        item?.status === 'completed' && { backgroundColor: accent },
+                        item?.status === 'scheduled' && { backgroundColor: COLORS.warning },
+                        item?.status === 'rest' && {
                           backgroundColor: 'transparent',
                           borderWidth: 1,
                           borderColor: COLORS.cardBorder,
                         },
                       ]}
                     >
-                      {item.status === 'completed' && (
+                      {item?.status === 'completed' && (
                         <Check size={20} color={COLORS.background} strokeWidth={3} />
                       )}
-                      {item.status === 'scheduled' && (
+                      {item?.status === 'scheduled' && (
                         <Check size={20} color={COLORS.background} strokeWidth={3} />
                       )}
-                      {item.status === 'rest' && (
+                      {item?.status === 'rest' && (
                         <Moon size={16} color={COLORS.textTertiary} strokeWidth={2} />
                       )}
                     </View>
                     <Text style={styles.dayStatus}>
-                      {item.status === 'completed'
+                      {item?.status === 'completed'
                         ? 'Done'
-                        : item.status === 'scheduled'
+                        : item?.status === 'scheduled'
                         ? 'Workout'
                         : 'Rest'}
                     </Text>

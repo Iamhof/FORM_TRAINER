@@ -145,12 +145,21 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
 
   const toggleDay = useCallback(
     async (dayIndex: number) => {
+      console.log('[ScheduleContext] toggleDay called for index:', dayIndex);
+      console.log('[ScheduleContext] Current schedule length:', schedule.length);
+      
       if (!activeProgramme) {
         console.log('[ScheduleContext] No active programme');
         return;
       }
 
+      if (dayIndex < 0 || dayIndex >= schedule.length) {
+        console.error('[ScheduleContext] Invalid day index:', dayIndex);
+        return;
+      }
+
       const currentStatus = schedule[dayIndex].status;
+      console.log('[ScheduleContext] Current status for day', dayIndex, ':', currentStatus);
 
       if (currentStatus === 'completed') {
         console.log('[ScheduleContext] Cannot toggle completed day');
@@ -159,6 +168,7 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
 
       const scheduledCount = schedule.filter((d) => d.status === 'scheduled').length;
       const requiredSessions = activeProgramme.days;
+      console.log('[ScheduleContext] Scheduled count:', scheduledCount, '/ Required:', requiredSessions);
 
       let newStatus: DayStatus;
 
@@ -174,6 +184,8 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
       } else {
         return;
       }
+
+      console.log('[ScheduleContext] Changing status from', currentStatus, 'to', newStatus);
 
       const newSchedule = schedule.map((day, idx) =>
         idx === dayIndex ? { ...day, status: newStatus } : day
