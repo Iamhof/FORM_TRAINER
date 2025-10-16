@@ -83,7 +83,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
       
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('name, role, is_pt, last_login')
+        .select('name, role, is_pt')
         .eq('user_id', authUser.id)
         .maybeSingle();
 
@@ -101,21 +101,13 @@ export const [UserProvider, useUser] = createContextHook(() => {
         console.log('[UserContext] Profile loaded successfully:', { name: profile.name, is_pt: profile.is_pt });
       }
 
-      const isFirst = !profile?.last_login;
-      setIsFirstVisit(isFirst);
-      console.log('[UserContext] Is first visit:', isFirst);
-
-      await supabase
-        .from('profiles')
-        .update({ last_login: new Date().toISOString() })
-        .eq('user_id', authUser.id);
+      setIsFirstVisit(true);
 
       setUser({
         id: authUser.id,
         email: authUser.email || '',
         name: profile?.name || '',
         is_pt: profile?.is_pt || false,
-        last_login: profile?.last_login,
       });
     } catch (error) {
       console.error('[UserContext] Exception while loading profile:', error instanceof Error ? error.message : String(error));
