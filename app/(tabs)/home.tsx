@@ -167,7 +167,7 @@ export default function DashboardScreen() {
                         styles.dayBox,
                         item?.status === 'completed' && { backgroundColor: accent },
                         item?.status === 'scheduled' && { backgroundColor: COLORS.warning },
-                        item?.status === 'rest' && {
+                        (item?.status === 'rest' || item?.status === 'empty') && {
                           backgroundColor: 'transparent',
                           borderWidth: 1,
                           borderColor: COLORS.cardBorder,
@@ -180,7 +180,7 @@ export default function DashboardScreen() {
                       {item?.status === 'scheduled' && (
                         <Check size={20} color={COLORS.background} strokeWidth={3} />
                       )}
-                      {item?.status === 'rest' && (
+                      {(item?.status === 'rest' || item?.status === 'empty') && (
                         <Moon size={16} color={COLORS.textTertiary} strokeWidth={2} />
                       )}
                     </View>

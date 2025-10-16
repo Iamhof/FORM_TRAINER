@@ -7,7 +7,6 @@ import { supabase } from '@/lib/supabase';
 export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
-  const envBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   const toolkitUrl = process.env.EXPO_PUBLIC_TOOLKIT_URL;
   
   if (toolkitUrl && toolkitUrl.includes('rorktest.dev')) {
@@ -16,14 +15,24 @@ const getBaseUrl = () => {
     return baseUrl;
   }
   
-  if (!envBaseUrl) {
-    console.error('[TRPC] Missing EXPO_PUBLIC_RORK_API_BASE_URL');
-    console.error('[TRPC] Using fallback URL. Please set EXPO_PUBLIC_RORK_API_BASE_URL in .env');
-    return 'http://localhost:8081';
+  const envBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  
+  if (envBaseUrl && !envBaseUrl.includes('localhost')) {
+    console.log('[TRPC] Base URL from env:', envBaseUrl);
+    return envBaseUrl;
   }
   
-  console.log('[TRPC] Base URL:', envBaseUrl);
-  return envBaseUrl;
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    const port = window.location.port || '8081';
+    const url = `${protocol}//${hostname}:${port}`;
+    console.log('[TRPC] Using window location:', url);
+    return url;
+  }
+  
+  console.warn('[TRPC] Falling back to localhost - this may not work in Rork environment');
+  return 'http://localhost:8081';
 };
 
 export const trpcClient = trpc.createClient({

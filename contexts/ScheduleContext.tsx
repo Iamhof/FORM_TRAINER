@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useUser } from './UserContext';
 import { useProgrammes } from './ProgrammeContext';
 
-export type DayStatus = 'scheduled' | 'completed' | 'rest';
+export type DayStatus = 'scheduled' | 'completed' | 'rest' | 'empty';
 
 export type ScheduleDay = {
   dayOfWeek: number;
@@ -32,7 +32,7 @@ function getWeekStart(date: Date = new Date()): string {
 function getInitialSchedule(weekStart: string): ScheduleDay[] {
   return Array.from({ length: 7 }, (_, i) => ({
     dayOfWeek: i,
-    status: 'rest' as DayStatus,
+    status: 'empty' as DayStatus,
     weekStart,
   }));
 }
@@ -183,13 +183,13 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
       if (currentStatus === 'scheduled') {
         newStatus = 'rest';
         console.log('[ScheduleContext] Changing from scheduled to rest');
-      } else if (currentStatus === 'rest') {
+      } else if (currentStatus === 'rest' || currentStatus === 'empty') {
         if (scheduledCount >= requiredSessions) {
           console.log('[ScheduleContext] Max sessions reached, cannot schedule more');
           return;
         }
         newStatus = 'scheduled';
-        console.log('[ScheduleContext] Changing from rest to scheduled');
+        console.log('[ScheduleContext] Changing from', currentStatus, 'to scheduled');
       } else {
         console.log('[ScheduleContext] Unknown status:', currentStatus);
         return;
@@ -227,6 +227,6 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
       toggleDay,
       loadSchedule,
     }),
-    [schedule, isLoading, scheduledCount, canScheduleMore, currentWeekStart, toggleDay]
+    [schedule, isLoading, scheduledCount, canScheduleMore, currentWeekStart, toggleDay, loadSchedule]
   );
 });
