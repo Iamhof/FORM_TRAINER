@@ -62,6 +62,12 @@ export default function DashboardScreen() {
   const { user, stats, isFirstVisit } = useUser();
   const { schedule, scheduledCount, toggleDay, isLoading: scheduleLoading } = useSchedule();
 
+  const safeSchedule = Array.isArray(schedule) && schedule.length === 7 ? schedule : Array.from({ length: 7 }, (_, i) => ({
+    dayOfWeek: i,
+    status: 'empty' as const,
+    weekStart: new Date().toISOString().split('T')[0],
+  }));
+
   return (
     <View style={styles.background}>
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -116,8 +122,8 @@ export default function DashboardScreen() {
               <View style={styles.noticeBox}>
                 <Text style={styles.noticeText}>
                   {(() => {
-                    const actualScheduled = schedule.filter((d) => d.status === 'scheduled').length;
-                    const completed = schedule.filter((d) => d.status === 'completed').length;
+                    const actualScheduled = safeSchedule.filter((d) => d?.status === 'scheduled').length;
+                    const completed = safeSchedule.filter((d) => d?.status === 'completed').length;
                     const total = actualScheduled + completed;
                     
                     if (total === 0) {
@@ -140,7 +146,7 @@ export default function DashboardScreen() {
 
             <View style={styles.weekRow}>
               {DAY_LABELS.map((dayLabel, dayIndex) => {
-                const item = schedule[dayIndex];
+                const item = safeSchedule[dayIndex];
                 const isInteractive = activeProgramme !== null;
 
                 return (

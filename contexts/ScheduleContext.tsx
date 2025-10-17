@@ -71,7 +71,27 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
 
       if (data) {
         console.log('[ScheduleContext] Loaded schedule:', data);
-        setSchedule(data.schedule as ScheduleDay[]);
+        console.log('[ScheduleContext] Schedule data type:', typeof data.schedule);
+        console.log('[ScheduleContext] Raw schedule:', data.schedule);
+        
+        let parsedSchedule: ScheduleDay[];
+        
+        if (typeof data.schedule === 'string') {
+          try {
+            parsedSchedule = JSON.parse(data.schedule);
+            console.log('[ScheduleContext] Parsed schedule from string:', parsedSchedule);
+          } catch (parseError) {
+            console.error('[ScheduleContext] Failed to parse schedule string:', parseError);
+            parsedSchedule = getInitialSchedule(currentWeekStart);
+          }
+        } else if (Array.isArray(data.schedule)) {
+          parsedSchedule = data.schedule;
+        } else {
+          console.warn('[ScheduleContext] Unexpected schedule format, using empty schedule');
+          parsedSchedule = getInitialSchedule(currentWeekStart);
+        }
+        
+        setSchedule(parsedSchedule);
       } else {
         console.log('[ScheduleContext] No schedule found, using empty schedule');
         setSchedule(getInitialSchedule(currentWeekStart));
@@ -96,6 +116,7 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
 
       try {
         console.log('[ScheduleContext] Saving schedule:', newSchedule);
+        console.log('[ScheduleContext] Schedule to save (stringified):', JSON.stringify(newSchedule));
 
         const { data: existing } = await supabase
           .from('schedules')
