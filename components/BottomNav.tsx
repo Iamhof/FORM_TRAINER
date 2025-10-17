@@ -117,8 +117,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   webBlur: {
-    backgroundColor: 'rgba(18, 18, 18, 0.85)',
+    backgroundColor: 'rgba(18, 18, 18, 0.75)',
     backdropFilter: 'blur(20px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
     shadowColor: '#000',
