@@ -72,22 +72,38 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
       if (data) {
         console.log('[ScheduleContext] Loaded schedule:', data);
         console.log('[ScheduleContext] Schedule data type:', typeof data.schedule);
-        console.log('[ScheduleContext] Raw schedule:', data.schedule);
         
         let parsedSchedule: ScheduleDay[];
         
-        if (typeof data.schedule === 'string') {
+        if (Array.isArray(data.schedule)) {
+          parsedSchedule = data.schedule;
+          console.log('[ScheduleContext] Using schedule array directly:', parsedSchedule);
+        } else if (typeof data.schedule === 'string') {
+          console.log('[ScheduleContext] Raw schedule string:', data.schedule);
           try {
-            parsedSchedule = JSON.parse(data.schedule);
-            console.log('[ScheduleContext] Parsed schedule from string:', parsedSchedule);
+            const trimmed = data.schedule.trim();
+            if (trimmed === '[object Object]' || trimmed.startsWith('[object')) {
+              console.error('[ScheduleContext] Corrupted data detected, resetting schedule');
+              parsedSchedule = getInitialSchedule(currentWeekStart);
+            } else {
+              parsedSchedule = JSON.parse(trimmed);
+              console.log('[ScheduleContext] Parsed schedule from string:', parsedSchedule);
+            }
           } catch (parseError) {
             console.error('[ScheduleContext] Failed to parse schedule string:', parseError);
+            console.error('[ScheduleContext] Problematic string:', data.schedule);
             parsedSchedule = getInitialSchedule(currentWeekStart);
           }
-        } else if (Array.isArray(data.schedule)) {
-          parsedSchedule = data.schedule;
+        } else if (data.schedule && typeof data.schedule === 'object') {
+          console.log('[ScheduleContext] Schedule is object, converting to array');
+          const scheduleObj = data.schedule as any;
+          if (scheduleObj.length !== undefined) {
+            parsedSchedule = Array.from(scheduleObj);
+          } else {
+            parsedSchedule = getInitialSchedule(currentWeekStart);
+          }
         } else {
-          console.warn('[ScheduleContext] Unexpected schedule format, using empty schedule');
+          console.warn('[ScheduleContext] Unexpected schedule format:', typeof data.schedule);
           parsedSchedule = getInitialSchedule(currentWeekStart);
         }
         
@@ -129,7 +145,7 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
           const { error } = await supabase
             .from('schedules')
             .update({
-              schedule: newSchedule,
+              schedule: JSON.parse(JSON.stringify(newSchedule)),
               programme_id: activeProgramme?.id || null,
             })
             .eq('id', existing.id);
@@ -145,7 +161,7 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
               user_id: user.id,
               programme_id: activeProgramme?.id || null,
               week_start: currentWeekStart,
-              schedule: newSchedule,
+              schedule: JSON.parse(JSON.stringify(newSchedule)),
             });
 
           if (error) {
