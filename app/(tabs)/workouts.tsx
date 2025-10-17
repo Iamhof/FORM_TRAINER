@@ -1,8 +1,8 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { Plus, Trash2, CheckCircle2 } from 'lucide-react-native';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
 import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
@@ -12,7 +12,8 @@ import { useProgrammes } from '@/contexts/ProgrammeContext';
 export default function WorkoutsScreen() {
   const { accent } = useTheme();
   const router = useRouter();
-  const { programmes } = useProgrammes();
+  const { programmes, deleteProgramme, getProgrammeProgress } = useProgrammes();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   return (
     <View style={styles.background}>
@@ -48,34 +49,101 @@ export default function WorkoutsScreen() {
             </Card>
           ) : (
             <View style={styles.programmeList}>
-              {programmes.map((programme) => (
-                <Pressable
-                  key={programme.id}
-                  onPress={() => router.push(`/programme/${programme.id}` as any)}
-                >
-                  <Card style={styles.programmeCard}>
-                    <View style={styles.programmeHeader}>
-                      <View style={styles.programmeTitleRow}>
-                        <Text style={styles.programmeName}>{programme.name}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.programmeDetails}>
-                      {programme.days} days per week • {programme.weeks} weeks
-                    </Text>
+              {programmes.map((programme) => {
+                const progress = getProgrammeProgress(programme.id);
+                const isCompleted = progress.percentage === 100;
 
-                    <View style={styles.statsRow}>
-                      <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Total Exercises</Text>
-                        <Text style={styles.statValue}>{programme.exercises?.length || 0}</Text>
+                const handleDelete = () => {
+                  Alert.alert(
+                    'Delete Programme',
+                    `Are you sure you want to delete "${programme.name}"? This action cannot be undone.`,
+                    [
+                      {
+                        text: 'Cancel',
+                        style: 'cancel',
+                      },
+                      {
+                        text: 'Delete',
+                        style: 'destructive',
+                        onPress: async () => {
+                          try {
+                            setDeletingId(programme.id);
+                            await deleteProgramme(programme.id);
+                          } catch {
+                            Alert.alert('Error', 'Failed to delete programme');
+                          } finally {
+                            setDeletingId(null);
+                          }
+                        },
+                      },
+                    ]
+                  );
+                };
+
+                return (
+                  <Pressable
+                    key={programme.id}
+                    onPress={() => router.push(`/programme/${programme.id}` as any)}
+                    onLongPress={handleDelete}
+                    disabled={deletingId === programme.id}
+                  >
+                    <Card style={styles.programmeCard}>
+                      <View style={styles.programmeHeader}>
+                        <View style={styles.programmeTitleRow}>
+                          <Text style={styles.programmeName}>{programme.name}</Text>
+                          {isCompleted && (
+                            <View style={[styles.completedBadge, { backgroundColor: `${accent}20` }]}>
+                              <CheckCircle2 size={12} color={accent} strokeWidth={2.5} />
+                              <Text style={[styles.completedBadgeText, { color: accent }]}>Completed</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Pressable
+                          onPress={handleDelete}
+                          hitSlop={8}
+                          style={styles.deleteButton}
+                        >
+                          <Trash2 size={18} color={COLORS.textSecondary} strokeWidth={2} />
+                        </Pressable>
                       </View>
-                      <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Duration</Text>
-                        <Text style={styles.statValue}>{programme.weeks} weeks</Text>
+                      <Text style={styles.programmeDetails}>
+                        {programme.days} days per week • {programme.weeks} weeks
+                      </Text>
+
+                      <View style={styles.progressSection}>
+                        <View style={styles.progressHeader}>
+                          <Text style={styles.progressLabel}>Progress</Text>
+                          <Text style={[styles.progressValue, { color: accent }]}>
+                            {progress.completed} / {progress.total} sessions • {progress.percentage}%
+                          </Text>
+                        </View>
+                        <View style={styles.progressBar}>
+                          <View 
+                            style={[
+                              styles.progressFill, 
+                              { 
+                                backgroundColor: accent,
+                                width: `${progress.percentage}%`,
+                              }
+                            ]} 
+                          />
+                        </View>
                       </View>
-                    </View>
-                  </Card>
-                </Pressable>
-              ))}
+
+                      <View style={styles.statsRow}>
+                        <View style={styles.statItem}>
+                          <Text style={styles.statLabel}>Total Exercises</Text>
+                          <Text style={styles.statValue}>{programme.exercises?.length || 0}</Text>
+                        </View>
+                        <View style={styles.statItem}>
+                          <Text style={styles.statLabel}>Duration</Text>
+                          <Text style={styles.statValue}>{programme.weeks} weeks</Text>
+                        </View>
+                      </View>
+                    </Card>
+                  </Pressable>
+                );
+              })}
             </View>
           )}
         </ScrollView>
@@ -147,24 +215,37 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   programmeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: SPACING.xs,
   },
   programmeTitleRow: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
+    flexWrap: 'wrap',
+  },
+  deleteButton: {
+    padding: SPACING.xs,
+    marginTop: -4,
+    marginRight: -4,
   },
   programmeName: {
     fontSize: 20,
     fontWeight: '700' as const,
     color: COLORS.textPrimary,
   },
-  activeBadge: {
-    paddingHorizontal: 10,
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    gap: 4,
   },
-  activeBadgeText: {
+  completedBadgeText: {
     fontSize: 11,
     fontWeight: '600' as const,
   },

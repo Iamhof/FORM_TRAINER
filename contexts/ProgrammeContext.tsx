@@ -209,6 +209,11 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
     return completedSessionKeys.has(sessionKey);
   }, [completedSessionKeys]);
 
+  const isProgrammeCompleted = useCallback((programmeId: string) => {
+    const progress = getProgrammeProgress(programmeId);
+    return progress.percentage === 100;
+  }, [getProgrammeProgress]);
+
   return useMemo(
     () => ({
       programmes,
@@ -221,8 +226,9 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
       completedSessionKeys,
       getProgrammeProgress,
       isSessionCompleted,
+      isProgrammeCompleted,
       refetch: loadProgrammes,
     }),
-    [programmes, isLoading, addProgramme, deleteProgramme, getProgramme, activeProgramme, completedSessions, completedSessionKeys, getProgrammeProgress, isSessionCompleted, loadProgrammes]
+    [programmes, isLoading, addProgramme, deleteProgramme, getProgramme, activeProgramme, completedSessions, completedSessionKeys, getProgrammeProgress, isSessionCompleted, isProgrammeCompleted, loadProgrammes]
   );
 });
