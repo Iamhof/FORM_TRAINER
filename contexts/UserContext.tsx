@@ -102,13 +102,13 @@ export const [UserProvider, useUser] = createContextHook(() => {
       }
 
       setIsFirstVisit(true);
-
       setUser({
         id: authUser.id,
         email: authUser.email || '',
         name: profile?.name || '',
         is_pt: profile?.is_pt || false,
       });
+      setIsLoading(false);
     } catch (error) {
       console.error('[UserContext] Exception while loading profile:', error instanceof Error ? error.message : String(error));
       setIsFirstVisit(true);
@@ -118,7 +118,6 @@ export const [UserProvider, useUser] = createContextHook(() => {
         name: '',
         is_pt: false,
       });
-    } finally {
       setIsLoading(false);
     }
   };
