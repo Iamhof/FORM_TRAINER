@@ -50,4 +50,6 @@ export const SPACING = {
   xxl: 48,
 } as const;
 
+export const BOTTOM_NAV_HEIGHT = 60;
+
 export type AccentColor = keyof typeof COLORS.accents;

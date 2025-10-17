@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TrendingUp, TrendingDown, Calendar, Target, Activity, Moon, BarChart3 } from 'lucide-react-native';
 import Card from '@/components/Card';
 import LineChart from '@/components/LineChart';
-import { COLORS, SPACING } from '@/constants/theme';
+import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAnalytics } from '@/contexts/AnalyticsContext';
 
@@ -14,6 +14,11 @@ export default function AnalyticsScreen() {
   const { accent } = useTheme();
   const { analyticsData, calculateCompletionPercentage, totalSessionsThisMonth, totalVolumeThisMonth } = useAnalytics();
   const [selectedMetric, setSelectedMetric] = useState<MetricTab>('sessions');
+  const insets = useSafeAreaInsets();
+
+  const scrollPaddingBottom = useMemo(() => {
+    return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
+  }, [insets.bottom]);
 
   const getChartData = () => {
     switch (selectedMetric) {
@@ -75,7 +80,7 @@ export default function AnalyticsScreen() {
           </View>
         </View>
 
-        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]} showsVerticalScrollIndicator={false}>
           <View style={styles.statsGrid}>
             <Card style={styles.statCard}>
               <View style={styles.statHeader}>
@@ -309,7 +314,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: 100,
   },
   statsGrid: {
     flexDirection: 'row',

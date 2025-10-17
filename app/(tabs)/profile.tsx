@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Users, UserCheck, Settings, LogOut, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
-import { COLORS, SPACING } from '@/constants/theme';
+import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
 
@@ -13,6 +13,11 @@ export default function ProfileScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const { user, signout } = useUser();
+  const insets = useSafeAreaInsets();
+
+  const scrollPaddingBottom = useMemo(() => {
+    return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
+  }, [insets.bottom]);
 
   const isPT = user?.is_pt || false;
 
@@ -30,7 +35,7 @@ export default function ProfileScreen() {
 
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
           showsVerticalScrollIndicator={false}
         >
           <Card style={styles.profileCard}>
@@ -130,7 +135,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.lg,
-    paddingBottom: 100,
   },
   header: {
     paddingHorizontal: SPACING.md,

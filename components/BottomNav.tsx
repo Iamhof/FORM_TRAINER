@@ -3,7 +3,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Home, Dumbbell, BarChart3, TrendingUp, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SPACING } from '@/constants/theme';
+import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 
 type TabItem = {
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexDirection: 'row',
-    paddingTop: SPACING.sm,
+    height: BOTTOM_NAV_HEIGHT,
     paddingHorizontal: SPACING.md,
   },
   tab: {

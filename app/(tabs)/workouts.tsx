@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Plus, Trash2, CheckCircle2 } from 'lucide-react-native';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
-import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
+import { COLORS, SPACING, TYPOGRAPHY, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
 
@@ -14,13 +14,18 @@ export default function WorkoutsScreen() {
   const router = useRouter();
   const { programmes, deleteProgramme, getProgrammeProgress } = useProgrammes();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
+
+  const scrollPaddingBottom = useMemo(() => {
+    return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
+  }, [insets.bottom]);
 
   return (
     <View style={styles.background}>
       <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView 
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.header}>
@@ -165,7 +170,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.lg,
-    paddingBottom: 100,
   },
   header: {
     flexDirection: 'row',
