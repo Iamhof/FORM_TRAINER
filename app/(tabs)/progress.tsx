@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.lg,
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   title: {
     ...TYPOGRAPHY.h1,
