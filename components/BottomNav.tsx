@@ -104,11 +104,16 @@ export default function BottomNav({ currentRoute, onNavigate }: BottomNavProps) 
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: 'absolute' as const,
     bottom: 0,
     left: 0,
     right: 0,
     zIndex: 1000,
+    ...Platform.select({
+      web: {
+        position: 'fixed' as any,
+      },
+    }),
   },
   blur: {
     overflow: 'hidden',
