@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: 120,
+    paddingBottom: 100,
   },
   statsGrid: {
     flexDirection: 'row',

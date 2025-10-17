@@ -109,11 +109,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 1000,
+    backgroundColor: COLORS.background,
   },
   blur: {
     overflow: 'hidden',
     borderTopWidth: 1,
     borderTopColor: COLORS.cardBorder,
+    backgroundColor: COLORS.background,
   },
   webBlur: {
     backgroundColor: `${COLORS.cardBackground}E6`,
