@@ -83,8 +83,17 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
             console.log('[ScheduleContext] Raw schedule string:', data.schedule);
             const trimmed = data.schedule.trim();
             
-            if (trimmed === '[object Object]' || trimmed.startsWith('[object') || trimmed === 'null' || trimmed === 'undefined' || trimmed === '') {
-              console.error('[ScheduleContext] Corrupted or empty data detected, resetting schedule');
+            const isCorrupted = 
+              trimmed === '[object Object]' || 
+              trimmed.startsWith('[object') || 
+              trimmed.includes('[object') ||
+              trimmed === 'null' || 
+              trimmed === 'undefined' || 
+              trimmed === '' ||
+              !trimmed.startsWith('[');
+            
+            if (isCorrupted) {
+              console.error('[ScheduleContext] Corrupted or invalid data detected:', trimmed);
               parsedSchedule = getInitialSchedule(currentWeekStart);
             } else {
               try {
@@ -97,6 +106,7 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
                 }
               } catch (parseError) {
                 console.error('[ScheduleContext] JSON parse failed:', parseError);
+                console.error('[ScheduleContext] Failed string was:', trimmed);
                 parsedSchedule = getInitialSchedule(currentWeekStart);
               }
             }
