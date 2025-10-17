@@ -75,39 +75,49 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
         
         let parsedSchedule: ScheduleDay[];
         
-        if (Array.isArray(data.schedule)) {
-          parsedSchedule = data.schedule;
-          console.log('[ScheduleContext] Using schedule array directly:', parsedSchedule);
-        } else if (typeof data.schedule === 'string') {
-          console.log('[ScheduleContext] Raw schedule string:', data.schedule);
-          try {
+        try {
+          if (Array.isArray(data.schedule)) {
+            parsedSchedule = data.schedule;
+            console.log('[ScheduleContext] Using schedule array directly:', parsedSchedule);
+          } else if (typeof data.schedule === 'string') {
+            console.log('[ScheduleContext] Raw schedule string:', data.schedule);
             const trimmed = data.schedule.trim();
-            if (trimmed === '[object Object]' || trimmed.startsWith('[object')) {
-              console.error('[ScheduleContext] Corrupted data detected, resetting schedule');
+            
+            if (trimmed === '[object Object]' || trimmed.startsWith('[object') || trimmed === 'null' || trimmed === 'undefined' || trimmed === '') {
+              console.error('[ScheduleContext] Corrupted or empty data detected, resetting schedule');
               parsedSchedule = getInitialSchedule(currentWeekStart);
             } else {
-              parsedSchedule = JSON.parse(trimmed);
-              console.log('[ScheduleContext] Parsed schedule from string:', parsedSchedule);
+              try {
+                parsedSchedule = JSON.parse(trimmed);
+                console.log('[ScheduleContext] Parsed schedule from string:', parsedSchedule);
+                
+                if (!Array.isArray(parsedSchedule)) {
+                  console.error('[ScheduleContext] Parsed data is not an array, resetting');
+                  parsedSchedule = getInitialSchedule(currentWeekStart);
+                }
+              } catch (parseError) {
+                console.error('[ScheduleContext] JSON parse failed:', parseError);
+                parsedSchedule = getInitialSchedule(currentWeekStart);
+              }
             }
-          } catch (parseError) {
-            console.error('[ScheduleContext] Failed to parse schedule string:', parseError);
-            console.error('[ScheduleContext] Problematic string:', data.schedule);
-            parsedSchedule = getInitialSchedule(currentWeekStart);
-          }
-        } else if (data.schedule && typeof data.schedule === 'object') {
-          console.log('[ScheduleContext] Schedule is object, converting to array');
-          const scheduleObj = data.schedule as any;
-          if (scheduleObj.length !== undefined) {
-            parsedSchedule = Array.from(scheduleObj);
+          } else if (data.schedule && typeof data.schedule === 'object') {
+            console.log('[ScheduleContext] Schedule is object, converting to array');
+            const scheduleObj = data.schedule as any;
+            if (scheduleObj.length !== undefined) {
+              parsedSchedule = Array.from(scheduleObj);
+            } else {
+              parsedSchedule = getInitialSchedule(currentWeekStart);
+            }
           } else {
+            console.warn('[ScheduleContext] Unexpected schedule format:', typeof data.schedule);
             parsedSchedule = getInitialSchedule(currentWeekStart);
           }
-        } else {
-          console.warn('[ScheduleContext] Unexpected schedule format:', typeof data.schedule);
-          parsedSchedule = getInitialSchedule(currentWeekStart);
+          
+          setSchedule(parsedSchedule);
+        } catch (error) {
+          console.error('[ScheduleContext] Error processing schedule data:', error);
+          setSchedule(getInitialSchedule(currentWeekStart));
         }
-        
-        setSchedule(parsedSchedule);
       } else {
         console.log('[ScheduleContext] No schedule found, using empty schedule');
         setSchedule(getInitialSchedule(currentWeekStart));
