@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.h1,
     color: COLORS.textPrimary,
     marginBottom: SPACING.sm,
+    paddingTop: SPACING.sm,
   },
   subtitle: {
     ...TYPOGRAPHY.body,

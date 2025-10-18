@@ -176,6 +176,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: SPACING.sm,
+    paddingTop: SPACING.sm,
   },
   title: {
     ...TYPOGRAPHY.h1,
