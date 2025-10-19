@@ -26,13 +26,14 @@ export default function WorkoutsScreen() {
     if (!confirmDelete) return;
     
     try {
+      console.log('[Workouts] Starting deletion for programme:', confirmDelete.id, confirmDelete.name);
       setDeletingId(confirmDelete.id);
-      setConfirmDelete(null);
-      console.log('[Workouts] Deleting programme:', confirmDelete.id);
       await deleteProgramme(confirmDelete.id);
       console.log('[Workouts] Programme deleted successfully');
+      setConfirmDelete(null);
     } catch (error) {
       console.error('[Workouts] Error deleting programme:', error);
+      alert(`Failed to delete programme: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setDeletingId(null);
     }

@@ -151,25 +151,49 @@ export const [ProgrammeProvider, useProgrammes] = createContextHook(() => {
   const deleteProgramme = useCallback(
     async (id: string) => {
       if (!user) {
+        console.error('[ProgrammeContext] Delete failed - user not authenticated');
         throw new Error('Not authenticated');
       }
 
       try {
-        console.log('[ProgrammeContext] Deleting programme:', id);
+        console.log('[ProgrammeContext] Starting delete operation for programme:', id);
+        console.log('[ProgrammeContext] User ID:', user.id);
         
-        const { error } = await supabase
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          console.error('[ProgrammeContext] No active session found');
+          throw new Error('No active session. Please sign in again.');
+        }
+        
+        console.log('[ProgrammeContext] Session verified, executing delete...');
+        const { error, count } = await supabase
           .from('programmes')
           .delete()
           .eq('id', id)
           .eq('user_id', user.id);
 
         if (error) {
-          console.error('[ProgrammeContext] Error deleting programme:', error);
-          throw error;
+          console.error('[ProgrammeContext] Supabase error during delete:');
+          console.error('[ProgrammeContext] Error code:', error.code);
+          console.error('[ProgrammeContext] Error message:', error.message);
+          console.error('[ProgrammeContext] Error details:', error.details);
+          throw new Error(`Failed to delete programme: ${error.message}`);
         }
 
+        console.log('[ProgrammeContext] Delete query executed successfully');
+        console.log('[ProgrammeContext] Rows affected:', count);
+        console.log('[ProgrammeContext] Updating local state...');
+        setProgrammes((prev) => {
+          const filtered = prev.filter((p) => p.id !== id);
+          console.log('[ProgrammeContext] Programmes remaining:', filtered.length);
+          return filtered;
+        });
+        setCompletedSessions((prev) => {
+          const updated = new Map(prev);
+          updated.delete(id);
+          return updated;
+        });
         console.log('[ProgrammeContext] Programme deleted successfully');
-        setProgrammes((prev) => prev.filter((p) => p.id !== id));
       } catch (error) {
         console.error('[ProgrammeContext] Failed to delete programme:', error);
         throw error;
