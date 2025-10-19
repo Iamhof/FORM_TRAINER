@@ -26,6 +26,7 @@ type SessionSelectorModalProps = {
   onClose: () => void;
   onSelect: (session: Session | null) => void;
   sessions: Session[];
+  scheduledSessionIds?: string[];
   selectedSessionId: string | null;
   dayName: string;
   accentColor: string;
@@ -36,10 +37,15 @@ export default function SessionSelectorModal({
   onClose,
   onSelect,
   sessions,
+  scheduledSessionIds = [],
   selectedSessionId,
   dayName,
   accentColor,
 }: SessionSelectorModalProps) {
+  const availableSessions = sessions.filter(
+    (session) => !scheduledSessionIds.includes(session.id)
+  );
+
   const handleSelect = (session: Session | null) => {
     onSelect(session);
     onClose();
@@ -94,7 +100,15 @@ export default function SessionSelectorModal({
               </View>
             </Pressable>
 
-            {sessions.map((session) => {
+            {availableSessions.length === 0 && (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>
+                  All sessions are already scheduled
+                </Text>
+              </View>
+            )}
+
+            {availableSessions.map((session) => {
               const isSelected = session.id === selectedSessionId;
               return (
                 <Pressable
@@ -300,5 +314,15 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontStyle: 'italic' as const,
     marginTop: 2,
+  },
+  emptyState: {
+    paddingVertical: SPACING.xl * 2,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  emptyStateText: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    textAlign: 'center' as const,
   },
 });

@@ -124,7 +124,7 @@ export default function DashboardScreen() {
     }
   }
 
-  const handleDayPress = (dayIndex: number) => {
+  const handleDayPress = async (dayIndex: number) => {
     console.log('[Home] Day pressed:', dayIndex);
     const dayData = safeSchedule[dayIndex];
     if (!dayData || dayData.status === 'completed') {
@@ -135,8 +135,15 @@ export default function DashboardScreen() {
       console.log('[Home] No active programme or loading, ignoring');
       return;
     }
-    setSelectedDay(dayIndex);
-    setShowSessionModal(true);
+
+    if (dayData.status === 'scheduled' && dayData.sessionId) {
+      console.log('[Home] Scheduled session clicked, clearing to rest day');
+      await assignSession(dayIndex, null);
+    } else {
+      console.log('[Home] Rest/empty day clicked, showing session selector');
+      setSelectedDay(dayIndex);
+      setShowSessionModal(true);
+    }
   };
 
   const handleSessionSelect = async (session: Session | null) => {
@@ -339,6 +346,10 @@ export default function DashboardScreen() {
             }}
             onSelect={handleSessionSelect}
             sessions={availableSessions}
+            scheduledSessionIds={safeSchedule
+              .filter((d, idx) => idx !== selectedDay && 'sessionId' in d && d.sessionId)
+              .map((d) => ('sessionId' in d ? d.sessionId : null))
+              .filter((id): id is string => id !== null)}
             selectedSessionId={schedule[selectedDay]?.sessionId || null}
             dayName={DAY_LABELS_FULL[selectedDay]}
             accentColor={accent}
