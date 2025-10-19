@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnalyticsData, MonthlyDataPoint } from '@/types/analytics';
 import { supabase } from '@/lib/supabase';
 import { useUser } from './UserContext';
+import { AnalyticsData as DBAnalyticsData } from '@/types/database';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -19,6 +20,117 @@ function generateEmptyMonthlyData(): MonthlyDataPoint[] {
   }
   
   return last6Months;
+}
+
+function aggregateAnalyticsData(
+  rawAnalytics: DBAnalyticsData[],
+  workouts: { completed_at: string; programme_id: string }[]
+): AnalyticsData {
+  const monthlyData: {
+    [key: string]: {
+      sessions: number;
+      volume: number;
+      exercises: Set<string>;
+    };
+  } = {};
+
+  const exerciseData: {
+    [key: string]: {
+      name: string;
+      data: { date: string; weight: number }[];
+    };
+  } = {};
+
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+
+  for (let i = 5; i >= 0; i--) {
+    const targetMonth = (currentMonth - i + 12) % 12;
+    const targetYear = currentMonth - i < 0 ? currentYear - 1 : currentYear;
+    const key = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
+    monthlyData[key] = { sessions: 0, volume: 0, exercises: new Set() };
+  }
+
+  rawAnalytics.forEach((record) => {
+    const recordDate = new Date(record.date);
+    const monthKey = `${recordDate.getFullYear()}-${String(recordDate.getMonth() + 1).padStart(2, '0')}`;
+
+    if (monthlyData[monthKey]) {
+      monthlyData[monthKey].volume += record.total_volume / 1000;
+      monthlyData[monthKey].exercises.add(record.exercise_id);
+    }
+
+    if (!exerciseData[record.exercise_id]) {
+      exerciseData[record.exercise_id] = {
+        name: record.exercise_id,
+        data: [],
+      };
+    }
+    exerciseData[record.exercise_id].data.push({
+      date: record.date,
+      weight: record.max_weight,
+    });
+  });
+
+  workouts.forEach((workout) => {
+    const workoutDate = new Date(workout.completed_at);
+    const monthKey = `${workoutDate.getFullYear()}-${String(workoutDate.getMonth() + 1).padStart(2, '0')}`;
+    if (monthlyData[monthKey]) {
+      monthlyData[monthKey].sessions += 1;
+    }
+  });
+
+  const sessionsCompleted: MonthlyDataPoint[] = [];
+  const totalVolume: MonthlyDataPoint[] = [];
+  const completionRate: MonthlyDataPoint[] = [];
+
+  Object.keys(monthlyData)
+    .sort()
+    .forEach((key) => {
+      const [, month] = key.split('-').map(Number);
+      const monthName = MONTHS[month - 1];
+      const data = monthlyData[key];
+
+      sessionsCompleted.push({ month: monthName, value: data.sessions });
+      totalVolume.push({ month: monthName, value: Math.round(data.volume) });
+      
+      const expectedSessions = 12;
+      const rate = expectedSessions > 0 ? Math.round((data.sessions / expectedSessions) * 100) : 0;
+      completionRate.push({ month: monthName, value: rate });
+    });
+
+  const exerciseProgress = Object.entries(exerciseData)
+    .map(([exerciseId, data]) => {
+      if (data.data.length < 2) return null;
+
+      const sorted = data.data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const startWeight = sorted[0].weight;
+      const currentWeight = sorted[sorted.length - 1].weight;
+      const percentageIncrease = startWeight > 0 ? Math.round(((currentWeight - startWeight) / startWeight) * 100) : 0;
+
+      return {
+        exerciseName: exerciseId,
+        startWeight,
+        currentWeight,
+        percentageIncrease,
+        history: sorted.map(item => ({ date: item.date, weight: item.weight })),
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  return {
+    sessionsCompleted,
+    sessionsMissed: generateEmptyMonthlyData(),
+    completionRate,
+    totalVolume,
+    exerciseProgress,
+    restDays: {
+      thisMonth: 0,
+      lastMonth: 0,
+      average: 0,
+    },
+  };
 }
 
 export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
@@ -56,20 +168,42 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
     try {
       console.log('[AnalyticsContext] Loading analytics for user:', user.id);
       
-      const { data, error } = await supabase
-        .from('analytics')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+      const startDate = sixMonthsAgo.toISOString().split('T')[0];
 
-      if (error) {
-        console.error('[AnalyticsContext] Error loading analytics:', error);
+      const [analyticsResult, workoutsResult] = await Promise.all([
+        supabase
+          .from('analytics')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('date', startDate)
+          .order('date', { ascending: true }),
+        supabase
+          .from('workouts')
+          .select('completed_at, programme_id')
+          .eq('user_id', user.id)
+          .gte('completed_at', startDate)
+          .order('completed_at', { ascending: true }),
+      ]);
+
+      if (analyticsResult.error) {
+        console.error('[AnalyticsContext] Error loading analytics:', analyticsResult.error);
         return;
       }
 
-      if (data && data.length > 0) {
-        console.log('[AnalyticsContext] Analytics data loaded:', data.length, 'records');
+      if (workoutsResult.error) {
+        console.error('[AnalyticsContext] Error loading workouts:', workoutsResult.error);
+        return;
       }
+
+      const rawAnalytics = analyticsResult.data as DBAnalyticsData[] || [];
+      const workouts = workoutsResult.data || [];
+
+      console.log('[AnalyticsContext] Loaded:', rawAnalytics.length, 'analytics records,', workouts.length, 'workouts');
+
+      const aggregatedData = aggregateAnalyticsData(rawAnalytics, workouts);
+      setAnalyticsData(aggregatedData);
     } catch (error) {
       console.error('[AnalyticsContext] Failed to load analytics:', error);
     }

@@ -11,6 +11,7 @@ import { useProgrammes } from '@/contexts/ProgrammeContext';
 import { EXERCISES } from '@/constants/exercises';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/UserContext';
+import { useAnalytics } from '@/contexts/AnalyticsContext';
 
 type SetData = {
   weight: string;
@@ -31,6 +32,7 @@ export default function SessionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { programmes, refetch } = useProgrammes();
   const { user } = useUser();
+  const { refetch: refetchAnalytics } = useAnalytics();
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [showRestTimer, setShowRestTimer] = useState(false);
@@ -214,11 +216,14 @@ export default function SessionScreen() {
       }
 
       console.log('[SessionScreen] Workout logged successfully:', insertedWorkout?.id);
-      console.log('[SessionScreen] Refreshing programme context...');
+      console.log('[SessionScreen] Refreshing programme context and analytics...');
       
-      await refetch();
+      await Promise.all([
+        refetch(),
+        refetchAnalytics(),
+      ]);
       
-      console.log('[SessionScreen] Programme context refreshed, navigating back');
+      console.log('[SessionScreen] Contexts refreshed, navigating back');
       
       router.back();
     } catch (error) {
