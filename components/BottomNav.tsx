@@ -4,7 +4,6 @@ import { BlurView } from 'expo-blur';
 import { Home, Dumbbell, BarChart3, TrendingUp, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
 
 type TabItem = {
   name: string;
@@ -26,7 +25,6 @@ type BottomNavProps = {
 };
 
 export default function BottomNav({ currentRoute, onNavigate }: BottomNavProps) {
-  const { accent } = useTheme();
   const insets = useSafeAreaInsets();
 
 
@@ -44,18 +42,22 @@ export default function BottomNav({ currentRoute, onNavigate }: BottomNavProps) 
                 <Pressable
                   key={tab.name}
                   onPress={() => onNavigate(tab.name)}
-                  style={styles.tab}
+                  style={[
+                    styles.tab,
+                    isActive && { backgroundColor: 'rgba(255, 255, 255, 0.12)' },
+                  ]}
                   testID={`tab-${tab.name}`}
                 >
                   <Icon
                     size={24}
-                    color={isActive ? accent : COLORS.textSecondary}
+                    color={isActive ? COLORS.textPrimary : COLORS.textSecondary}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
                   <Text
                     style={[
                       styles.label,
-                      { color: isActive ? accent : COLORS.textSecondary },
+                      isActive && styles.activeLabel,
+                      { color: isActive ? COLORS.textPrimary : COLORS.textSecondary },
                     ]}
                   >
                     {tab.label}
@@ -76,18 +78,22 @@ export default function BottomNav({ currentRoute, onNavigate }: BottomNavProps) 
                 <Pressable
                   key={tab.name}
                   onPress={() => onNavigate(tab.name)}
-                  style={styles.tab}
+                  style={[
+                    styles.tab,
+                    isActive && { backgroundColor: 'rgba(255, 255, 255, 0.12)' },
+                  ]}
                   testID={`tab-${tab.name}`}
                 >
                   <Icon
                     size={24}
-                    color={isActive ? accent : COLORS.textSecondary}
+                    color={isActive ? COLORS.textPrimary : COLORS.textSecondary}
                     strokeWidth={isActive ? 2.5 : 2}
                   />
                   <Text
                     style={[
                       styles.label,
-                      { color: isActive ? accent : COLORS.textSecondary },
+                      isActive && styles.activeLabel,
+                      { color: isActive ? COLORS.textPrimary : COLORS.textSecondary },
                     ]}
                   >
                     {tab.label}
@@ -139,9 +145,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: SPACING.sm,
     gap: 4,
+    borderRadius: 12,
+    marginHorizontal: 2,
   },
   label: {
     fontSize: 12,
     fontWeight: '500' as const,
+  },
+  activeLabel: {
+    fontWeight: '700' as const,
   },
 });
