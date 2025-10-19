@@ -462,7 +462,6 @@ const styles = StyleSheet.create({
   },
   programmeCardEnhanced: {
     backgroundColor: COLORS.cardBackground,
-    borderRadius: 16,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
     padding: SPACING.lg,
