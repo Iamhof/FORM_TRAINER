@@ -27,6 +27,24 @@ export default function ProfileSetupScreen() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+
+  const formatDateOfBirth = (text: string) => {
+    const cleaned = text.replace(/\D/g, '');
+    const limited = cleaned.slice(0, 8);
+    
+    let formatted = '';
+    if (limited.length > 0) {
+      formatted = limited.slice(0, 2);
+    }
+    if (limited.length >= 3) {
+      formatted += '/' + limited.slice(2, 4);
+    }
+    if (limited.length >= 5) {
+      formatted += '/' + limited.slice(4, 8);
+    }
+    
+    setDateOfBirth(formatted);
+  };
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [muscleMass, setMuscleMass] = useState('');
@@ -117,8 +135,9 @@ export default function ProfileSetupScreen() {
                 placeholder="DD/MM/YYYY"
                 placeholderTextColor={COLORS.textTertiary}
                 value={dateOfBirth}
-                onChangeText={setDateOfBirth}
-                keyboardType="numbers-and-punctuation"
+                onChangeText={formatDateOfBirth}
+                keyboardType="numeric"
+                maxLength={10}
               />
             </View>
 
