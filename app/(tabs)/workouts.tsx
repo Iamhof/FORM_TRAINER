@@ -58,8 +58,7 @@ export default function WorkoutsScreen() {
                 const progress = getProgrammeProgress(programme.id);
                 const isCompleted = progress.percentage === 100;
 
-                const handleDelete = (e?: any) => {
-                  e?.stopPropagation?.();
+                const handleDelete = () => {
                   Alert.alert(
                     'Delete Programme',
                     `Are you sure you want to delete "${programme.name}"? This action cannot be undone.`,
@@ -108,7 +107,10 @@ export default function WorkoutsScreen() {
                           )}
                         </View>
                         <Pressable
-                          onPress={handleDelete}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleDelete();
+                          }}
                           hitSlop={8}
                           style={styles.deleteButton}
                         >
