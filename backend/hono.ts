@@ -7,6 +7,7 @@ const app = new Hono();
 
 app.use("*", async (c, next) => {
   console.log('[Hono] Incoming request:', c.req.method, c.req.url);
+  console.log('[Hono] Request path:', c.req.path);
   c.header('Access-Control-Allow-Origin', '*');
   c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -35,7 +36,9 @@ app.get("/", (c) => {
 
 app.notFound((c) => {
   console.error('[Hono] Route not found:', c.req.method, c.req.url);
-  return c.json({ error: 'Not found', path: c.req.url }, 404);
+  console.error('[Hono] Request path:', c.req.path);
+  console.error('[Hono] Available routes: /api/trpc/*');
+  return c.json({ error: 'Not found', path: c.req.url, requestedPath: c.req.path }, 404);
 });
 
 export default app;
