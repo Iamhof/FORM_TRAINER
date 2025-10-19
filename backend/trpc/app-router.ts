@@ -20,6 +20,12 @@ import { getClientAnalyticsProcedure } from "./routes/pt/get-client-analytics/ro
 import { getClientWorkoutsProcedure } from "./routes/pt/get-client-workouts/route";
 import { getMyPTProcedure } from "./routes/clients/get-my-pt/route";
 import { listSharedProgrammesProcedure } from "./routes/clients/list-shared-programmes/route";
+import { logBodyMetricsProcedure } from "./routes/body-metrics/log/route";
+import { listBodyMetricsProcedure } from "./routes/body-metrics/list/route";
+import { getLatestBodyMetricsProcedure } from "./routes/body-metrics/latest/route";
+import { deleteBodyMetricsProcedure } from "./routes/body-metrics/delete/route";
+import { listPersonalRecordsProcedure } from "./routes/personal-records/list/route";
+import { checkAndRecordPRProcedure } from "./routes/personal-records/check-and-record/route";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
@@ -56,6 +62,16 @@ export const appRouter = createTRPCRouter({
   clients: createTRPCRouter({
     getMyPT: getMyPTProcedure,
     listSharedProgrammes: listSharedProgrammesProcedure,
+  }),
+  bodyMetrics: createTRPCRouter({
+    log: logBodyMetricsProcedure,
+    list: listBodyMetricsProcedure,
+    latest: getLatestBodyMetricsProcedure,
+    delete: deleteBodyMetricsProcedure,
+  }),
+  personalRecords: createTRPCRouter({
+    list: listPersonalRecordsProcedure,
+    checkAndRecord: checkAndRecordPRProcedure,
   }),
 });
 

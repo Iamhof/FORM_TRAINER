@@ -8,6 +8,7 @@ import { ProgrammeProvider } from "@/contexts/ProgrammeContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { AnalyticsProvider } from "@/contexts/AnalyticsContext";
 import { ScheduleProvider } from "@/contexts/ScheduleContext";
+import { BodyMetricsProvider } from "@/contexts/BodyMetricsContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -54,9 +55,11 @@ export default function RootLayout() {
             <ProgrammeProvider>
               <AnalyticsProvider>
                 <ScheduleProvider>
-                  <GestureHandlerRootView style={{ flex: 1 }}>
-                    <RootLayoutNav />
-                  </GestureHandlerRootView>
+                  <BodyMetricsProvider>
+                    <GestureHandlerRootView style={{ flex: 1 }}>
+                      <RootLayoutNav />
+                    </GestureHandlerRootView>
+                  </BodyMetricsProvider>
                 </ScheduleProvider>
               </AnalyticsProvider>
             </ProgrammeProvider>

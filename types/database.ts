@@ -103,3 +103,26 @@ export interface ScheduleDay {
   status: 'scheduled' | 'completed' | 'rest' | 'empty';
   weekStart: string;
 }
+
+export interface BodyMetric {
+  id: string;
+  user_id: string;
+  date: string;
+  weight: number | null;
+  muscle_mass: number | null;
+  body_fat_percentage: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PersonalRecord {
+  id: string;
+  user_id: string;
+  exercise_id: string;
+  weight: number;
+  reps: number;
+  date: string;
+  workout_id: string | null;
+  created_at: string;
+}

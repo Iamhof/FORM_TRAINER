@@ -1,19 +1,23 @@
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TrendingUp, TrendingDown, Calendar, Target, Activity, Moon, BarChart3 } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, Calendar, Target, Activity, Moon, BarChart3, Plus, Scale, Award } from 'lucide-react-native';
 import Card from '@/components/Card';
 import LineChart from '@/components/LineChart';
 import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAnalytics } from '@/contexts/AnalyticsContext';
+import { useBodyMetrics } from '@/contexts/BodyMetricsContext';
+import BodyMetricsModal from '@/components/BodyMetricsModal';
 
 type MetricTab = 'sessions' | 'volume' | 'completion';
 
 export default function AnalyticsScreen() {
   const { accent } = useTheme();
   const { analyticsData, calculateCompletionPercentage, totalSessionsThisMonth, totalVolumeThisMonth } = useAnalytics();
+  const { latestMetrics, personalRecords } = useBodyMetrics();
   const [selectedMetric, setSelectedMetric] = useState<MetricTab>('sessions');
+  const [showBodyMetricsModal, setShowBodyMetricsModal] = useState<boolean>(false);
   const insets = useSafeAreaInsets();
 
   const scrollPaddingBottom = useMemo(() => {
@@ -269,8 +273,89 @@ export default function AnalyticsScreen() {
               </Text>
             </Card>
           )}
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Body Metrics</Text>
+              <Pressable
+                style={[styles.addButton, { backgroundColor: accent }]}
+                onPress={() => setShowBodyMetricsModal(true)}
+              >
+                <Plus size={18} color={COLORS.textPrimary} strokeWidth={2.5} />
+              </Pressable>
+            </View>
+
+            {latestMetrics ? (
+              <View style={styles.metricsGrid}>
+                {latestMetrics.weight && (
+                  <Card style={styles.metricCard}>
+                    <View style={[styles.metricIconBox, { backgroundColor: `${COLORS.accents.blue}20` }]}>
+                      <Scale size={20} color={COLORS.accents.blue} strokeWidth={2} />
+                    </View>
+                    <Text style={styles.metricValue}>{latestMetrics.weight} kg</Text>
+                    <Text style={styles.metricLabel}>Weight</Text>
+                  </Card>
+                )}
+                {latestMetrics.muscle_mass && (
+                  <Card style={styles.metricCard}>
+                    <View style={[styles.metricIconBox, { backgroundColor: `${accent}20` }]}>
+                      <Activity size={20} color={accent} strokeWidth={2} />
+                    </View>
+                    <Text style={styles.metricValue}>{latestMetrics.muscle_mass} kg</Text>
+                    <Text style={styles.metricLabel}>Muscle Mass</Text>
+                  </Card>
+                )}
+                {latestMetrics.body_fat_percentage && (
+                  <Card style={styles.metricCard}>
+                    <View style={[styles.metricIconBox, { backgroundColor: `${COLORS.accents.orange}20` }]}>
+                      <Target size={20} color={COLORS.accents.orange} strokeWidth={2} />
+                    </View>
+                    <Text style={styles.metricValue}>{latestMetrics.body_fat_percentage}%</Text>
+                    <Text style={styles.metricLabel}>Body Fat</Text>
+                  </Card>
+                )}
+              </View>
+            ) : (
+              <Card style={styles.emptyMetricsCard}>
+                <Text style={styles.emptyMetricsText}>No body metrics logged yet</Text>
+                <Pressable
+                  style={[styles.logMetricsButton, { backgroundColor: accent }]}
+                  onPress={() => setShowBodyMetricsModal(true)}
+                >
+                  <Plus size={16} color={COLORS.textPrimary} strokeWidth={2.5} />
+                  <Text style={styles.logMetricsButtonText}>Log Metrics</Text>
+                </Pressable>
+              </Card>
+            )}
+          </View>
+
+          {personalRecords.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Personal Records</Text>
+              {personalRecords.slice(0, 5).map((pr, index) => (
+                <Card key={index} style={styles.prCard}>
+                  <View style={styles.prHeader}>
+                    <View style={styles.prTitleRow}>
+                      <Award size={18} color={accent} strokeWidth={2} />
+                      <Text style={styles.prExercise}>{pr.exercise_id}</Text>
+                    </View>
+                    <Text style={styles.prWeight}>{pr.weight} kg</Text>
+                  </View>
+                  <View style={styles.prDetails}>
+                    <Text style={styles.prReps}>{pr.reps} reps</Text>
+                    <Text style={styles.prDate}>{new Date(pr.date).toLocaleDateString()}</Text>
+                  </View>
+                </Card>
+              ))}
+            </View>
+          )}
         </ScrollView>
       </SafeAreaView>
+
+      <BodyMetricsModal
+        visible={showBodyMetricsModal}
+        onClose={() => setShowBodyMetricsModal(false)}
+      />
     </View>
   );
 }
@@ -505,5 +590,107 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center' as const,
     lineHeight: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  addButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  metricCard: {
+    flex: 1,
+    minWidth: '30%',
+    padding: SPACING.md,
+    alignItems: 'center',
+  },
+  metricIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.sm,
+  },
+  metricValue: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  metricLabel: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  emptyMetricsCard: {
+    padding: SPACING.lg,
+    alignItems: 'center',
+  },
+  emptyMetricsText: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.md,
+  },
+  logMetricsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: 12,
+  },
+  logMetricsButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: COLORS.textPrimary,
+  },
+  prCard: {
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+  },
+  prHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
+  },
+  prTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+  },
+  prExercise: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: COLORS.textPrimary,
+  },
+  prWeight: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: COLORS.textPrimary,
+  },
+  prDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  prReps: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+  },
+  prDate: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
   },
 });
