@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Plus, Trash2, CheckCircle2 } from 'lucide-react-native';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
+import ConfirmModal from '@/components/ConfirmModal';
 import { COLORS, SPACING, TYPOGRAPHY, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
@@ -14,11 +15,28 @@ export default function WorkoutsScreen() {
   const router = useRouter();
   const { programmes, deleteProgramme, getProgrammeProgress } = useProgrammes();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const insets = useSafeAreaInsets();
 
   const scrollPaddingBottom = useMemo(() => {
     return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
   }, [insets.bottom]);
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete) return;
+    
+    try {
+      setDeletingId(confirmDelete.id);
+      setConfirmDelete(null);
+      console.log('[Workouts] Deleting programme:', confirmDelete.id);
+      await deleteProgramme(confirmDelete.id);
+      console.log('[Workouts] Programme deleted successfully');
+    } catch (error) {
+      console.error('[Workouts] Error deleting programme:', error);
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <View style={styles.background}>
@@ -58,41 +76,14 @@ export default function WorkoutsScreen() {
                 const progress = getProgrammeProgress(programme.id);
                 const isCompleted = progress.percentage === 100;
 
-                const handleDelete = () => {
-                  Alert.alert(
-                    'Delete Programme',
-                    `Are you sure you want to delete "${programme.name}"? This action cannot be undone.`,
-                    [
-                      {
-                        text: 'Cancel',
-                        style: 'cancel',
-                      },
-                      {
-                        text: 'Delete',
-                        style: 'destructive',
-                        onPress: async () => {
-                          try {
-                            setDeletingId(programme.id);
-                            console.log('[Workouts] Deleting programme:', programme.id);
-                            await deleteProgramme(programme.id);
-                            console.log('[Workouts] Programme deleted successfully');
-                          } catch (error) {
-                            console.error('[Workouts] Error deleting programme:', error);
-                            Alert.alert('Error', 'Failed to delete programme. Please try again.');
-                          } finally {
-                            setDeletingId(null);
-                          }
-                        },
-                      },
-                    ]
-                  );
+                const handleDeletePress = () => {
+                  setConfirmDelete({ id: programme.id, name: programme.name });
                 };
 
                 return (
                   <Pressable
                     key={programme.id}
                     onPress={() => router.push(`/programme/${programme.id}` as any)}
-                    onLongPress={handleDelete}
                     disabled={deletingId === programme.id}
                   >
                     <Card style={styles.programmeCard}>
@@ -109,7 +100,7 @@ export default function WorkoutsScreen() {
                         <Pressable
                           onPress={(e) => {
                             e.stopPropagation();
-                            handleDelete();
+                            handleDeletePress();
                           }}
                           hitSlop={8}
                           style={styles.deleteButton}
@@ -158,6 +149,17 @@ export default function WorkoutsScreen() {
             </View>
           )}
         </ScrollView>
+
+        <ConfirmModal
+          visible={confirmDelete !== null}
+          title="Delete Programme"
+          message={confirmDelete ? `Are you sure you want to delete "${confirmDelete.name}"? This action cannot be undone.` : ''}
+          confirmText="Delete"
+          cancelText="Cancel"
+          destructive
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmDelete(null)}
+        />
       </SafeAreaView>
     </View>
   );
