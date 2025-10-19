@@ -18,14 +18,8 @@ const getBaseUrl = () => {
     return url;
   }
   
-  const envBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
-  if (envBaseUrl) {
-    console.log('[TRPC] Using env base URL:', envBaseUrl);
-    return envBaseUrl;
-  }
-  
-  console.warn('[TRPC] Falling back to localhost');
-  return 'http://localhost:8081';
+  console.log('[TRPC] Using empty base URL for native (will use relative URLs)');
+  return '';
 };
 
 export const trpcClient = trpc.createClient({
