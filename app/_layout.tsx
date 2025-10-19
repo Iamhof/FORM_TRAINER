@@ -50,8 +50,8 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <ThemeProvider>
-          <UserProvider>
+        <UserProvider>
+          <ThemeProvider>
             <ProgrammeProvider>
               <AnalyticsProvider>
                 <ScheduleProvider>
@@ -63,8 +63,8 @@ export default function RootLayout() {
                 </ScheduleProvider>
               </AnalyticsProvider>
             </ProgrammeProvider>
-          </UserProvider>
-        </ThemeProvider>
+          </ThemeProvider>
+        </UserProvider>
       </trpc.Provider>
     </QueryClientProvider>
   );
