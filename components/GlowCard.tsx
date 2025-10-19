@@ -1,6 +1,5 @@
 import React, { ReactNode } from 'react';
 import { StyleSheet, View, ViewStyle, Platform } from 'react-native';
-import { COLORS } from '@/constants/theme';
 
 type GlowCardProps = {
   children: ReactNode;
@@ -15,150 +14,70 @@ export default function GlowCard({
   style,
   glowIntensity = 'medium'
 }: GlowCardProps) {
-  const intensityConfig = {
-    subtle: { opacity: 0.08, blur: 24, spread: 8 },
-    medium: { opacity: 0.12, blur: 32, spread: 10 },
-    strong: { opacity: 0.18, blur: 40, spread: 14 },
-  };
-
-  const config = intensityConfig[glowIntensity];
-
   if (Platform.OS === 'web') {
     return (
-      <View style={[styles.container, style]}>
+      <View style={[styles.wrapper, style]}>
         <View 
           style={[
-            styles.glowLayerWeb,
+            styles.glowWeb,
             {
               backgroundColor: accent,
-              opacity: config.opacity * 0.3,
-              filter: `blur(${config.blur * 1.5}px)`,
+              filter: `blur(40px)`,
+              opacity: 0.15,
             },
           ]} 
         />
-        <View 
-          style={[
-            styles.glowLayerWeb,
-            styles.glowLayerMedium,
-            {
-              backgroundColor: accent,
-              opacity: config.opacity * 0.5,
-              filter: `blur(${config.blur}px)`,
-            },
-          ]} 
-        />
-        <View 
-          style={[
-            styles.glowLayerWeb,
-            styles.glowLayerSmall,
-            {
-              backgroundColor: accent,
-              opacity: config.opacity * 0.7,
-              filter: `blur(${config.blur * 0.5}px)`,
-            },
-          ]} 
-        />
-        <View 
-          style={[
-            styles.glowLayerWeb,
-            styles.glowLayerTiny,
-            {
-              backgroundColor: accent,
-              opacity: config.opacity,
-              filter: `blur(${config.blur * 0.3}px)`,
-            },
-          ]} 
-        />
-        {children}
+        <View style={styles.contentWrapper}>
+          {children}
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.wrapper, style]}>
       <View 
         style={[
-          styles.glowLayerNative,
+          styles.glowNative,
           {
             shadowColor: accent,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: config.opacity * 0.6,
-            shadowRadius: config.blur * 1.2,
-            elevation: config.spread,
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.3,
+            shadowRadius: 24,
+            elevation: 8,
           },
         ]} 
       />
-      <View 
-        style={[
-          styles.glowLayerNative,
-          styles.glowLayerMedium,
-          {
-            shadowColor: accent,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: config.opacity * 0.5,
-            shadowRadius: config.blur * 0.8,
-            elevation: config.spread * 0.7,
-          },
-        ]} 
-      />
-      <View 
-        style={[
-          styles.glowLayerNative,
-          styles.glowLayerSmall,
-          {
-            shadowColor: accent,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: config.opacity * 0.4,
-            shadowRadius: config.blur * 0.5,
-            elevation: config.spread * 0.5,
-          },
-        ]} 
-      />
-      {children}
+      <View style={styles.contentWrapper}>
+        {children}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
     position: 'relative' as const,
   },
-  glowLayerWeb: {
+  glowWeb: {
     position: 'absolute' as const,
-    top: -32,
-    left: -32,
-    right: -32,
-    bottom: -32,
-    borderRadius: 24,
+    top: -20,
+    left: -20,
+    right: -20,
+    bottom: -20,
+    borderRadius: 32,
     pointerEvents: 'none' as const,
-    zIndex: -1,
   },
-  glowLayerNative: {
+  glowNative: {
     position: 'absolute' as const,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     borderRadius: 16,
-    backgroundColor: COLORS.cardBackground,
-    zIndex: -1,
+    backgroundColor: 'transparent',
   },
-  glowLayerMedium: {
-    top: 1,
-    left: 1,
-    right: 1,
-    bottom: 1,
-  },
-  glowLayerSmall: {
-    top: 2,
-    left: 2,
-    right: 2,
-    bottom: 2,
-  },
-  glowLayerTiny: {
-    top: 3,
-    left: 3,
-    right: 3,
-    bottom: 3,
+  contentWrapper: {
+    position: 'relative' as const,
   },
 });
