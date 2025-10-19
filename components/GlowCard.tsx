@@ -40,11 +40,13 @@ export default function GlowCard({
         style={[
           styles.glowNative,
           {
+            backgroundColor: accent,
+            opacity: 0.15,
             shadowColor: accent,
             shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.3,
-            shadowRadius: 24,
-            elevation: 8,
+            shadowOpacity: 0.4,
+            shadowRadius: 30,
+            elevation: 12,
           },
         ]} 
       />
