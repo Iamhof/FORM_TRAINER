@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { COLORS, SPACING } from '@/constants/theme';
 import { MonthlyDataPoint } from '@/types/analytics';
@@ -12,7 +12,6 @@ type LineChartProps = {
   formatValue?: (value: number) => string;
 };
 
-const CHART_WIDTH = Dimensions.get('window').width - SPACING.md * 4;
 const DEFAULT_HEIGHT = 180;
 
 export default function LineChart({
@@ -22,15 +21,21 @@ export default function LineChart({
   showValues = false,
   formatValue = (v) => v.toString(),
 }: LineChartProps) {
+  const [chartWidth, setChartWidth] = useState<number>(0);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    setChartWidth(width);
+  };
   const chartData = useMemo(() => {
-    if (data.length === 0) return { points: [], maxValue: 0, minValue: 0 };
+    if (data.length === 0 || chartWidth === 0) return { points: [], maxValue: 0, minValue: 0 };
 
     const values = data.map((d) => d.value);
     const maxValue = Math.max(...values, 1);
     const minValue = Math.min(...values, 0);
     const range = maxValue - minValue || 1;
 
-    const pointSpacing = CHART_WIDTH / (data.length - 1 || 1);
+    const pointSpacing = chartWidth / (data.length - 1 || 1);
     const chartHeight = height - 40;
 
     const points = data.map((item, index) => {
@@ -42,7 +47,7 @@ export default function LineChart({
     });
 
     return { points, maxValue, minValue };
-  }, [data, height]);
+  }, [data, height, chartWidth]);
 
   const pathD = useMemo(() => {
     if (chartData.points.length === 0) return '';
@@ -83,10 +88,18 @@ export default function LineChart({
     );
   }
 
+  if (chartWidth === 0) {
+    return (
+      <View style={[styles.container, { height }]} onLayout={handleLayout}>
+        <Text style={styles.emptyText}>Loading chart...</Text>
+      </View>
+    );
+  }
+
   return (
-    <View style={[styles.container, { height }]}>
+    <View style={[styles.container, { height }]} onLayout={handleLayout}>
       <View style={styles.chartArea}>
-        <Svg width={CHART_WIDTH} height={height - 40} style={styles.svg}>
+        <Svg width={chartWidth} height={height - 40} style={styles.svg}>
           <Defs>
             <LinearGradient id={`gradient-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
               <Stop offset="0%" stopColor={color} stopOpacity={0.3} />
@@ -131,7 +144,6 @@ const styles = StyleSheet.create({
   },
   chartArea: {
     position: 'relative',
-    paddingHorizontal: SPACING.md,
   },
   svg: {
     overflow: 'visible',
@@ -139,8 +151,8 @@ const styles = StyleSheet.create({
   valuesContainer: {
     position: 'absolute',
     top: 0,
-    left: SPACING.md,
-    right: SPACING.md,
+    left: 0,
+    right: 0,
     bottom: 0,
   },
   valueLabel: {
@@ -155,7 +167,6 @@ const styles = StyleSheet.create({
   xAxis: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md,
     marginTop: SPACING.sm,
   },
   xLabel: {
