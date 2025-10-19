@@ -22,8 +22,8 @@ export default function GlowCard({
             styles.glowWeb,
             {
               backgroundColor: accent,
-              filter: `blur(40px)`,
-              opacity: 0.15,
+              filter: `blur(60px)`,
+              opacity: 0.3,
             },
           ]} 
         />
@@ -42,9 +42,9 @@ export default function GlowCard({
           {
             shadowColor: accent,
             shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.5,
-            shadowRadius: 20,
-            elevation: 8,
+            shadowOpacity: 0.6,
+            shadowRadius: 30,
+            backgroundColor: 'transparent',
           },
         ]} 
       />
@@ -53,10 +53,22 @@ export default function GlowCard({
           styles.glowLayer2,
           {
             shadowColor: accent,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 12,
-            elevation: 6,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.4,
+            shadowRadius: 20,
+            backgroundColor: 'transparent',
+          },
+        ]} 
+      />
+      <View 
+        style={[
+          styles.glowLayer3,
+          {
+            shadowColor: accent,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.2,
+            shadowRadius: 10,
+            backgroundColor: 'transparent',
           },
         ]} 
       />
@@ -73,32 +85,39 @@ const styles = StyleSheet.create({
   },
   glowWeb: {
     position: 'absolute' as const,
-    top: -20,
-    left: -20,
-    right: -20,
-    bottom: -20,
+    top: -30,
+    left: -30,
+    right: -30,
+    bottom: -30,
     borderRadius: 32,
     pointerEvents: 'none' as const,
   },
   glowLayer1: {
     position: 'absolute' as const,
-    top: -10,
-    left: -10,
-    right: -10,
-    bottom: -10,
-    borderRadius: 24,
-    backgroundColor: '#000',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
   },
   glowLayer2: {
     position: 'absolute' as const,
-    top: -5,
-    left: -5,
-    right: -5,
-    bottom: -5,
-    borderRadius: 20,
-    backgroundColor: '#000',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
+  },
+  glowLayer3: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 16,
   },
   contentWrapper: {
     position: 'relative' as const,
+    zIndex: 1,
   },
 });
