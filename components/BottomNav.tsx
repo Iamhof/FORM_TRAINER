@@ -15,8 +15,8 @@ type TabItem = {
 const TABS: TabItem[] = [
   { name: 'home', label: 'Home', icon: Home },
   { name: 'workouts', label: 'Workouts', icon: Dumbbell },
-  { name: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { name: 'progress', label: 'Progress', icon: TrendingUp },
+  { name: 'analytics', label: 'Progress', icon: BarChart3 },
+  { name: 'progress', label: 'Library', icon: TrendingUp },
   { name: 'profile', label: 'Profile', icon: User },
 ];
 
