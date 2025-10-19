@@ -136,14 +136,9 @@ export default function DashboardScreen() {
       return;
     }
 
-    if (dayData.status === 'scheduled' && dayData.sessionId) {
-      console.log('[Home] Scheduled session clicked, clearing to rest day');
-      await assignSession(dayIndex, null);
-    } else {
-      console.log('[Home] Rest/empty day clicked, showing session selector');
-      setSelectedDay(dayIndex);
-      setShowSessionModal(true);
-    }
+    console.log('[Home] Opening session selector for day:', dayIndex);
+    setSelectedDay(dayIndex);
+    setShowSessionModal(true);
   };
 
   const handleSessionSelect = async (session: Session | null) => {
@@ -349,8 +344,8 @@ export default function DashboardScreen() {
             scheduledSessionIds={safeSchedule
               .filter((d, idx) => idx !== selectedDay && 'sessionId' in d && d.sessionId)
               .map((d) => ('sessionId' in d ? d.sessionId : null))
-              .filter((id): id is string => id !== null)}
-            selectedSessionId={schedule[selectedDay]?.sessionId || null}
+              .filter((id): id is string => id !== null && id !== undefined)}
+            selectedSessionId={'sessionId' in safeSchedule[selectedDay] ? safeSchedule[selectedDay].sessionId || null : null}
             dayName={DAY_LABELS_FULL[selectedDay]}
             accentColor={accent}
           />

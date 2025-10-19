@@ -43,7 +43,7 @@ export default function SessionSelectorModal({
   accentColor,
 }: SessionSelectorModalProps) {
   const availableSessions = sessions.filter(
-    (session) => !scheduledSessionIds.includes(session.id)
+    (session) => session.id === selectedSessionId || !scheduledSessionIds.includes(session.id)
   );
 
   const handleSelect = (session: Session | null) => {
@@ -100,10 +100,19 @@ export default function SessionSelectorModal({
               </View>
             </Pressable>
 
-            {availableSessions.length === 0 && (
+            {sessions.length === 0 && (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyStateText}>
-                  All sessions are already scheduled
+                  No sessions available for this week
+                </Text>
+              </View>
+            )}
+
+            {sessions.length > 0 && availableSessions.length === 0 && selectedSessionId === null && (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>
+                  All sessions are already scheduled.{"\n"}
+                  Tap &quot;Rest Day&quot; to unassign this day.
                 </Text>
               </View>
             )}
