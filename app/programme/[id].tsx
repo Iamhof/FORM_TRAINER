@@ -341,65 +341,101 @@ export default function ProgrammeOverviewScreen() {
                 )}
               </View>
 
-              {weekData.sessions.map((session) => (
-                <Card key={session.id} style={[
-                  styles.workoutCard,
-                  session.completed && styles.completedCard,
-                ]}>
-                  <View style={styles.workoutHeader}>
-                    <View style={styles.workoutTitleRow}>
-                      <Text style={[
-                        styles.workoutName,
-                        session.completed && styles.completedText,
-                      ]}>{session.name}</Text>
-                      {session.completed && (
-                        <View style={[styles.checkmark, { backgroundColor: accent }]}>
-                          <Check size={16} color={COLORS.background} strokeWidth={3} />
+              {(() => {
+                const completedSessions = weekData.sessions.filter(s => s.completed);
+                const incompleteSessions = weekData.sessions.filter(s => !s.completed);
+                
+                return (
+                  <>
+                    {incompleteSessions.map((session) => (
+                      <Card key={session.id} style={styles.workoutCard}>
+                        <View style={styles.workoutHeader}>
+                          <View style={styles.workoutTitleRow}>
+                            <Text style={styles.workoutName}>{session.name}</Text>
+                          </View>
+                          <View style={[
+                            styles.dayBadge,
+                            { backgroundColor: `${accent}20` }
+                          ]}>
+                            <Text style={[styles.dayBadgeText, { color: accent }]}>{session.dayBadge}</Text>
+                          </View>
                         </View>
-                      )}
-                    </View>
-                    <View style={[
-                      styles.dayBadge,
-                      { backgroundColor: session.completed ? `${accent}40` : `${accent}20` }
-                    ]}>
-                      <Text style={[styles.dayBadgeText, { color: accent }]}>{session.dayBadge}</Text>
-                    </View>
-                  </View>
-                  <Text style={[
-                    styles.exerciseCount,
-                    session.completed && styles.completedText,
-                  ]}>{session.exercises.length} exercises</Text>
+                        <Text style={styles.exerciseCount}>{session.exercises.length} exercises</Text>
 
-                  <View style={styles.exerciseList}>
-                    {session.exercises.map((exercise, exerciseIndex) => (
-                      <View key={exerciseIndex} style={styles.exerciseRow}>
-                        <Text style={[
-                          styles.exerciseName,
-                          session.completed && styles.completedText,
-                        ]}>{exercise.name}</Text>
-                        <Text style={[
-                          styles.exerciseSets,
-                          session.completed && styles.completedText,
-                        ]}>{exercise.sets} × {exercise.reps}</Text>
-                      </View>
+                        <View style={styles.exerciseList}>
+                          {session.exercises.map((exercise, exerciseIndex) => (
+                            <View key={exerciseIndex} style={styles.exerciseRow}>
+                              <Text style={styles.exerciseName}>{exercise.name}</Text>
+                              <Text style={styles.exerciseSets}>{exercise.sets} × {exercise.reps}</Text>
+                            </View>
+                          ))}
+                        </View>
+
+                        <Button
+                          title="▶ Start Session"
+                          onPress={() => router.push(`/session/${session.id}` as any)}
+                          variant="primary"
+                          style={styles.startButton}
+                        />
+                      </Card>
                     ))}
-                  </View>
 
-                  {session.completed ? (
-                    <View style={[styles.completedBadge, { backgroundColor: `${accent}20` }]}>
-                      <Check size={18} color={accent} strokeWidth={2.5} />
-                      <Text style={[styles.completedBadgeText, { color: accent }]}>Completed</Text>
-                    </View>
-                  ) : (
-                    <Button
-                      title="▶ Start Session"
-                      onPress={() => router.push(`/session/${session.id}` as any)}
-                      variant="primary"
-                      style={styles.startButton}
-                    />
-                  )}
-                </Card>
-              ))}
+                    {completedSessions.length > 0 && (
+                      <>
+                        <Text style={styles.sectionHeading}>Completed</Text>
+                        {completedSessions.map((session) => (
+                          <Card key={session.id} style={[
+                            styles.workoutCard,
+                            styles.completedCard,
+                          ]}>
+                            <View style={styles.workoutHeader}>
+                              <View style={styles.workoutTitleRow}>
+                                <Text style={[
+                                  styles.workoutName,
+                                  styles.completedText,
+                                ]}>{session.name}</Text>
+                                <View style={[styles.checkmark, { backgroundColor: accent }]}>
+                                  <Check size={16} color={COLORS.background} strokeWidth={3} />
+                                </View>
+                              </View>
+                              <View style={[
+                                styles.dayBadge,
+                                { backgroundColor: `${accent}40` }
+                              ]}>
+                                <Text style={[styles.dayBadgeText, { color: accent }]}>{session.dayBadge}</Text>
+                              </View>
+                            </View>
+                            <Text style={[
+                              styles.exerciseCount,
+                              styles.completedText,
+                            ]}>{session.exercises.length} exercises</Text>
+
+                            <View style={styles.exerciseList}>
+                              {session.exercises.map((exercise, exerciseIndex) => (
+                                <View key={exerciseIndex} style={styles.exerciseRow}>
+                                  <Text style={[
+                                    styles.exerciseName,
+                                    styles.completedText,
+                                  ]}>{exercise.name}</Text>
+                                  <Text style={[
+                                    styles.exerciseSets,
+                                    styles.completedText,
+                                  ]}>{exercise.sets} × {exercise.reps}</Text>
+                                </View>
+                              ))}
+                            </View>
+
+                            <View style={[styles.completedBadge, { backgroundColor: `${accent}20` }]}>
+                              <Check size={18} color={accent} strokeWidth={2.5} />
+                              <Text style={[styles.completedBadgeText, { color: accent }]}>Completed</Text>
+                            </View>
+                          </Card>
+                        ))}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </ScrollView>
           ))}
         </ScrollView>
@@ -635,5 +671,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
+  },
+  sectionHeading: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: COLORS.textPrimary,
+    marginTop: SPACING.lg,
+    marginBottom: SPACING.md,
   },
 });
