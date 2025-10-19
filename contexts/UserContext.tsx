@@ -9,7 +9,7 @@ export type UserProfile = {
   email: string;
   name: string;
   is_pt: boolean;
-  selectedColor?: string;
+  accentColor?: string;
   last_login?: string;
 };
 
@@ -83,7 +83,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
       
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('name, role, is_pt')
+        .select('name, role, is_pt, accent_color')
         .eq('user_id', authUser.id)
         .maybeSingle();
 
@@ -98,7 +98,11 @@ export const [UserProvider, useUser] = createContextHook(() => {
       if (!profile) {
         console.warn('[UserContext] No profile found for user, creating default user object');
       } else {
-        console.log('[UserContext] Profile loaded successfully:', { name: profile.name, is_pt: profile.is_pt });
+        console.log('[UserContext] Profile loaded successfully:', { 
+          name: profile.name, 
+          is_pt: profile.is_pt,
+          accentColor: profile.accent_color 
+        });
       }
 
       setIsFirstVisit(true);
@@ -107,6 +111,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
         email: authUser.email || '',
         name: profile?.name || '',
         is_pt: profile?.is_pt || false,
+        accentColor: profile?.accent_color || undefined,
       });
       setIsLoading(false);
     } catch (error) {
@@ -178,14 +183,20 @@ export const [UserProvider, useUser] = createContextHook(() => {
     }
   }, []);
 
-  const updateProfile = useCallback(async (updates: Partial<Pick<UserProfile, 'name' | 'is_pt'>>) => {
+  const updateProfile = useCallback(async (updates: Partial<Pick<UserProfile, 'name' | 'is_pt' | 'accentColor'>>) => {
     if (!user) return { success: false, error: 'Not authenticated' };
 
     try {
       console.log('[UserContext] Updating profile:', updates);
+      
+      const dbUpdates: Record<string, any> = {};
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.is_pt !== undefined) dbUpdates.is_pt = updates.is_pt;
+      if (updates.accentColor !== undefined) dbUpdates.accent_color = updates.accentColor;
+      
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(dbUpdates)
         .eq('user_id', user.id);
 
       if (error) {
@@ -194,6 +205,7 @@ export const [UserProvider, useUser] = createContextHook(() => {
       }
 
       setUser((prev) => prev ? { ...prev, ...updates } : null);
+      console.log('[UserContext] Profile updated successfully:', updates);
       return { success: true };
     } catch (error: any) {
       console.error('[UserContext] Profile update failed:', error);

@@ -1,47 +1,174 @@
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { COLORS, AccentColor } from '@/constants/theme';
+import { useUser } from './UserContext';
 
 const THEME_STORAGE_KEY = '@form_accent_color';
 
+const hexToAccentColor = (hex: string): AccentColor => {
+  const colorMap: Record<string, AccentColor> = {
+    '#FF6B55': 'orange',
+    '#B266FF': 'purple',
+    '#6699FF': 'blue',
+    '#F44336': 'red',
+    '#FFC107': 'yellow',
+    '#4CAF50': 'green',
+    '#009688': 'teal',
+    '#EC407A': 'pink',
+  };
+  
+  const upperHex = hex.toUpperCase();
+  return colorMap[upperHex] || 'orange';
+};
+
+const accentColorToHex = (color: AccentColor): string => {
+  const hexMap: Record<AccentColor, string> = {
+    orange: '#FF6B55',
+    purple: '#B266FF',
+    blue: '#6699FF',
+    red: '#F44336',
+    yellow: '#FFC107',
+    green: '#4CAF50',
+    teal: '#009688',
+    pink: '#EC407A',
+  };
+  return hexMap[color];
+};
+
+const rgbToHex = (rgb: string): string => {
+  const match = rgb.match(/\d+/g);
+  if (!match || match.length < 3) return '#FF6B55';
+  
+  const r = parseInt(match[0]);
+  const g = parseInt(match[1]);
+  const b = parseInt(match[2]);
+  
+  return '#' + [r, g, b].map(x => {
+    const hex = x.toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  }).join('').toUpperCase();
+};
+
+const findClosestAccentColor = (hex: string): AccentColor => {
+  const validColors: AccentColor[] = ['orange', 'purple', 'blue', 'red', 'yellow', 'green', 'teal', 'pink'];
+  
+  for (const color of validColors) {
+    if (accentColorToHex(color).toUpperCase() === hex.toUpperCase()) {
+      return color;
+    }
+  }
+  
+  return hexToAccentColor(hex);
+};
+
 export const [ThemeProvider, useTheme] = createContextHook(() => {
+  const { user, updateProfile, isLoading: userLoading } = useUser();
   const [accentColor, setAccentColorState] = useState<AccentColor>('orange');
   const [isLoading, setIsLoading] = useState(true);
+  const hasMigratedRef = useRef(false);
 
-  useEffect(() => {
-    loadAccentColor();
-  }, []);
-
-  const loadAccentColor = async () => {
+  const loadAccentColor = useCallback(async () => {
+    console.log('[ThemeContext] Loading accent color...');
+    console.log('[ThemeContext] User loading:', userLoading);
+    console.log('[ThemeContext] User:', user ? { id: user.id, accentColor: user.accentColor } : 'null');
+    
     try {
-      const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
       const validColors: AccentColor[] = ['orange', 'purple', 'blue', 'red', 'yellow', 'green', 'teal', 'pink'];
-      if (stored && validColors.includes(stored as AccentColor)) {
-        setAccentColorState(stored as AccentColor);
+      
+      if (user?.accentColor) {
+        console.log('[ThemeContext] Found database color:', user.accentColor);
+        const color = findClosestAccentColor(user.accentColor);
+        console.log('[ThemeContext] Mapped to accent color:', color);
+        setAccentColorState(color);
+        
+        await AsyncStorage.setItem(THEME_STORAGE_KEY, color);
+        console.log('[ThemeContext] Synced to AsyncStorage');
+      } else if (user && !hasMigratedRef.current) {
+        console.log('[ThemeContext] No database color, checking AsyncStorage for migration...');
+        hasMigratedRef.current = true;
+        
+        const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+        console.log('[ThemeContext] AsyncStorage value:', stored);
+        
+        if (stored && validColors.includes(stored as AccentColor)) {
+          const color = stored as AccentColor;
+          console.log('[ThemeContext] Migrating AsyncStorage color to database:', color);
+          
+          setAccentColorState(color);
+          
+          const hexColor = accentColorToHex(color);
+          const result = await updateProfile({ accentColor: hexColor });
+          
+          if (result.success) {
+            console.log('[ThemeContext] Migration successful');
+          } else {
+            console.error('[ThemeContext] Migration failed:', result.error);
+          }
+        } else {
+          console.log('[ThemeContext] No AsyncStorage color, using default');
+          setAccentColorState('orange');
+        }
+      } else if (!user) {
+        console.log('[ThemeContext] No user, checking AsyncStorage...');
+        const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+        
+        if (stored && validColors.includes(stored as AccentColor)) {
+          console.log('[ThemeContext] Using AsyncStorage color:', stored);
+          setAccentColorState(stored as AccentColor);
+        } else {
+          console.log('[ThemeContext] No stored color, using default');
+          setAccentColorState('orange');
+        }
       }
     } catch (error) {
-      console.error('Failed to load accent color:', error);
+      console.error('[ThemeContext] Failed to load accent color:', error);
+      setAccentColorState('orange');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, userLoading, updateProfile]);
+
+  useEffect(() => {
+    loadAccentColor();
+  }, [loadAccentColor]);
 
   const setAccentColor = useCallback(async (color: AccentColor) => {
+    console.log('[ThemeContext] Setting accent color:', color);
+    
     try {
       setAccentColorState(color);
+      
       await AsyncStorage.setItem(THEME_STORAGE_KEY, color);
+      console.log('[ThemeContext] Saved to AsyncStorage');
+      
+      if (user) {
+        const hexColor = accentColorToHex(color);
+        console.log('[ThemeContext] Saving to database:', hexColor);
+        
+        const result = await updateProfile({ accentColor: hexColor });
+        
+        if (result.success) {
+          console.log('[ThemeContext] Database sync successful');
+        } else {
+          console.error('[ThemeContext] Database sync failed:', result.error);
+        }
+      } else {
+        console.log('[ThemeContext] No user, skipping database sync');
+      }
     } catch (error) {
-      console.error('Failed to save accent color:', error);
+      console.error('[ThemeContext] Failed to save accent color:', error);
     }
-  }, []);
+  }, [user, updateProfile]);
 
   const accent = COLORS.accents[accentColor];
+  const accentHex = useMemo(() => rgbToHex(accent), [accent]);
 
   return useMemo(() => ({
     accentColor,
     accent,
+    accentHex,
     setAccentColor,
-    isLoading,
-  }), [accentColor, accent, setAccentColor, isLoading]);
+    isLoading: isLoading || userLoading,
+  }), [accentColor, accent, accentHex, setAccentColor, isLoading, userLoading]);
 });
