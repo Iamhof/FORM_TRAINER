@@ -7,12 +7,6 @@ import { supabase } from '@/lib/supabase';
 export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
-  const envBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
-  if (envBaseUrl) {
-    console.log('[TRPC] Using env base URL:', envBaseUrl);
-    return envBaseUrl;
-  }
-  
   if (typeof window !== 'undefined') {
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
@@ -22,6 +16,12 @@ const getBaseUrl = () => {
     console.log('[TRPC] Using window location:', url);
     console.log('[TRPC] Window details - protocol:', protocol, 'hostname:', hostname, 'port:', port);
     return url;
+  }
+  
+  const envBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  if (envBaseUrl) {
+    console.log('[TRPC] Using env base URL:', envBaseUrl);
+    return envBaseUrl;
   }
   
   console.warn('[TRPC] Falling back to localhost');
