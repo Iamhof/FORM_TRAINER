@@ -17,16 +17,16 @@ export default function GlowCard({
   const intensitySettings = {
     subtle: {
       shadowLayers: [
-        { opacity: 0.08, blur: 8, spread: 0 },
-        { opacity: 0.05, blur: 16, spread: 0 },
-        { opacity: 0.03, blur: 24, spread: 0 },
+        { opacity: 0.04, blur: 8, spread: 0 },
+        { opacity: 0.025, blur: 16, spread: 0 },
+        { opacity: 0.015, blur: 24, spread: 0 },
       ],
     },
     medium: {
       shadowLayers: [
-        { opacity: 0.12, blur: 12, spread: 0 },
-        { opacity: 0.08, blur: 20, spread: 0 },
-        { opacity: 0.05, blur: 32, spread: 0 },
+        { opacity: 0.06, blur: 12, spread: 0 },
+        { opacity: 0.04, blur: 20, spread: 0 },
+        { opacity: 0.025, blur: 32, spread: 0 },
       ],
     },
     strong: {
