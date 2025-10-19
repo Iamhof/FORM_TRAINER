@@ -93,58 +93,23 @@ export default function DashboardScreen() {
           contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.header}>
-            <View>
-              <Text style={styles.greeting}>
-                {isFirstVisit ? 'Welcome' : 'Welcome back'}, <Text style={[styles.greetingName, { color: accent }]}>{user?.name?.split(' ')[0] || 'User'}</Text>
-              </Text>
-              <Text style={styles.subtitle}>Ready to crush your goals today?</Text>
-            </View>
-          </View>
-
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>This Week</Text>
-              {scheduledCount > 0 && (
-                <Text style={styles.scheduledText}>{scheduledCount}/{activeProgramme?.days || 0} scheduled</Text>
-              )}
-            </View>
-            <Pressable style={styles.viewCalendarButton}>
-              <CalendarIcon size={16} color={accent} strokeWidth={2} />
-              <Text style={[styles.viewCalendarText, { color: accent }]}>View Calendar</Text>
-            </Pressable>
-            
-            {!activeProgramme ? (
-              <View style={styles.noticeBox}>
-                <Text style={styles.noticeText}>
-                  Create a programme to start scheduling your workouts
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.noticeBox}>
-                <Text style={styles.noticeText}>
-                  {(() => {
-                    const actualScheduled = safeSchedule.filter((d) => d?.status === 'scheduled').length;
-                    const completed = safeSchedule.filter((d) => d?.status === 'completed').length;
-                    const total = actualScheduled + completed;
-                    
-                    if (total === 0) {
-                      return <>
-                        Tap days to schedule your <Text style={{ color: accent }}>{activeProgramme.days} weekly sessions</Text>
-                      </>;
-                    } else if (total < activeProgramme.days) {
-                      return <>
-                        <Text style={{ color: accent }}>{total}/{activeProgramme.days} sessions scheduled</Text> - Tap to schedule {activeProgramme.days - total} more
-                      </>;
-                    } else {
-                      return <>
-                        <Text style={{ color: accent }}>All {activeProgramme.days} sessions scheduled!</Text> Ready to start your week
-                      </>;
-                    }
-                  })()}
-                </Text>
-              </View>
-            )}
+            {activeProgramme && (() => {
+              const actualScheduled = safeSchedule.filter((d) => d?.status === 'scheduled').length;
+              const completed = safeSchedule.filter((d) => d?.status === 'completed').length;
+              const total = actualScheduled + completed;
+              
+              if (total >= activeProgramme.days) {
+                return (
+                  <View style={[styles.noticeBox, { backgroundColor: COLORS.cardBackground }]}>
+                    <Text style={styles.noticeText}>
+                      <Text style={{ color: accent }}>All {activeProgramme.days} sessions scheduled!</Text> Ready to start your week
+                    </Text>
+                  </View>
+                );
+              }
+              return null;
+            })()}
 
             <View style={styles.weekRow}>
               {DAY_LABELS.map((dayLabel, dayIndex) => {
@@ -260,6 +225,9 @@ export default function DashboardScreen() {
             </Card>
 
             <Card style={styles.statCard}>
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>9</Text>
+              </View>
               <Text style={styles.statLabel}>Workouts This Week</Text>
               <View style={styles.statRow}>
                 <Text style={styles.statValue}>{stats.weekWorkouts}/{stats.weekTotal || activeProgramme?.days || 0}</Text>
@@ -356,10 +324,28 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   statCard: {
-    padding: SPACING.md,
+    padding: SPACING.lg,
+    position: 'relative' as const,
   },
   statCardLarge: {
     marginBottom: SPACING.sm,
+  },
+  notificationBadge: {
+    position: 'absolute' as const,
+    top: 12,
+    right: 12,
+    backgroundColor: COLORS.error,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  notificationBadgeText: {
+    color: COLORS.textPrimary,
+    fontSize: 11,
+    fontWeight: '700' as const,
   },
   statRow: {
     flexDirection: 'row',
@@ -444,7 +430,7 @@ const styles = StyleSheet.create({
   dayBox: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
