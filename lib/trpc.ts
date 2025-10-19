@@ -7,31 +7,24 @@ import { supabase } from '@/lib/supabase';
 export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
-  const toolkitUrl = process.env.EXPO_PUBLIC_TOOLKIT_URL;
-  
-  if (toolkitUrl && toolkitUrl.includes('rorktest.dev')) {
-    const baseUrl = toolkitUrl.replace('/toolkit', '');
-    console.log('[TRPC] Using Rork dev environment:', baseUrl);
-    return baseUrl;
-  }
-  
-  const envBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
-  
-  if (envBaseUrl && !envBaseUrl.includes('localhost')) {
-    console.log('[TRPC] Base URL from env:', envBaseUrl);
-    return envBaseUrl;
-  }
-  
   if (typeof window !== 'undefined') {
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
-    const port = window.location.port || '8081';
-    const url = `${protocol}//${hostname}:${port}`;
+    const port = window.location.port;
+    
+    const url = `${protocol}//${hostname}${port ? ':' + port : ''}`;
     console.log('[TRPC] Using window location:', url);
+    console.log('[TRPC] Window details - protocol:', protocol, 'hostname:', hostname, 'port:', port);
     return url;
   }
   
-  console.warn('[TRPC] Falling back to localhost - this may not work in Rork environment');
+  const envBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  if (envBaseUrl) {
+    console.log('[TRPC] Using env base URL:', envBaseUrl);
+    return envBaseUrl;
+  }
+  
+  console.warn('[TRPC] Falling back to localhost');
   return 'http://localhost:8081';
 };
 
