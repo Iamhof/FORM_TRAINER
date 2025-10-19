@@ -5,6 +5,7 @@ import { useRouter, Stack, useLocalSearchParams, useFocusEffect } from 'expo-rou
 import { ChevronLeft, BarChart3, Check, ChevronRight } from 'lucide-react-native';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
+import WeekScheduler from '@/components/WeekScheduler';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
@@ -272,6 +273,13 @@ export default function ProgrammeOverviewScreen() {
             </ScrollView>
           </View>
         </View>
+
+        <WeekScheduler
+          sessions={transformedProgramme.sessionsByWeek.flatMap(w => w.sessions)}
+          accentColor={accent}
+          currentWeek={currentWeek}
+          programmeWeeks={transformedProgramme.weeks}
+        />
 
         <ScrollView
           ref={weekScrollRef}

@@ -9,6 +9,7 @@ export type DayStatus = 'scheduled' | 'completed' | 'rest' | 'empty';
 export type ScheduleDay = {
   dayOfWeek: number;
   status: DayStatus;
+  sessionId?: string | null;
   weekStart: string;
 };
 
@@ -33,6 +34,7 @@ function getInitialSchedule(weekStart: string): ScheduleDay[] {
   return Array.from({ length: 7 }, (_, i) => ({
     dayOfWeek: i,
     status: 'empty' as DayStatus,
+    sessionId: null,
     weekStart,
   }));
 }
@@ -200,6 +202,43 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
     [user, currentWeekStart, activeProgramme]
   );
 
+  const assignSession = useCallback(
+    async (dayIndex: number, sessionId: string | null) => {
+      console.log('[ScheduleContext] assignSession called for index:', dayIndex, 'session:', sessionId);
+      
+      if (!activeProgramme) {
+        console.log('[ScheduleContext] No active programme');
+        return;
+      }
+
+      if (dayIndex < 0 || dayIndex >= schedule.length) {
+        console.error('[ScheduleContext] Invalid day index:', dayIndex);
+        return;
+      }
+
+      const dayData = schedule[dayIndex];
+      if (!dayData) {
+        console.error('[ScheduleContext] No data for day index:', dayIndex);
+        return;
+      }
+
+      if (dayData.status === 'completed') {
+        console.log('[ScheduleContext] Cannot modify completed day');
+        return;
+      }
+
+      const newStatus: DayStatus = sessionId ? 'scheduled' : 'rest';
+      const newSchedule = schedule.map((day, idx) =>
+        idx === dayIndex ? { ...day, status: newStatus, sessionId } : day
+      );
+
+      console.log('[ScheduleContext] New schedule:', JSON.stringify(newSchedule));
+      setSchedule(newSchedule);
+      await saveSchedule(newSchedule);
+    },
+    [schedule, activeProgramme, saveSchedule]
+  );
+
   const toggleDay = useCallback(
     async (dayIndex: number) => {
       console.log('[ScheduleContext] toggleDay called for index:', dayIndex);
@@ -282,8 +321,9 @@ export const [ScheduleProvider, useSchedule] = createContextHook(() => {
       canScheduleMore,
       currentWeekStart,
       toggleDay,
+      assignSession,
       loadSchedule,
     }),
-    [schedule, isLoading, scheduledCount, canScheduleMore, currentWeekStart, toggleDay, loadSchedule]
+    [schedule, isLoading, scheduledCount, canScheduleMore, currentWeekStart, toggleDay, assignSession, loadSchedule]
   );
 });

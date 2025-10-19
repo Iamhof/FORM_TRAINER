@@ -26,6 +26,9 @@ import { getLatestBodyMetricsProcedure } from "./routes/body-metrics/latest/rout
 import { deleteBodyMetricsProcedure } from "./routes/body-metrics/delete/route";
 import { listPersonalRecordsProcedure } from "./routes/personal-records/list/route";
 import { checkAndRecordPRProcedure } from "./routes/personal-records/check-and-record/route";
+import { getScheduleProcedure } from "./routes/schedules/get/route";
+import { updateScheduleProcedure } from "./routes/schedules/update/route";
+import { assignSessionProcedure } from "./routes/schedules/assign-session/route";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
@@ -72,6 +75,11 @@ export const appRouter = createTRPCRouter({
   personalRecords: createTRPCRouter({
     list: listPersonalRecordsProcedure,
     checkAndRecord: checkAndRecordPRProcedure,
+  }),
+  schedules: createTRPCRouter({
+    get: getScheduleProcedure,
+    update: updateScheduleProcedure,
+    assignSession: assignSessionProcedure,
   }),
 });
 
