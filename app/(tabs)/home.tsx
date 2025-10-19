@@ -4,6 +4,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Flame, Target, TrendingUp, Check, Moon, Calendar as CalendarIcon, ChevronRight, Dumbbell, User, Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
+import GlowCard from '@/components/GlowCard';
 import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
@@ -19,34 +20,26 @@ type ProgrammeCardWithGlowProps = {
 };
 
 function ProgrammeCardWithGlow({ accent, activeProgramme, router }: ProgrammeCardWithGlowProps) {
-  const shadowStyle = Platform.OS === 'web'
-    ? { boxShadow: `0 0 24px ${accent}50` } as any
-    : {
-        shadowColor: accent,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 20,
-        elevation: 8,
-      };
-
   return (
     <Pressable onPress={() => router.push(`/programme/${activeProgramme.id}` as any)}>
-      <View style={[styles.programmeCardEnhanced, shadowStyle]}>
-        <View style={styles.programmeHeader}>
-          <Text style={styles.programmeTitle}>{activeProgramme.name}</Text>
-          <View style={[styles.activeBadge, { backgroundColor: `${accent}30` }]}>
-              <Text style={[styles.activeBadgeText, { color: accent }]}>Active</Text>
+      <GlowCard accent={accent} glowIntensity="strong">
+        <View style={styles.programmeCardEnhanced}>
+          <View style={styles.programmeHeader}>
+            <Text style={styles.programmeTitle}>{activeProgramme.name}</Text>
+            <View style={[styles.activeBadge, { backgroundColor: `${accent}30` }]}>
+                <Text style={[styles.activeBadgeText, { color: accent }]}>Active</Text>
+              </View>
             </View>
-          </View>
-          <Text style={styles.programmeSubtitle}>
-            {activeProgramme.days} days per week • {activeProgramme.weeks} weeks
-          </Text>
+            <Text style={styles.programmeSubtitle}>
+              {activeProgramme.days} days per week • {activeProgramme.weeks} weeks
+            </Text>
 
-        <View style={styles.totalDaysRow}>
-          <Text style={styles.totalDaysLabel}>Total Exercises</Text>
-          <Text style={styles.totalDaysValue}>{activeProgramme.exercises?.length || 0}</Text>
+          <View style={styles.totalDaysRow}>
+            <Text style={styles.totalDaysLabel}>Total Exercises</Text>
+            <Text style={styles.totalDaysValue}>{activeProgramme.exercises?.length || 0}</Text>
+          </View>
         </View>
-      </View>
+      </GlowCard>
     </Pressable>
   );
 }
