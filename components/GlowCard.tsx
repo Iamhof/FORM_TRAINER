@@ -17,30 +17,25 @@ export default function GlowCard({
   const intensitySettings = {
     subtle: {
       shadowLayers: [
-        { opacity: 0.15, blur: 8, spread: 0 },
-        { opacity: 0.1, blur: 16, spread: 0 },
+        { opacity: 0.08, blur: 8, spread: 0 },
+        { opacity: 0.05, blur: 16, spread: 0 },
+        { opacity: 0.03, blur: 24, spread: 0 },
       ],
-      webBlur: 12,
-      webOpacity: 0.2,
     },
     medium: {
       shadowLayers: [
-        { opacity: 0.25, blur: 12, spread: 0 },
-        { opacity: 0.15, blur: 24, spread: 0 },
-        { opacity: 0.1, blur: 40, spread: 0 },
+        { opacity: 0.12, blur: 12, spread: 0 },
+        { opacity: 0.08, blur: 20, spread: 0 },
+        { opacity: 0.05, blur: 32, spread: 0 },
       ],
-      webBlur: 20,
-      webOpacity: 0.3,
     },
     strong: {
       shadowLayers: [
-        { opacity: 0.4, blur: 16, spread: 0 },
-        { opacity: 0.25, blur: 32, spread: 0 },
-        { opacity: 0.15, blur: 48, spread: 0 },
-        { opacity: 0.1, blur: 64, spread: 0 },
+        { opacity: 0.15, blur: 16, spread: 0 },
+        { opacity: 0.1, blur: 28, spread: 0 },
+        { opacity: 0.06, blur: 40, spread: 0 },
+        { opacity: 0.03, blur: 56, spread: 0 },
       ],
-      webBlur: 28,
-      webOpacity: 0.4,
     },
   };
 
@@ -55,8 +50,7 @@ export default function GlowCard({
             style={[
               styles.glowLayerWeb,
               {
-                boxShadow: `0 0 ${layer.blur}px ${layer.blur / 2}px ${accent}`,
-                opacity: layer.opacity,
+                boxShadow: `0 0 ${layer.blur}px ${layer.blur * 0.3}px ${accent}${Math.round(layer.opacity * 255).toString(16).padStart(2, '0')}`,
               },
             ]}
           />
