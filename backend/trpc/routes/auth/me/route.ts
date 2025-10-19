@@ -7,7 +7,7 @@ export const meProcedure = protectedProcedure.query(async ({ ctx }) => {
   
   const { data: profile, error } = await supabaseAdmin
     .from('profiles')
-    .select('name, role, is_pt, created_at, updated_at')
+    .select('name, role, is_pt, accent_color, created_at, updated_at')
     .eq('user_id', ctx.userId)
     .single();
 
@@ -27,6 +27,7 @@ export const meProcedure = protectedProcedure.query(async ({ ctx }) => {
     name: profile.name,
     is_pt: profile.is_pt,
     role: profile.role,
+    accentColor: profile.accent_color || '#A855F7',
     createdAt: profile.created_at,
     updatedAt: profile.updated_at,
   };

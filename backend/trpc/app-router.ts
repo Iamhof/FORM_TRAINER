@@ -29,6 +29,7 @@ import { checkAndRecordPRProcedure } from "./routes/personal-records/check-and-r
 import { getScheduleProcedure } from "./routes/schedules/get/route";
 import { updateScheduleProcedure } from "./routes/schedules/update/route";
 import { assignSessionProcedure } from "./routes/schedules/assign-session/route";
+import { updateColorProcedure } from "./routes/profile/update-color/route";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
@@ -80,6 +81,9 @@ export const appRouter = createTRPCRouter({
     get: getScheduleProcedure,
     update: updateScheduleProcedure,
     assignSession: assignSessionProcedure,
+  }),
+  profile: createTRPCRouter({
+    updateColor: updateColorProcedure,
   }),
 });
 

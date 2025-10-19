@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name: string;
   is_pt: boolean;
+  accent_color?: string;
   created_at: string;
   updated_at: string;
 }
