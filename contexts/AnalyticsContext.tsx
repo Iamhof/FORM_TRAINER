@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnalyticsData, MonthlyDataPoint } from '@/types/analytics';
 import { supabase } from '@/lib/supabase';
 import { useUser } from './UserContext';
-import { AnalyticsData as DBAnalyticsData } from '@/types/database';
+import { AnalyticsData as DBAnalyticsData, Schedule } from '@/types/database';
+import { useProgrammes } from './ProgrammeContext';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -24,7 +25,9 @@ function generateEmptyMonthlyData(): MonthlyDataPoint[] {
 
 function aggregateAnalyticsData(
   rawAnalytics: DBAnalyticsData[],
-  workouts: { completed_at: string; programme_id: string }[]
+  workouts: { completed_at: string; programme_id: string }[],
+  schedules: Schedule[],
+  activeProgrammeDays: number
 ): AnalyticsData {
   const monthlyData: {
     [key: string]: {
@@ -51,6 +54,32 @@ function aggregateAnalyticsData(
     const key = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
     monthlyData[key] = { sessions: 0, volume: 0, exercises: new Set() };
   }
+
+  const scheduledSessionsByMonth: { [key: string]: number } = {};
+  const restDaysByMonth: { [key: string]: number } = {};
+  const completedSessionsByMonth: { [key: string]: Set<string> } = {};
+
+  schedules.forEach((schedule) => {
+    const weekDate = new Date(schedule.week_start);
+    const monthKey = `${weekDate.getFullYear()}-${String(weekDate.getMonth() + 1).padStart(2, '0')}`;
+
+    if (!scheduledSessionsByMonth[monthKey]) {
+      scheduledSessionsByMonth[monthKey] = 0;
+      restDaysByMonth[monthKey] = 0;
+      completedSessionsByMonth[monthKey] = new Set();
+    }
+
+    schedule.schedule.forEach((day) => {
+      if (day.status === 'scheduled') {
+        scheduledSessionsByMonth[monthKey] += 1;
+      } else if (day.status === 'rest') {
+        restDaysByMonth[monthKey] += 1;
+      } else if (day.status === 'completed') {
+        scheduledSessionsByMonth[monthKey] += 1;
+        completedSessionsByMonth[monthKey].add(`${schedule.week_start}-${day.dayOfWeek}`);
+      }
+    });
+  });
 
   rawAnalytics.forEach((record) => {
     const recordDate = new Date(record.date);
@@ -82,6 +111,7 @@ function aggregateAnalyticsData(
   });
 
   const sessionsCompleted: MonthlyDataPoint[] = [];
+  const sessionsMissed: MonthlyDataPoint[] = [];
   const totalVolume: MonthlyDataPoint[] = [];
   const completionRate: MonthlyDataPoint[] = [];
 
@@ -95,10 +125,26 @@ function aggregateAnalyticsData(
       sessionsCompleted.push({ month: monthName, value: data.sessions });
       totalVolume.push({ month: monthName, value: Math.round(data.volume) });
       
-      const expectedSessions = 12;
-      const rate = expectedSessions > 0 ? Math.round((data.sessions / expectedSessions) * 100) : 0;
+      const scheduledForMonth = scheduledSessionsByMonth[key] || 0;
+      const completedForMonth = completedSessionsByMonth[key]?.size || 0;
+      const missed = Math.max(0, scheduledForMonth - completedForMonth);
+      
+      sessionsMissed.push({ month: monthName, value: missed });
+      
+      const rate = scheduledForMonth > 0 ? Math.round((completedForMonth / scheduledForMonth) * 100) : 0;
       completionRate.push({ month: monthName, value: rate });
     });
+
+  const currentMonthKey = Object.keys(monthlyData).sort().pop();
+  const lastMonthKeys = Object.keys(monthlyData).sort();
+  const lastMonthKey = lastMonthKeys.length >= 2 ? lastMonthKeys[lastMonthKeys.length - 2] : null;
+
+  const restDaysThisMonth = currentMonthKey ? (restDaysByMonth[currentMonthKey] || 0) : 0;
+  const restDaysLastMonth = lastMonthKey ? (restDaysByMonth[lastMonthKey] || 0) : 0;
+  const allRestDays = Object.values(restDaysByMonth);
+  const averageRestDays = allRestDays.length > 0 
+    ? Math.round(allRestDays.reduce((sum, val) => sum + val, 0) / allRestDays.length)
+    : 0;
 
   const exerciseProgress = Object.entries(exerciseData)
     .map(([exerciseId, data]) => {
@@ -121,20 +167,21 @@ function aggregateAnalyticsData(
 
   return {
     sessionsCompleted,
-    sessionsMissed: generateEmptyMonthlyData(),
+    sessionsMissed,
     completionRate,
     totalVolume,
     exerciseProgress,
     restDays: {
-      thisMonth: 0,
-      lastMonth: 0,
-      average: 0,
+      thisMonth: restDaysThisMonth,
+      lastMonth: restDaysLastMonth,
+      average: averageRestDays,
     },
   };
 }
 
 export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
   const { user, isAuthenticated } = useUser();
+  const { activeProgramme } = useProgrammes();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
     sessionsCompleted: generateEmptyMonthlyData(),
     sessionsMissed: generateEmptyMonthlyData(),
@@ -172,7 +219,7 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
       const startDate = sixMonthsAgo.toISOString().split('T')[0];
 
-      const [analyticsResult, workoutsResult] = await Promise.all([
+      const [analyticsResult, workoutsResult, schedulesResult] = await Promise.all([
         supabase
           .from('analytics')
           .select('*')
@@ -185,6 +232,12 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
           .eq('user_id', user.id)
           .gte('completed_at', startDate)
           .order('completed_at', { ascending: true }),
+        supabase
+          .from('schedules')
+          .select('*')
+          .eq('user_id', user.id)
+          .gte('week_start', startDate)
+          .order('week_start', { ascending: true }),
       ]);
 
       if (analyticsResult.error) {
@@ -197,17 +250,24 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
         return;
       }
 
+      if (schedulesResult.error) {
+        console.error('[AnalyticsContext] Error loading schedules:', schedulesResult.error);
+        return;
+      }
+
       const rawAnalytics = analyticsResult.data as DBAnalyticsData[] || [];
       const workouts = workoutsResult.data || [];
+      const schedules = schedulesResult.data as Schedule[] || [];
 
-      console.log('[AnalyticsContext] Loaded:', rawAnalytics.length, 'analytics records,', workouts.length, 'workouts');
+      console.log('[AnalyticsContext] Loaded:', rawAnalytics.length, 'analytics records,', workouts.length, 'workouts,', schedules.length, 'schedules');
 
-      const aggregatedData = aggregateAnalyticsData(rawAnalytics, workouts);
+      const activeProgrammeDays = activeProgramme?.days || 3;
+      const aggregatedData = aggregateAnalyticsData(rawAnalytics, workouts, schedules, activeProgrammeDays);
       setAnalyticsData(aggregatedData);
     } catch (error) {
       console.error('[AnalyticsContext] Failed to load analytics:', error);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, activeProgramme]);
 
   useEffect(() => {
     loadAnalytics();

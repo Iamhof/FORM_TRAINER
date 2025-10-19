@@ -12,6 +12,7 @@ import { EXERCISES } from '@/constants/exercises';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/contexts/UserContext';
 import { useAnalytics } from '@/contexts/AnalyticsContext';
+import { useSchedule } from '@/contexts/ScheduleContext';
 
 type SetData = {
   weight: string;
@@ -33,6 +34,7 @@ export default function SessionScreen() {
   const { programmes, refetch } = useProgrammes();
   const { user } = useUser();
   const { refetch: refetchAnalytics } = useAnalytics();
+  const { loadSchedule } = useSchedule();
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [showRestTimer, setShowRestTimer] = useState(false);
@@ -196,6 +198,9 @@ export default function SessionScreen() {
         exerciseCount: workoutExercises.length,
       });
 
+      const completedAt = new Date().toISOString();
+      const date = completedAt.split('T')[0];
+
       const { data: insertedWorkout, error } = await supabase
         .from('workouts')
         .insert({
@@ -205,7 +210,7 @@ export default function SessionScreen() {
           day: sessionData.day,
           week: sessionData.week,
           exercises: workoutExercises,
-          completed_at: new Date().toISOString(),
+          completed_at: completedAt,
         })
         .select()
         .single();
@@ -216,11 +221,84 @@ export default function SessionScreen() {
       }
 
       console.log('[SessionScreen] Workout logged successfully:', insertedWorkout?.id);
-      console.log('[SessionScreen] Refreshing programme context and analytics...');
+      console.log('[SessionScreen] Now syncing analytics data...');
+
+      const analyticsRecords = workoutExercises
+        .map((exercise) => {
+          const completedSets = exercise.sets.filter((set) => set.completed);
+          if (completedSets.length === 0) return null;
+
+          const maxWeight = Math.max(...completedSets.map((set) => set.weight));
+          const totalVolume = completedSets.reduce((sum, set) => sum + set.weight * set.reps, 0);
+          const totalReps = completedSets.reduce((sum, set) => sum + set.reps, 0);
+
+          return {
+            user_id: user.id,
+            exercise_id: exercise.exerciseId,
+            date,
+            max_weight: maxWeight,
+            total_volume: totalVolume,
+            total_reps: totalReps,
+          };
+        })
+        .filter((record): record is NonNullable<typeof record> => record !== null);
+
+      if (analyticsRecords.length > 0) {
+        console.log('[SessionScreen] Inserting', analyticsRecords.length, 'analytics records');
+        const { error: analyticsError } = await supabase
+          .from('analytics')
+          .upsert(analyticsRecords, {
+            onConflict: 'user_id,exercise_id,date',
+          });
+
+        if (analyticsError) {
+          console.error('[SessionScreen] Analytics sync error:', analyticsError);
+        } else {
+          console.log('[SessionScreen] Analytics synced successfully');
+        }
+      }
+      
+      console.log('[SessionScreen] Updating schedule status to completed...');
+      const today = new Date();
+      const dayOfWeek = (today.getDay() + 6) % 7;
+      
+      const mondayOfThisWeek = new Date(today);
+      mondayOfThisWeek.setDate(today.getDate() - dayOfWeek);
+      const weekStart = mondayOfThisWeek.toISOString().split('T')[0];
+
+      const { data: existingSchedule } = await supabase
+        .from('schedules')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('week_start', weekStart)
+        .maybeSingle();
+
+      if (existingSchedule) {
+        const updatedSchedule = existingSchedule.schedule.map((day: any, idx: number) => {
+          if (idx === dayOfWeek && (day.status === 'scheduled' || day.status === 'empty')) {
+            return { ...day, status: 'completed' };
+          }
+          return day;
+        });
+
+        const { error: scheduleError } = await supabase
+          .from('schedules')
+          .update({ schedule: updatedSchedule })
+          .eq('id', existingSchedule.id);
+
+        if (scheduleError) {
+          console.error('[SessionScreen] Error updating schedule:', scheduleError);
+        } else {
+          console.log('[SessionScreen] Schedule updated successfully');
+        }
+      }
+      
+      console.log('[SessionScreen] Refreshing programme context, analytics, and schedule...');
       
       await Promise.all([
         refetch(),
         refetchAnalytics(),
+        loadSchedule(),
       ]);
       
       console.log('[SessionScreen] Contexts refreshed, navigating back');
