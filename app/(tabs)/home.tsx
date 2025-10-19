@@ -24,15 +24,12 @@ function ProgrammeCardWithGlow({ accent, activeProgramme, router }: ProgrammeCar
       <View
         style={[
           styles.programmeCardEnhanced,
-          Platform.OS !== 'web' && {
+          {
             shadowColor: accent,
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.25,
-            shadowRadius: 24,
+            shadowRadius: Platform.OS === 'web' ? 32 : 24,
             elevation: 12,
-          },
-          Platform.OS === 'web' && {
-            boxShadow: `0 8px 32px ${accent}40`,
           },
         ]}
       >
