@@ -38,15 +38,25 @@ export default function GlowCard({
     <View style={[styles.wrapper, style]}>
       <View 
         style={[
-          styles.glowNative,
+          styles.glowLayer1,
           {
-            backgroundColor: accent,
-            opacity: 0.15,
             shadowColor: accent,
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.4,
-            shadowRadius: 30,
-            elevation: 12,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.5,
+            shadowRadius: 20,
+            elevation: 8,
+          },
+        ]} 
+      />
+      <View 
+        style={[
+          styles.glowLayer2,
+          {
+            shadowColor: accent,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 12,
+            elevation: 6,
           },
         ]} 
       />
@@ -70,14 +80,23 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     pointerEvents: 'none' as const,
   },
-  glowNative: {
+  glowLayer1: {
     position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 16,
-    backgroundColor: 'transparent',
+    top: -10,
+    left: -10,
+    right: -10,
+    bottom: -10,
+    borderRadius: 24,
+    backgroundColor: '#000',
+  },
+  glowLayer2: {
+    position: 'absolute' as const,
+    top: -5,
+    left: -5,
+    right: -5,
+    bottom: -5,
+    borderRadius: 20,
+    backgroundColor: '#000',
   },
   contentWrapper: {
     position: 'relative' as const,
