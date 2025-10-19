@@ -1,17 +1,20 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Platform } from 'react-native';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Flame, Target, TrendingUp, Check, Moon, Calendar as CalendarIcon, ChevronRight, Dumbbell, User, Bell } from 'lucide-react-native';
+import { Flame, Target, TrendingUp, Check, Moon, ChevronRight, Dumbbell, User, Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
 import GlowCard from '@/components/GlowCard';
 import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
+import SessionSelectorModal, { Session } from '@/components/SessionSelectorModal';
+import { EXERCISES } from '@/constants/exercises';
 import { useUser } from '@/contexts/UserContext';
 import { useSchedule } from '@/contexts/ScheduleContext';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_LABELS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 type ProgrammeCardWithGlowProps = {
   accent: string;
@@ -48,13 +51,107 @@ export default function DashboardScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const { activeProgramme } = useProgrammes();
-  const { user, stats, isFirstVisit } = useUser();
-  const { schedule, scheduledCount, toggleDay, isLoading: scheduleLoading } = useSchedule();
+  const { stats } = useUser();
+  const { schedule, assignSession, isLoading: scheduleLoading } = useSchedule();
   const insets = useSafeAreaInsets();
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [showSessionModal, setShowSessionModal] = useState(false);
+  const [availableSessions, setAvailableSessions] = useState<Session[]>([]);
 
   const scrollPaddingBottom = useMemo(() => {
     return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
   }, [insets.bottom]);
+
+  const loadAvailableSessions = useCallback(async () => {
+    if (!activeProgramme) {
+      setAvailableSessions([]);
+      return;
+    }
+
+    try {
+      console.log('[Home] Loading sessions for programme:', activeProgramme.id);
+
+      const exercisesByDay = new Map<number, typeof activeProgramme.exercises>();
+      activeProgramme.exercises.forEach(ex => {
+        const dayExercises = exercisesByDay.get(ex.day) || [];
+        dayExercises.push(ex);
+        exercisesByDay.set(ex.day, dayExercises);
+      });
+
+      const sessions: Session[] = [];
+      for (let day = 1; day <= activeProgramme.days; day++) {
+        const dayExercises = exercisesByDay.get(day) || [];
+        
+        sessions.push({
+          id: `${activeProgramme.id}-${day}-1`,
+          name: getDayName(day, activeProgramme.days),
+          day,
+          week: 1,
+          exercises: dayExercises.map(ex => {
+            const exerciseData = EXERCISES.find(e => e.id === ex.exerciseId);
+            return {
+              name: exerciseData?.name || 'Unknown Exercise',
+              sets: ex.sets,
+              reps: ex.reps,
+            };
+          }),
+          dayBadge: `Day ${day}`,
+        });
+      }
+
+      setAvailableSessions(sessions);
+    } catch (error) {
+      console.error('[Home] Error loading sessions:', error);
+      setAvailableSessions([]);
+    }
+  }, [activeProgramme]);
+
+  useEffect(() => {
+    loadAvailableSessions();
+  }, [loadAvailableSessions]);
+
+  function getDayName(day: number, totalDays: number): string {
+    if (totalDays === 2) {
+      return day === 1 ? 'Upper Body' : 'Lower Body';
+    } else if (totalDays === 3) {
+      const names = ['Push', 'Pull', 'Legs'];
+      return names[day - 1] || `Day ${day}`;
+    } else if (totalDays === 4) {
+      const names = ['Upper Body A', 'Lower Body A', 'Upper Body B', 'Lower Body B'];
+      return names[day - 1] || `Day ${day}`;
+    } else {
+      return `Day ${day}`;
+    }
+  }
+
+  const handleDayPress = (dayIndex: number) => {
+    console.log('[Home] Day pressed:', dayIndex);
+    const dayData = safeSchedule[dayIndex];
+    if (!dayData || dayData.status === 'completed') {
+      console.log('[Home] Day is completed or invalid, ignoring');
+      return;
+    }
+    if (!activeProgramme || scheduleLoading) {
+      console.log('[Home] No active programme or loading, ignoring');
+      return;
+    }
+    setSelectedDay(dayIndex);
+    setShowSessionModal(true);
+  };
+
+  const handleSessionSelect = async (session: Session | null) => {
+    if (selectedDay === null) return;
+    console.log('[Home] Session selected:', session?.id);
+    await assignSession(selectedDay, session?.id || null);
+    setShowSessionModal(false);
+    setSelectedDay(null);
+  };
+
+  const getSessionForDay = (dayIndex: number): Session | null => {
+    const daySchedule = schedule[dayIndex];
+    if (!daySchedule?.sessionId) return null;
+    return availableSessions.find(s => s.id === daySchedule.sessionId) || null;
+  };
 
   const safeSchedule = Array.isArray(schedule) && schedule.length === 7 ? schedule : Array.from({ length: 7 }, (_, i) => ({
     dayOfWeek: i,
@@ -112,19 +209,8 @@ export default function DashboardScreen() {
                   <Pressable
                     key={`day-${dayIndex}`}
                     style={styles.dayContainer}
-                    onPress={() => {
-                      console.log(`[Home] Day ${dayIndex} (${dayLabel}) clicked`);
-                      console.log('[Home] Item data:', JSON.stringify(item));
-                      console.log('[Home] Status:', item?.status || 'undefined');
-                      console.log('[Home] isInteractive:', isInteractive);
-                      console.log('[Home] scheduleLoading:', scheduleLoading);
-                      if (isInteractive && !scheduleLoading && item) {
-                        toggleDay(dayIndex);
-                      } else {
-                        console.log('[Home] Click blocked - interactive:', isInteractive, 'loading:', scheduleLoading, 'has item:', !!item);
-                      }
-                    }}
-                    disabled={!isInteractive || scheduleLoading}
+                    onPress={() => handleDayPress(dayIndex)}
+                    disabled={!isInteractive || scheduleLoading || item?.status === 'completed'}
                   >
                     <Text style={styles.dayLabel}>{dayLabel}</Text>
                     <View
@@ -153,7 +239,10 @@ export default function DashboardScreen() {
                       {item?.status === 'completed'
                         ? 'Done'
                         : item?.status === 'scheduled'
-                        ? 'Workout'
+                        ? (() => {
+                            const session = getSessionForDay(dayIndex);
+                            return session ? session.name : 'Workout';
+                          })()
                         : 'Rest'}
                     </Text>
                   </Pressable>
@@ -240,6 +329,21 @@ export default function DashboardScreen() {
             </Card>
           </View>
         </ScrollView>
+
+        {selectedDay !== null && (
+          <SessionSelectorModal
+            visible={showSessionModal}
+            onClose={() => {
+              setShowSessionModal(false);
+              setSelectedDay(null);
+            }}
+            onSelect={handleSessionSelect}
+            sessions={availableSessions}
+            selectedSessionId={schedule[selectedDay]?.sessionId || null}
+            dayName={DAY_LABELS_FULL[selectedDay]}
+            accentColor={accent}
+          />
+        )}
       </SafeAreaView>
     </View>
   );
