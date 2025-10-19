@@ -159,26 +159,26 @@ export default function AnalyticsScreen() {
 
             <View style={styles.tabsContainer}>
               <Pressable
-                style={[styles.tab, selectedMetric === 'sessions' && { backgroundColor: `${accent}20` }]}
+                style={[styles.tab, selectedMetric === 'sessions' && { backgroundColor: accent }]}
                 onPress={() => setSelectedMetric('sessions')}
               >
-                <Text style={[styles.tabText, selectedMetric === 'sessions' && { color: accent, fontWeight: '600' as const }]}>
+                <Text style={[styles.tabText, selectedMetric === 'sessions' && { color: COLORS.textPrimary, fontWeight: '600' as const }]}>
                   Sessions
                 </Text>
               </Pressable>
               <Pressable
-                style={[styles.tab, selectedMetric === 'volume' && { backgroundColor: `${accent}20` }]}
+                style={[styles.tab, selectedMetric === 'volume' && { backgroundColor: accent }]}
                 onPress={() => setSelectedMetric('volume')}
               >
-                <Text style={[styles.tabText, selectedMetric === 'volume' && { color: accent, fontWeight: '600' as const }]}>
+                <Text style={[styles.tabText, selectedMetric === 'volume' && { color: COLORS.textPrimary, fontWeight: '600' as const }]}>
                   Volume
                 </Text>
               </Pressable>
               <Pressable
-                style={[styles.tab, selectedMetric === 'completion' && { backgroundColor: `${accent}20` }]}
+                style={[styles.tab, selectedMetric === 'completion' && { backgroundColor: accent }]}
                 onPress={() => setSelectedMetric('completion')}
               >
-                <Text style={[styles.tabText, selectedMetric === 'completion' && { color: accent, fontWeight: '600' as const }]}>
+                <Text style={[styles.tabText, selectedMetric === 'completion' && { color: COLORS.textPrimary, fontWeight: '600' as const }]}>
                   Rate
                 </Text>
               </Pressable>
