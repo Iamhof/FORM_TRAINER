@@ -22,7 +22,7 @@ type ProgrammeCardWithGlowProps = {
 function ProgrammeCardWithGlow({ accent, activeProgramme, router }: ProgrammeCardWithGlowProps) {
   return (
     <Pressable onPress={() => router.push(`/programme/${activeProgramme.id}` as any)}>
-      <GlowCard accent={accent} glowIntensity="medium">
+      <GlowCard accent={accent} glowIntensity="subtle">
         <View style={styles.programmeCardEnhanced}>
           <View style={styles.programmeHeader}>
             <Text style={styles.programmeTitle}>{activeProgramme.name}</Text>

@@ -17,24 +17,24 @@ export default function GlowCard({
   const intensitySettings = {
     subtle: {
       shadowLayers: [
-        { opacity: 0.04, blur: 8, spread: 0 },
-        { opacity: 0.025, blur: 16, spread: 0 },
-        { opacity: 0.015, blur: 24, spread: 0 },
+        { opacity: 0.15, blur: 20, spread: 0 },
+        { opacity: 0.08, blur: 30, spread: 0 },
+        { opacity: 0.04, blur: 40, spread: 0 },
       ],
     },
     medium: {
       shadowLayers: [
-        { opacity: 0.06, blur: 12, spread: 0 },
-        { opacity: 0.04, blur: 20, spread: 0 },
-        { opacity: 0.025, blur: 32, spread: 0 },
+        { opacity: 0.2, blur: 24, spread: 0 },
+        { opacity: 0.12, blur: 36, spread: 0 },
+        { opacity: 0.06, blur: 48, spread: 0 },
       ],
     },
     strong: {
       shadowLayers: [
-        { opacity: 0.15, blur: 16, spread: 0 },
-        { opacity: 0.1, blur: 28, spread: 0 },
-        { opacity: 0.06, blur: 40, spread: 0 },
-        { opacity: 0.03, blur: 56, spread: 0 },
+        { opacity: 0.25, blur: 28, spread: 0 },
+        { opacity: 0.15, blur: 42, spread: 0 },
+        { opacity: 0.08, blur: 56, spread: 0 },
+        { opacity: 0.04, blur: 72, spread: 0 },
       ],
     },
   };
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderRadius: 18,
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255, 255, 255, 0.001)',
   },
   contentWrapper: {
     position: 'relative' as const,
