@@ -120,10 +120,23 @@ export default function ProgrammeOverviewScreen() {
     const totalSessions = programme.days * programme.weeks;
     const completedSessions = workoutsList.length;
 
+    let calculatedCurrentWeek = 0;
+    for (let weekIndex = 0; weekIndex < sessionsByWeek.length; weekIndex++) {
+      const weekData = sessionsByWeek[weekIndex];
+      const hasUncompletedSession = weekData.sessions.some(session => !session.completed);
+      
+      if (hasUncompletedSession) {
+        calculatedCurrentWeek = weekIndex;
+        console.log('[ProgrammeOverview] First uncompleted session found in week:', weekData.week);
+        break;
+      }
+    }
+
     console.log('[ProgrammeOverview] Sessions:', {
       total: totalSessions,
       completed: completedSessions,
       progress: Math.round((completedSessions / totalSessions) * 100),
+      calculatedCurrentWeek: calculatedCurrentWeek + 1,
     });
 
     return {
@@ -134,8 +147,24 @@ export default function ProgrammeOverviewScreen() {
         completedSessions,
         totalSessions,
       },
+      calculatedCurrentWeek,
     };
   }, [programme, workouts, programmeId, isSessionCompleted]);
+
+  useEffect(() => {
+    if (transformedProgramme && transformedProgramme.calculatedCurrentWeek !== undefined) {
+      const calculatedWeek = transformedProgramme.calculatedCurrentWeek;
+      console.log('[ProgrammeOverview] Auto-setting current week to:', calculatedWeek + 1);
+      setCurrentWeek(calculatedWeek);
+      
+      setTimeout(() => {
+        weekScrollRef.current?.scrollTo({ 
+          x: calculatedWeek * screenWidth, 
+          animated: false 
+        });
+      }, 100);
+    }
+  }, [transformedProgramme?.calculatedCurrentWeek, screenWidth]);
 
   function getDayName(day: number, totalDays: number): string {
     if (totalDays === 2) {
