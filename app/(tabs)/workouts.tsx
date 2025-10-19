@@ -58,7 +58,8 @@ export default function WorkoutsScreen() {
                 const progress = getProgrammeProgress(programme.id);
                 const isCompleted = progress.percentage === 100;
 
-                const handleDelete = () => {
+                const handleDelete = (e?: any) => {
+                  e?.stopPropagation?.();
                   Alert.alert(
                     'Delete Programme',
                     `Are you sure you want to delete "${programme.name}"? This action cannot be undone.`,
@@ -73,9 +74,12 @@ export default function WorkoutsScreen() {
                         onPress: async () => {
                           try {
                             setDeletingId(programme.id);
+                            console.log('[Workouts] Deleting programme:', programme.id);
                             await deleteProgramme(programme.id);
-                          } catch {
-                            Alert.alert('Error', 'Failed to delete programme');
+                            console.log('[Workouts] Programme deleted successfully');
+                          } catch (error) {
+                            console.error('[Workouts] Error deleting programme:', error);
+                            Alert.alert('Error', 'Failed to delete programme. Please try again.');
                           } finally {
                             setDeletingId(null);
                           }
