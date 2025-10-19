@@ -71,13 +71,15 @@ export const logWorkoutProcedure = protectedProcedure
 
       await supabaseAdmin
         .from('analytics')
-        .insert({
+        .upsert({
           user_id: ctx.userId,
           exercise_id: exercise.exerciseId,
           date: completedAt.split('T')[0],
           max_weight: maxWeight,
           total_volume: totalVolume,
           total_reps: totalReps,
+        }, {
+          onConflict: 'user_id,exercise_id,date',
         })
         .then(({ error }) => {
           if (error) {
