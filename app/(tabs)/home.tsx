@@ -25,7 +25,7 @@ type ProgrammeCardWithGlowProps = {
 function ProgrammeCardWithGlow({ accent, activeProgramme, router }: ProgrammeCardWithGlowProps) {
   return (
     <Pressable onPress={() => router.push(`/programme/${activeProgramme.id}` as any)}>
-      <GlowCard accent={accent} glowIntensity="subtle">
+      <GlowCard accent={accent} glowIntensity="medium" style={{ marginBottom: 16 }}>
         <View style={styles.programmeCardEnhanced}>
           <View style={styles.programmeHeader}>
             <Text style={styles.programmeTitle}>{activeProgramme.name}</Text>
@@ -572,9 +572,10 @@ const styles = StyleSheet.create({
   },
   programmeCardEnhanced: {
     backgroundColor: COLORS.cardBackground,
-    borderWidth: 1,
-    borderColor: COLORS.cardBorder,
+    borderWidth: 0,
+    borderRadius: 16,
     padding: SPACING.lg,
+    overflow: 'hidden' as const,
   },
   programmeCard: {
     padding: SPACING.lg,

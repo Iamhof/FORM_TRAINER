@@ -48,7 +48,7 @@ export default function GlowCard({
     const boxShadows = settings.shadowLayers
       .map((layer) => {
         const shadowHexOpacity = Math.round(layer.opacity * 255).toString(16).padStart(2, '0');
-        const spreadPx = layer.spread;
+        const spreadPx = layer.blur / 6;
         return `0 0 ${layer.blur}px ${spreadPx}px ${accent}${shadowHexOpacity}`;
       })
       .join(', ');
@@ -60,6 +60,7 @@ export default function GlowCard({
             styles.glowLayerWeb,
             {
               boxShadow: boxShadows,
+              borderRadius: 24,
               borderWidth: 0,
             },
           ]}
@@ -82,10 +83,11 @@ export default function GlowCard({
               {
                 shadowColor: accent,
                 shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: layer.opacity,
-                shadowRadius: layer.blur / 2,
-                elevation: 10 + index * 5,
-                backgroundColor: 'transparent',
+                shadowOpacity: layer.opacity * 1.3,
+                shadowRadius: layer.blur / 2.5,
+                elevation: 15 + index * 8,
+                backgroundColor: Platform.OS === 'android' ? '#FFFFFF' : 'transparent',
+                opacity: Platform.OS === 'android' ? 0.001 : 1,
               },
             ]}
           />
@@ -129,7 +131,6 @@ const styles = StyleSheet.create({
   contentWrapper: {
     position: 'relative' as const,
     zIndex: 10,
-    overflow: 'hidden' as const,
     borderRadius: 16,
   },
 });
