@@ -17,36 +17,42 @@ export default function GlowCard({
   const intensitySettings = {
     subtle: {
       shadowLayers: [
-        { opacity: 0.2, blur: 24, spread: -2 },
-        { opacity: 0.12, blur: 36, spread: -4 },
-        { opacity: 0.08, blur: 48, spread: -6 },
+        { opacity: 0.4, blur: 16, spread: 0 },
+        { opacity: 0.25, blur: 32, spread: 0 },
+        { opacity: 0.15, blur: 48, spread: 0 },
       ],
+      borderOpacity: 0.3,
     },
     medium: {
       shadowLayers: [
-        { opacity: 0.25, blur: 28, spread: -2 },
-        { opacity: 0.15, blur: 42, spread: -4 },
-        { opacity: 0.10, blur: 56, spread: -6 },
+        { opacity: 0.5, blur: 20, spread: 0 },
+        { opacity: 0.3, blur: 40, spread: 0 },
+        { opacity: 0.2, blur: 60, spread: 0 },
       ],
+      borderOpacity: 0.4,
     },
     strong: {
       shadowLayers: [
-        { opacity: 0.3, blur: 32, spread: 0 },
-        { opacity: 0.2, blur: 48, spread: 0 },
-        { opacity: 0.12, blur: 64, spread: 0 },
-        { opacity: 0.06, blur: 80, spread: 0 },
+        { opacity: 0.6, blur: 24, spread: 0 },
+        { opacity: 0.4, blur: 48, spread: 0 },
+        { opacity: 0.25, blur: 72, spread: 0 },
+        { opacity: 0.15, blur: 96, spread: 0 },
       ],
+      borderOpacity: 0.5,
     },
   };
 
   const settings = intensitySettings[glowIntensity];
 
+  const hexOpacity = Math.round(settings.borderOpacity * 255).toString(16).padStart(2, '0');
+  const borderColor = `${accent}${hexOpacity}`;
+
   if (Platform.OS === 'web') {
     const boxShadows = settings.shadowLayers
       .map((layer) => {
-        const hexOpacity = Math.round(layer.opacity * 255).toString(16).padStart(2, '0');
+        const shadowHexOpacity = Math.round(layer.opacity * 255).toString(16).padStart(2, '0');
         const spreadPx = layer.spread;
-        return `0 0 ${layer.blur}px ${spreadPx}px ${accent}${hexOpacity}`;
+        return `0 0 ${layer.blur}px ${spreadPx}px ${accent}${shadowHexOpacity}`;
       })
       .join(', ');
 
@@ -57,10 +63,12 @@ export default function GlowCard({
             styles.glowLayerWeb,
             {
               boxShadow: boxShadows,
+              borderWidth: 1.5,
+              borderColor,
             },
           ]}
         />
-        <View style={styles.contentWrapper}>
+        <View style={[styles.contentWrapper, { borderWidth: 1, borderColor }]}>
           {children}
         </View>
       </View>
@@ -80,13 +88,14 @@ export default function GlowCard({
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: layer.opacity,
                 shadowRadius: layer.blur / 2,
-                elevation: 8 + index * 2,
+                elevation: 10 + index * 4,
+                backgroundColor: '#1A1A1A',
               },
             ]}
           />
         ))}
       </View>
-      <View style={styles.contentWrapper}>
+      <View style={[styles.contentWrapper, { borderWidth: 1.5, borderColor }]}>
         {children}
       </View>
     </View>
@@ -99,19 +108,19 @@ const styles = StyleSheet.create({
   },
   glowLayerWeb: {
     position: 'absolute' as const,
-    top: -8,
-    left: -8,
-    right: -8,
-    bottom: -8,
+    top: -12,
+    left: -12,
+    right: -12,
+    bottom: -12,
     borderRadius: 24,
     pointerEvents: 'none' as const,
   },
   glowContainerNative: {
     position: 'absolute' as const,
-    top: -8,
-    left: -8,
-    right: -8,
-    bottom: -8,
+    top: -12,
+    left: -12,
+    right: -12,
+    bottom: -12,
   },
   glowLayerNative: {
     position: 'absolute' as const,
@@ -120,9 +129,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderRadius: 24,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'transparent',
   },
   contentWrapper: {
     position: 'relative' as const,
