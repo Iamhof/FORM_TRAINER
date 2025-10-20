@@ -24,26 +24,28 @@ type ProgrammeCardWithGlowProps = {
 
 function ProgrammeCardWithGlow({ accent, activeProgramme, router }: ProgrammeCardWithGlowProps) {
   return (
-    <Pressable onPress={() => router.push(`/programme/${activeProgramme.id}` as any)}>
-      <GlowCard accent={accent} glowIntensity="medium" style={{ marginBottom: 16 }}>
-        <View style={styles.programmeCardEnhanced}>
-          <View style={styles.programmeHeader}>
-            <Text style={styles.programmeTitle}>{activeProgramme.name}</Text>
-            <View style={[styles.activeBadge, { backgroundColor: `${accent}30` }]}>
-                <Text style={[styles.activeBadgeText, { color: accent }]}>Active</Text>
+    <View style={styles.cardContainer}>
+      <Pressable onPress={() => router.push(`/programme/${activeProgramme.id}` as any)}>
+        <GlowCard glowColor={accent}>
+          <View style={styles.programmeCardEnhanced}>
+            <View style={styles.programmeHeader}>
+              <Text style={styles.programmeTitle}>{activeProgramme.name}</Text>
+              <View style={[styles.activeBadge, { backgroundColor: `${accent}30` }]}>
+                  <Text style={[styles.activeBadgeText, { color: accent }]}>Active</Text>
+                </View>
               </View>
-            </View>
-            <Text style={styles.programmeSubtitle}>
-              {activeProgramme.days} days per week • {activeProgramme.weeks} weeks
-            </Text>
+              <Text style={styles.programmeSubtitle}>
+                {activeProgramme.days} days per week • {activeProgramme.weeks} weeks
+              </Text>
 
-          <View style={styles.totalDaysRow}>
-            <Text style={styles.totalDaysLabel}>Total Exercises</Text>
-            <Text style={styles.totalDaysValue}>{activeProgramme.exercises?.length || 0}</Text>
+            <View style={styles.totalDaysRow}>
+              <Text style={styles.totalDaysLabel}>Total Exercises</Text>
+              <Text style={styles.totalDaysValue}>{activeProgramme.exercises?.length || 0}</Text>
+            </View>
           </View>
-        </View>
-      </GlowCard>
-    </Pressable>
+        </GlowCard>
+      </Pressable>
+    </View>
   );
 }
 
@@ -570,11 +572,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600' as const,
   },
+  cardContainer: {
+    marginVertical: 30,
+  },
   programmeCardEnhanced: {
     backgroundColor: COLORS.cardBackground,
     borderWidth: 0,
     borderRadius: 16,
     padding: SPACING.lg,
+    overflow: 'hidden',
   },
   programmeCard: {
     padding: SPACING.lg,

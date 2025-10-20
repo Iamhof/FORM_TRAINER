@@ -37,18 +37,20 @@ export default function GlowCard({
 
   return (
     <View style={[styles.container, style]}>
-      <View style={[styles.glowWrapper, styles.glow1]}>
-        <LinearGradient
-          colors={[colorWithOpacity(glowColor, 0.2), colorWithOpacity(glowColor, 0)]}
-          style={styles.glowInner}
-        />
-      </View>
+      <View style={styles.glowContainer}>
+        <View style={[styles.glowWrapper, styles.glow1]}>
+          <LinearGradient
+            colors={[colorWithOpacity(glowColor, 0.25), colorWithOpacity(glowColor, 0)]}
+            style={styles.glowInner}
+          />
+        </View>
 
-      <View style={[styles.glowWrapper, styles.glow2]}>
-        <LinearGradient
-          colors={[colorWithOpacity(glowColor, 0.4), colorWithOpacity(glowColor, 0)]}
-          style={styles.glowInner}
-        />
+        <View style={[styles.glowWrapper, styles.glow2]}>
+          <LinearGradient
+            colors={[colorWithOpacity(glowColor, 0.5), colorWithOpacity(glowColor, 0)]}
+            style={styles.glowInner}
+          />
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -61,7 +63,15 @@ export default function GlowCard({
 const styles = StyleSheet.create({
   container: {
     position: 'relative' as const,
-    width: '100%',
+    overflow: 'visible',
+  },
+  glowContainer: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
   },
   glowWrapper: {
     position: 'absolute' as const,
@@ -72,17 +82,17 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     ...Platform.select({
       web: {
-        filter: 'blur(60px)',
+        filter: 'blur(70px)',
       } as any,
     }),
   },
   glow1: {
-    transform: [{ scale: 1.15 }, { translateY: 10 }],
-    opacity: 0.5,
+    transform: [{ scaleX: 1.2 }, { scaleY: 1.4 }, { translateY: 15 }],
+    opacity: 0.6,
   },
   glow2: {
-    transform: [{ scale: 1.0 }, { translateY: 15 }],
-    opacity: 0.9,
+    transform: [{ scaleX: 1.05 }, { scaleY: 1.2 }, { translateY: 20 }],
+    opacity: 1,
   },
   glowInner: {
     flex: 1,
