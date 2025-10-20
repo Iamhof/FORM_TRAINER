@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleSheet, View, ViewStyle, Platform } from 'react-native';
 import { COLORS } from '@/constants/theme';
 
 type GlowCardProps = {
@@ -36,7 +36,28 @@ export default function GlowCard({
 
   return (
     <View style={[styles.container, style]}>
-      <View style={[styles.glowBorder, { borderColor: colorWithOpacity(glowColor, 0.6) }]}>
+      <View 
+        style={[
+          styles.glowBorder, 
+          { 
+            borderColor: colorWithOpacity(glowColor, 0.8),
+            shadowColor: glowColor,
+            ...Platform.select({
+              ios: {
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.6,
+                shadowRadius: 8,
+              },
+              android: {
+                elevation: 8,
+              },
+              web: {
+                boxShadow: `0 0 20px ${colorWithOpacity(glowColor, 0.4)}`,
+              } as any,
+            }),
+          }
+        ]}
+      >
         {children}
       </View>
     </View>
