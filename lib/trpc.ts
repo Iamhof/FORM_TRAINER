@@ -11,7 +11,8 @@ const getBaseUrl = () => {
   
   if (apiBaseUrl) {
     console.log('[TRPC] Using EXPO_PUBLIC_RORK_API_BASE_URL:', apiBaseUrl);
-    return apiBaseUrl;
+    const cleanUrl = apiBaseUrl.replace(/\/+$/, '');
+    return cleanUrl;
   }
   
   if (typeof window !== 'undefined') {
@@ -32,7 +33,7 @@ const getBaseUrl = () => {
 export const trpcClient = trpc.createClient({
   links: [
     httpLink({
-      url: `${getBaseUrl()}/api/trpc`,
+      url: `${getBaseUrl()}/trpc`,
       transformer: superjson,
       async headers() {
         try {

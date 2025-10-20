@@ -20,6 +20,17 @@ app.use("*", async (c, next) => {
 });
 
 app.use(
+  "/trpc/*",
+  trpcServer({
+    router: appRouter,
+    createContext,
+    onError: ({ path, error }) => {
+      console.error('[Hono tRPC] Error on path', path, ':', error);
+    },
+  })
+);
+
+app.use(
   "/api/trpc/*",
   trpcServer({
     router: appRouter,
@@ -37,7 +48,7 @@ app.get("/", (c) => {
 app.notFound((c) => {
   console.error('[Hono] Route not found:', c.req.method, c.req.url);
   console.error('[Hono] Request path:', c.req.path);
-  console.error('[Hono] Available routes: /api/trpc/*');
+  console.error('[Hono] Available routes: /trpc/*, /api/trpc/*');
   return c.json({ error: 'Not found', path: c.req.url, requestedPath: c.req.path }, 404);
 });
 
