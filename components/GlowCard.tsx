@@ -1,6 +1,5 @@
 import React, { ReactNode } from 'react';
 import { StyleSheet, View, ViewStyle, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '@/constants/theme';
 
 type GlowCardProps = {
@@ -35,25 +34,22 @@ export default function GlowCard({
     return `rgba(255, 107, 85, ${alpha})`;
   };
 
+  const borderGlowStyle = Platform.select({
+    web: {
+      boxShadow: `0 0 20px ${colorWithOpacity(glowColor, 0.3)}, 0 0 40px ${colorWithOpacity(glowColor, 0.15)}, inset 0 0 80px ${colorWithOpacity(glowColor, 0.05)}`,
+    },
+    default: {
+      shadowColor: glowColor,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.4,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+  });
+
   return (
     <View style={[styles.container, style]}>
-      <View style={styles.glowContainer}>
-        <View style={[styles.glowWrapper, styles.glow1]}>
-          <LinearGradient
-            colors={[colorWithOpacity(glowColor, 0.25), colorWithOpacity(glowColor, 0)]}
-            style={styles.glowInner}
-          />
-        </View>
-
-        <View style={[styles.glowWrapper, styles.glow2]}>
-          <LinearGradient
-            colors={[colorWithOpacity(glowColor, 0.5), colorWithOpacity(glowColor, 0)]}
-            style={styles.glowInner}
-          />
-        </View>
-      </View>
-
-      <View style={styles.content}>
+      <View style={[styles.glowBorder, { borderColor: colorWithOpacity(glowColor, 0.3) }, borderGlowStyle as any]}>
         {children}
       </View>
     </View>
@@ -63,42 +59,9 @@ export default function GlowCard({
 const styles = StyleSheet.create({
   container: {
     position: 'relative' as const,
-    overflow: 'visible',
   },
-  glowContainer: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1,
-  },
-  glowWrapper: {
-    position: 'absolute' as const,
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderRadius: 50,
-    ...Platform.select({
-      web: {
-        filter: 'blur(70px)',
-      } as any,
-    }),
-  },
-  glow1: {
-    transform: [{ scaleX: 1.2 }, { scaleY: 1.4 }, { translateY: 15 }],
-    opacity: 0.6,
-  },
-  glow2: {
-    transform: [{ scaleX: 1.05 }, { scaleY: 1.2 }, { translateY: 20 }],
-    opacity: 1,
-  },
-  glowInner: {
-    flex: 1,
-    borderRadius: 50,
-  },
-  content: {
-    zIndex: 5,
+  glowBorder: {
+    borderWidth: 1,
+    borderRadius: 16,
   },
 });
