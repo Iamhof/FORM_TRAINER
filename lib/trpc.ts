@@ -18,7 +18,13 @@ const getBaseUrl = () => {
     return url;
   }
   
-  console.log('[TRPC] Using empty base URL for native (will use relative URLs)');
+  const apiBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  if (apiBaseUrl) {
+    console.log('[TRPC] Using EXPO_PUBLIC_RORK_API_BASE_URL:', apiBaseUrl);
+    return apiBaseUrl;
+  }
+  
+  console.error('[TRPC] ERROR: No base URL configured! Set EXPO_PUBLIC_RORK_API_BASE_URL in .env file');
   return '';
 };
 
