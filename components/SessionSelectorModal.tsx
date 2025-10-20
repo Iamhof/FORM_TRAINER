@@ -218,15 +218,16 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800' as const,
     color: COLORS.textPrimary,
-    marginBottom: 2,
+    marginBottom: 4,
+    letterSpacing: 0.3,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
-    fontWeight: '500' as const,
+    fontWeight: '600' as const,
   },
   closeButton: {
     width: 36,
@@ -286,6 +287,7 @@ const styles = StyleSheet.create({
     fontWeight: '800' as const,
     color: COLORS.textPrimary,
     flex: 1,
+    letterSpacing: 0.2,
   },
   dayBadge: {
     paddingHorizontal: 12,
@@ -307,12 +309,12 @@ const styles = StyleSheet.create({
   },
   exerciseCount: {
     fontSize: 14,
-    color: COLORS.textSecondary,
+    color: COLORS.textTertiary,
     fontWeight: '600' as const,
   },
   divider: {
     height: 1,
-    backgroundColor: `${COLORS.textSecondary}20`,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: SPACING.md,
   },
   exerciseList: {
@@ -326,24 +328,25 @@ const styles = StyleSheet.create({
   },
   exerciseName: {
     fontSize: 15,
-    color: COLORS.textPrimary,
-    fontWeight: '500' as const,
+    color: COLORS.textSecondary,
+    fontWeight: '600' as const,
     flex: 1,
   },
   exerciseSets: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    fontWeight: '600' as const,
-    backgroundColor: `${COLORS.textSecondary}10`,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    fontSize: 13,
+    color: COLORS.textPrimary,
+    fontWeight: '700' as const,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 8,
   },
   moreExercises: {
     fontSize: 13,
-    color: COLORS.textSecondary,
+    color: COLORS.textTertiary,
     fontWeight: '600' as const,
     marginTop: 4,
+    fontStyle: 'italic' as const,
   },
   emptyState: {
     paddingVertical: SPACING.xl * 2,
@@ -354,5 +357,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textSecondary,
     textAlign: 'center' as const,
+    lineHeight: 22,
   },
 });

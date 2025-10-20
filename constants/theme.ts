@@ -3,8 +3,9 @@ export const COLORS = {
   cardBackground: 'rgba(40, 20, 15, 0.6)',
   cardBorder: 'rgba(80, 40, 30, 0.3)',
   textPrimary: 'rgb(255, 255, 255)',
-  textSecondary: 'rgb(153, 153, 153)',
-  textTertiary: 'rgb(100, 100, 100)',
+  textSecondary: 'rgb(170, 170, 170)',
+  textTertiary: 'rgb(120, 120, 120)',
+  textMuted: 'rgb(100, 100, 100)',
   
   accents: {
     orange: 'rgb(255, 107, 85)',

@@ -160,7 +160,7 @@ export default function WeekScheduler({
                   </View>
                 ) : (
                   <View style={styles.emptyIndicator}>
-                    <Plus size={24} color={COLORS.textTertiary} strokeWidth={2} />
+                    <Plus size={24} color={COLORS.textSecondary} strokeWidth={2.5} />
                     <Text style={styles.emptyText}>Assign</Text>
                   </View>
                 )}
@@ -258,9 +258,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
   },
   dayLabel: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700' as const,
-    color: COLORS.textSecondary,
+    color: COLORS.textPrimary,
+    letterSpacing: 0.3,
   },
   completeBadge: {
     width: 18,
@@ -280,7 +281,8 @@ const styles = StyleSheet.create({
   },
   exerciseCount: {
     fontSize: 12,
-    color: COLORS.textSecondary,
+    color: COLORS.textTertiary,
+    fontWeight: '600' as const,
   },
   restIndicator: {
     alignItems: 'center' as const,
@@ -298,8 +300,8 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 12,
-    color: COLORS.textTertiary,
-    fontWeight: '500' as const,
+    color: COLORS.textSecondary,
+    fontWeight: '600' as const,
   },
   legend: {
     flexDirection: 'row' as const,
