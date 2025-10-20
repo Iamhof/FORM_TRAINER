@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end' as const,
   },
   modalContent: {
-    backgroundColor: COLORS.background,
+    backgroundColor: '#1a1a1a',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: height * 0.85,
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.xl + 20,
   },
   restOption: {
-    backgroundColor: COLORS.cardBackground,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 16,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   sessionCard: {
     padding: SPACING.lg,
     marginBottom: SPACING.md,
-    backgroundColor: COLORS.cardBackground,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderWidth: 2,
     borderColor: 'transparent',
     borderRadius: 16,
