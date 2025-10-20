@@ -36,6 +36,13 @@ export default function WeekScheduler({
     return currentWeekSessions.find(s => s.id === daySchedule.sessionId) || null;
   };
 
+  const getScheduledSessionIds = useMemo(() => {
+    return schedule
+      .filter(day => day.sessionId && day.status !== 'empty')
+      .map(day => day.sessionId)
+      .filter((id): id is string => id !== null && id !== undefined);
+  }, [schedule]);
+
   const handleDayPress = (dayIndex: number) => {
     const daySchedule = schedule[dayIndex];
     if (daySchedule?.status === 'completed') {
@@ -187,6 +194,7 @@ export default function WeekScheduler({
           }}
           onSelect={handleSessionSelect}
           sessions={currentWeekSessions}
+          scheduledSessionIds={getScheduledSessionIds}
           selectedSessionId={schedule[selectedDay]?.sessionId || null}
           dayName={DAYS_FULL[selectedDay]}
           accentColor={accentColor}
