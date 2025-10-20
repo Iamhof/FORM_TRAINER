@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { StyleSheet, View, ViewStyle, Platform } from 'react-native';
+import { StyleSheet, View, ViewStyle } from 'react-native';
 import { COLORS } from '@/constants/theme';
 
 type GlowCardProps = {
@@ -34,22 +34,9 @@ export default function GlowCard({
     return `rgba(255, 107, 85, ${alpha})`;
   };
 
-  const borderGlowStyle = Platform.select({
-    web: {
-      boxShadow: `0 0 20px ${colorWithOpacity(glowColor, 0.3)}, 0 0 40px ${colorWithOpacity(glowColor, 0.15)}, inset 0 0 80px ${colorWithOpacity(glowColor, 0.05)}`,
-    },
-    default: {
-      shadowColor: glowColor,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.4,
-      shadowRadius: 20,
-      elevation: 10,
-    },
-  });
-
   return (
     <View style={[styles.container, style]}>
-      <View style={[styles.glowBorder, { borderColor: colorWithOpacity(glowColor, 0.3) }, borderGlowStyle as any]}>
+      <View style={[styles.glowBorder, { borderColor: colorWithOpacity(glowColor, 0.6) }]}>
         {children}
       </View>
     </View>
@@ -61,7 +48,7 @@ const styles = StyleSheet.create({
     position: 'relative' as const,
   },
   glowBorder: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 16,
   },
 });
