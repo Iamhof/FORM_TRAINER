@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { X, Check } from 'lucide-react-native';
-import Card from './Card';
+
 import { COLORS, SPACING } from '@/constants/theme';
 
 export type Session = {
@@ -124,13 +124,12 @@ export default function SessionSelectorModal({
                   key={session.id}
                   onPress={() => handleSelect(session)}
                 >
-                  <Card
+                  <View
                     style={[
                       styles.sessionCard,
                       isSelected && {
-                        backgroundColor: `${accentColor}10`,
+                        backgroundColor: `${accentColor}15`,
                         borderColor: accentColor,
-                        borderWidth: 2,
                       },
                     ]}
                   >
@@ -184,7 +183,7 @@ export default function SessionSelectorModal({
                         </Text>
                       )}
                     </View>
-                  </Card>
+                  </View>
                 </Pressable>
               );
             })}
@@ -265,6 +264,10 @@ const styles = StyleSheet.create({
   sessionCard: {
     padding: SPACING.lg,
     marginBottom: SPACING.md,
+    backgroundColor: COLORS.cardBackground,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    borderRadius: 16,
   },
   sessionHeader: {
     flexDirection: 'row' as const,
