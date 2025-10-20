@@ -1,21 +1,26 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./trpc/app-router";
 import { createContext } from "./trpc/create-context";
 
 const app = new Hono();
 
+app.use(
+  "*",
+  cors({
+    origin: '*',
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
+    exposeHeaders: ['Content-Length', 'X-Request-Id'],
+    maxAge: 600,
+    credentials: true,
+  })
+);
+
 app.use("*", async (c, next) => {
   console.log('[Hono] Incoming request:', c.req.method, c.req.url);
   console.log('[Hono] Request path:', c.req.path);
-  c.header('Access-Control-Allow-Origin', '*');
-  c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
-  if (c.req.method === 'OPTIONS') {
-    return new Response(null, { status: 204 });
-  }
-  
   await next();
 });
 
