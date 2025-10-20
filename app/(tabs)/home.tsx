@@ -575,7 +575,6 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     borderRadius: 16,
     padding: SPACING.lg,
-    overflow: 'hidden' as const,
   },
   programmeCard: {
     padding: SPACING.lg,
