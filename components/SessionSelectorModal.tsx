@@ -139,7 +139,7 @@ export default function SessionSelectorModal({
                     style={[
                       styles.sessionCard,
                       isSelected && {
-                        backgroundColor: `${accentColor}15`,
+                        backgroundColor: accentColor,
                         borderColor: accentColor,
                       },
                     ]}
@@ -149,47 +149,62 @@ export default function SessionSelectorModal({
                         <View style={styles.sessionTitleRow}>
                           <Text style={[
                             styles.sessionName,
-                            isSelected && { color: accentColor },
+                            isSelected && { color: '#FFFFFF' },
                           ]}>
                             {session.name}
                           </Text>
                           {isSelected && (
-                            <View style={[styles.checkmark, { backgroundColor: accentColor }]}>
-                              <Check size={18} color={COLORS.background} strokeWidth={3} />
+                            <View style={[styles.checkmark, { backgroundColor: '#FFFFFF' }]}>
+                              <Check size={18} color={accentColor} strokeWidth={3} />
                             </View>
                           )}
                         </View>
-                        <Text style={styles.exerciseCount}>
+                        <Text style={[
+                          styles.exerciseCount,
+                          isSelected && { color: 'rgba(255, 255, 255, 0.8)' },
+                        ]}>
                           {session.exercises.length} {session.exercises.length === 1 ? 'exercise' : 'exercises'}
                         </Text>
                       </View>
                       <View
                         style={[
                           styles.dayBadge,
-                          { backgroundColor: isSelected ? accentColor : `${accentColor}30` },
+                          { backgroundColor: isSelected ? '#FFFFFF' : `${accentColor}30` },
                         ]}
                       >
-                        <Text style={[styles.dayBadgeText, { color: isSelected ? COLORS.background : accentColor }]}>
+                        <Text style={[styles.dayBadgeText, { color: isSelected ? accentColor : accentColor }]}>
                           {session.dayBadge}
                         </Text>
                       </View>
                     </View>
 
-                    <View style={styles.divider} />
+                    <View style={[styles.divider, isSelected && { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]} />
 
                     <View style={styles.exerciseList}>
                       {session.exercises.slice(0, 3).map((exercise, idx) => (
                         <View key={idx} style={styles.exerciseRow}>
-                          <Text style={styles.exerciseName} numberOfLines={1}>
+                          <Text style={[
+                            styles.exerciseName,
+                            isSelected && { color: '#FFFFFF' },
+                          ]} numberOfLines={1}>
                             • {exercise.name}
                           </Text>
-                          <Text style={styles.exerciseSets}>
+                          <Text style={[
+                            styles.exerciseSets,
+                            isSelected && { 
+                              color: accentColor,
+                              backgroundColor: '#FFFFFF',
+                            },
+                          ]}>
                             {exercise.sets} × {exercise.reps}
                           </Text>
                         </View>
                       ))}
                       {session.exercises.length > 3 && (
-                        <Text style={styles.moreExercises}>
+                        <Text style={[
+                          styles.moreExercises,
+                          isSelected && { color: 'rgba(255, 255, 255, 0.7)' },
+                        ]}>
                           +{session.exercises.length - 3} more exercises
                         </Text>
                       )}
