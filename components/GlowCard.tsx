@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import { StyleSheet, View, ViewStyle, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type GlowCardProps = {
   children: ReactNode;
@@ -55,13 +56,21 @@ export default function GlowCard({
 
     return (
       <View style={[styles.wrapper, style]}>
+        <View style={styles.glowLayerWeb}>
+          <LinearGradient
+            colors={[`${accent}60`, `${accent}30`, `${accent}10`, 'transparent']}
+            start={{ x: 0.5, y: 0.5 }}
+            end={{ x: 0.5, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
         <View
+          // @ts-ignore - boxShadow is web-only
           style={[
-            styles.glowLayerWeb,
+            styles.glowShadowWeb,
             {
+              backgroundColor: 'transparent',
               boxShadow: boxShadows,
-              borderRadius: 24,
-              borderWidth: 0,
             },
           ]}
         />
@@ -103,15 +112,28 @@ export default function GlowCard({
 const styles = StyleSheet.create({
   wrapper: {
     position: 'relative' as const,
+    overflow: 'visible' as const,
   },
   glowLayerWeb: {
     position: 'absolute' as const,
-    top: -12,
-    left: -12,
-    right: -12,
-    bottom: -12,
+    top: -20,
+    left: -20,
+    right: -20,
+    bottom: -20,
+    borderRadius: 32,
+    pointerEvents: 'none' as const,
+    zIndex: 1,
+    overflow: 'visible' as const,
+  },
+  glowShadowWeb: {
+    position: 'absolute' as const,
+    top: -16,
+    left: -16,
+    right: -16,
+    bottom: -16,
     borderRadius: 24,
     pointerEvents: 'none' as const,
+    zIndex: 1,
   },
   glowContainerNative: {
     position: 'absolute' as const,
@@ -130,7 +152,7 @@ const styles = StyleSheet.create({
   },
   contentWrapper: {
     position: 'relative' as const,
-    zIndex: 10,
+    zIndex: 2,
     borderRadius: 16,
   },
 });
