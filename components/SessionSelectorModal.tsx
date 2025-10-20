@@ -42,11 +42,22 @@ export default function SessionSelectorModal({
   dayName,
   accentColor,
 }: SessionSelectorModalProps) {
+  console.log('[SessionSelectorModal] Rendered with:', {
+    visible,
+    sessionsCount: sessions.length,
+    dayName,
+    selectedSessionId,
+    scheduledSessionIds,
+  });
+
   const availableSessions = sessions.filter(
     (session) => session.id === selectedSessionId || !scheduledSessionIds.includes(session.id)
   );
 
+  console.log('[SessionSelectorModal] Available sessions:', availableSessions.length);
+
   const handleSelect = (session: Session | null) => {
+    console.log('[SessionSelectorModal] Selecting session:', session?.id);
     onSelect(session);
     onClose();
   };
@@ -207,6 +218,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: height * 0.85,
+    minHeight: height * 0.5,
     paddingTop: SPACING.lg,
   },
   header: {
@@ -238,10 +250,12 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    maxHeight: height * 0.65,
   },
   scrollContent: {
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.xl + 20,
+    paddingBottom: SPACING.xl + 40,
+    flexGrow: 1,
   },
   restOption: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
