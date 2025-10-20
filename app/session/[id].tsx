@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { X, Check } from 'lucide-react-native';
 import Card from '@/components/Card';
 import RestTimerModal from '@/components/RestTimerModal';
+import WorkoutCompleteModal, { WorkoutSummary } from '@/components/WorkoutCompleteModal';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
@@ -47,6 +48,9 @@ export default function SessionScreen() {
     day: number;
     week: number;
   } | null>(null);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [workoutSummary, setWorkoutSummary] = useState<WorkoutSummary | null>(null);
+  const sessionStartTime = useRef(Date.now());
 
 
 
@@ -191,6 +195,27 @@ export default function SessionScreen() {
         })),
       }));
 
+      const sessionEndTime = Date.now();
+      const totalTimeMinutes = Math.round((sessionEndTime - sessionStartTime.current) / 60000);
+      const totalExercises = exercises.length;
+      const totalSetsCount = exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
+      const totalVolumeKg = exercises.reduce((volume, ex) => 
+        volume + ex.sets.reduce((setVolume, set) => 
+          setVolume + (parseFloat(set.weight) || 0) * (parseInt(set.reps, 10) || 0), 0
+        ), 0
+      );
+      const estimatedCalories = Math.round(totalVolumeKg * 0.025);
+
+      const summaryData: WorkoutSummary = {
+        title: sessionData.programmeName || 'Workout Complete!',
+        date: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
+        totalTime: `${totalTimeMinutes}m`,
+        totalVolume: Math.round(totalVolumeKg),
+        exercises: totalExercises,
+        calories: estimatedCalories,
+        sets: totalSetsCount,
+      };
+
       console.log('[SessionScreen] Saving workout to Supabase:', {
         programmeId: sessionData.programmeId,
         day: sessionData.day,
@@ -301,9 +326,10 @@ export default function SessionScreen() {
         loadSchedule(),
       ]);
       
-      console.log('[SessionScreen] Contexts refreshed, navigating back');
+      console.log('[SessionScreen] Contexts refreshed, showing celebration modal');
       
-      router.back();
+      setWorkoutSummary(summaryData);
+      setShowCompleteModal(true);
     } catch (error) {
       console.error('[SessionScreen] Error completing workout:', error);
       
@@ -511,6 +537,18 @@ export default function SessionScreen() {
         onSkip={() => setShowRestTimer(false)}
         onComplete={() => setShowRestTimer(false)}
       />
+
+      {workoutSummary && (
+        <WorkoutCompleteModal
+          visible={showCompleteModal}
+          onClose={() => {
+            setShowCompleteModal(false);
+            router.back();
+          }}
+          summary={workoutSummary}
+          accentColor={accent}
+        />
+      )}
     </View>
   );
 }
