@@ -17,11 +17,11 @@ export default function GlowCard({
   const intensitySettings = {
     subtle: {
       shadowLayers: [
-        { opacity: 0.4, blur: 16, spread: 0 },
-        { opacity: 0.25, blur: 32, spread: 0 },
-        { opacity: 0.15, blur: 48, spread: 0 },
+        { opacity: 0.5, blur: 12, spread: 0 },
+        { opacity: 0.35, blur: 24, spread: 0 },
+        { opacity: 0.2, blur: 40, spread: 0 },
       ],
-      borderOpacity: 0.3,
+      borderOpacity: 0,
     },
     medium: {
       shadowLayers: [
@@ -44,9 +44,6 @@ export default function GlowCard({
 
   const settings = intensitySettings[glowIntensity];
 
-  const hexOpacity = Math.round(settings.borderOpacity * 255).toString(16).padStart(2, '0');
-  const borderColor = `${accent}${hexOpacity}`;
-
   if (Platform.OS === 'web') {
     const boxShadows = settings.shadowLayers
       .map((layer) => {
@@ -63,12 +60,11 @@ export default function GlowCard({
             styles.glowLayerWeb,
             {
               boxShadow: boxShadows,
-              borderWidth: 1.5,
-              borderColor,
+              borderWidth: 0,
             },
           ]}
         />
-        <View style={[styles.contentWrapper, { borderWidth: 1, borderColor }]}>
+        <View style={styles.contentWrapper}>
           {children}
         </View>
       </View>
@@ -88,14 +84,14 @@ export default function GlowCard({
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: layer.opacity,
                 shadowRadius: layer.blur / 2,
-                elevation: 10 + index * 4,
-                backgroundColor: '#1A1A1A',
+                elevation: 10 + index * 5,
+                backgroundColor: 'transparent',
               },
             ]}
           />
         ))}
       </View>
-      <View style={[styles.contentWrapper, { borderWidth: 1.5, borderColor }]}>
+      <View style={styles.contentWrapper}>
         {children}
       </View>
     </View>
