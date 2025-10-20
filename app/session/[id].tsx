@@ -25,6 +25,7 @@ type ExerciseData = {
   exerciseId: string;
   name: string;
   targetSets: number;
+  rest: number;
   sets: SetData[];
 };
 
@@ -90,6 +91,7 @@ export default function SessionScreen() {
         exerciseId: ex.exerciseId,
         name: exerciseData?.name || 'Unknown Exercise',
         targetSets: ex.sets,
+        rest: ex.rest || 90,
         sets: Array.from({ length: ex.sets }, () => ({
           weight: '',
           reps: '',
@@ -533,7 +535,7 @@ export default function SessionScreen() {
 
       <RestTimerModal
         visible={showRestTimer}
-        duration={175}
+        duration={currentExercise?.rest || 90}
         onSkip={() => setShowRestTimer(false)}
         onComplete={() => setShowRestTimer(false)}
       />
