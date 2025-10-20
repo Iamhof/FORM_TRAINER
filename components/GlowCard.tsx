@@ -21,29 +21,30 @@ export default function GlowCard({
   
   const intensitySettings = {
     subtle: {
-      blurIntensity: 10,
+      blurIntensity: 8,
       shadowLayers: [
-        { opacity: 0.1, blur: 15, spread: 0 },
-        { opacity: 0.08, blur: 25, spread: 0 },
+        { opacity: 0.08, blur: 20, spread: 0 },
+        { opacity: 0.05, blur: 35, spread: 0 },
       ],
-      gradientOpacity: 0.08,
+      gradientOpacity: 0.04,
     },
     medium: {
-      blurIntensity: 12,
+      blurIntensity: 10,
       shadowLayers: [
-        { opacity: 0.12, blur: 20, spread: 0 },
-        { opacity: 0.1, blur: 30, spread: 0 },
+        { opacity: 0.1, blur: 25, spread: 0 },
+        { opacity: 0.08, blur: 40, spread: 0 },
+        { opacity: 0.05, blur: 60, spread: 0 },
       ],
-      gradientOpacity: 0.1,
+      gradientOpacity: 0.06,
     },
     strong: {
-      blurIntensity: 15,
+      blurIntensity: 12,
       shadowLayers: [
-        { opacity: 0.15, blur: 25, spread: 0 },
-        { opacity: 0.12, blur: 35, spread: 0 },
-        { opacity: 0.08, blur: 50, spread: 0 },
+        { opacity: 0.15, blur: 30, spread: 0 },
+        { opacity: 0.1, blur: 50, spread: 0 },
+        { opacity: 0.06, blur: 80, spread: 0 },
       ],
-      gradientOpacity: 0.12,
+      gradientOpacity: 0.08,
     },
   };
 
@@ -53,7 +54,7 @@ export default function GlowCard({
     const boxShadows = settings.shadowLayers
       .map((layer) => {
         const shadowHexOpacity = Math.round(layer.opacity * 255).toString(16).padStart(2, '0');
-        const spreadPx = layer.blur / 8;
+        const spreadPx = layer.blur / 6;
         return `0 0 ${layer.blur}px ${spreadPx}px ${glowTint}${shadowHexOpacity}`;
       })
       .join(', ');
@@ -65,8 +66,8 @@ export default function GlowCard({
         <View style={styles.glowLayerWeb}>
           <LinearGradient
             colors={[`${glowTint}${gradientAlpha}`, 'transparent']}
-            start={{ x: 0.5, y: 0.5 }}
-            end={{ x: 0.5, y: 2.0 }}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1.5 }}
             style={StyleSheet.absoluteFill}
           />
         </View>
@@ -109,7 +110,7 @@ export default function GlowCard({
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: layer.opacity,
                 shadowRadius: layer.blur / 2,
-                elevation: 10 + index * 5,
+                elevation: 8 + index * 4,
                 backgroundColor: Platform.OS === 'android' ? '#FFFFFF' : 'transparent',
                 opacity: Platform.OS === 'android' ? 0.001 : 1,
               },
@@ -117,18 +118,20 @@ export default function GlowCard({
           />
         ))}
       </View>
+      <View style={styles.gradientBackdrop}>
+        <LinearGradient
+          colors={[`${glowTint}${gradientAlpha}`, 'transparent']}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1.5 }}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+      </View>
       <BlurView
         intensity={settings.blurIntensity}
         tint="dark"
         style={styles.blurContainer}
       >
-        <LinearGradient
-          colors={[`${glowTint}${gradientAlpha}`, 'transparent']}
-          start={{ x: 0.5, y: 0.5 }}
-          end={{ x: 0.5, y: 2.0 }}
-          style={styles.gradientOverlay}
-          pointerEvents="none"
-        />
         <View style={styles.contentWrapper}>
           {children}
         </View>
@@ -144,30 +147,31 @@ const styles = StyleSheet.create({
   },
   glowLayerWeb: {
     position: 'absolute' as const,
+    top: -24,
+    left: -24,
+    right: -24,
+    bottom: -24,
+    borderRadius: 32,
+    pointerEvents: 'none' as const,
+    zIndex: 0,
+    overflow: 'visible' as const,
+  },
+  glowShadowWeb: {
+    position: 'absolute' as const,
     top: -16,
     left: -16,
     right: -16,
     bottom: -16,
-    borderRadius: 28,
     pointerEvents: 'none' as const,
-    zIndex: 1,
-    overflow: 'visible' as const,
+    zIndex: 0,
   },
-  glowShadowWeb: {
+  glowContainerNative: {
     position: 'absolute' as const,
     top: -12,
     left: -12,
     right: -12,
     bottom: -12,
-    pointerEvents: 'none' as const,
-    zIndex: 1,
-  },
-  glowContainerNative: {
-    position: 'absolute' as const,
-    top: -8,
-    left: -8,
-    right: -8,
-    bottom: -8,
+    zIndex: 0,
   },
   glowLayerNative: {
     position: 'absolute' as const,
@@ -177,14 +181,21 @@ const styles = StyleSheet.create({
     bottom: 0,
     borderRadius: 24,
   },
+  gradientBackdrop: {
+    position: 'absolute' as const,
+    top: -20,
+    left: -20,
+    right: -20,
+    bottom: -20,
+    borderRadius: 28,
+    pointerEvents: 'none' as const,
+    zIndex: 0,
+    overflow: 'visible' as const,
+  },
   blurContainer: {
     borderRadius: 16,
     overflow: 'hidden' as const,
     zIndex: 2,
-  },
-  gradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 16,
   },
   contentWrapper: {
     position: 'relative' as const,
