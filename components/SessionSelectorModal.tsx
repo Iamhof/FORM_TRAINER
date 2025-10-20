@@ -135,40 +135,43 @@ export default function SessionSelectorModal({
                     ]}
                   >
                     <View style={styles.sessionHeader}>
-                      <View style={styles.sessionTitleRow}>
-                        <Text style={[
-                          styles.sessionName,
-                          isSelected && { color: accentColor },
-                        ]}>
-                          {session.name}
+                      <View style={styles.sessionInfoContainer}>
+                        <View style={styles.sessionTitleRow}>
+                          <Text style={[
+                            styles.sessionName,
+                            isSelected && { color: accentColor },
+                          ]}>
+                            {session.name}
+                          </Text>
+                          {isSelected && (
+                            <View style={[styles.checkmark, { backgroundColor: accentColor }]}>
+                              <Check size={18} color={COLORS.background} strokeWidth={3} />
+                            </View>
+                          )}
+                        </View>
+                        <Text style={styles.exerciseCount}>
+                          {session.exercises.length} {session.exercises.length === 1 ? 'exercise' : 'exercises'}
                         </Text>
-                        {isSelected && (
-                          <View style={[styles.checkmark, { backgroundColor: accentColor }]}>
-                            <Check size={16} color={COLORS.background} strokeWidth={3} />
-                          </View>
-                        )}
                       </View>
                       <View
                         style={[
                           styles.dayBadge,
-                          { backgroundColor: isSelected ? `${accentColor}30` : `${accentColor}15` },
+                          { backgroundColor: isSelected ? accentColor : `${accentColor}30` },
                         ]}
                       >
-                        <Text style={[styles.dayBadgeText, { color: accentColor }]}>
+                        <Text style={[styles.dayBadgeText, { color: isSelected ? COLORS.background : accentColor }]}>
                           {session.dayBadge}
                         </Text>
                       </View>
                     </View>
 
-                    <Text style={styles.exerciseCount}>
-                      {session.exercises.length} exercises
-                    </Text>
+                    <View style={styles.divider} />
 
                     <View style={styles.exerciseList}>
                       {session.exercises.slice(0, 3).map((exercise, idx) => (
                         <View key={idx} style={styles.exerciseRow}>
                           <Text style={styles.exerciseName} numberOfLines={1}>
-                            {exercise.name}
+                            • {exercise.name}
                           </Text>
                           <Text style={styles.exerciseSets}>
                             {exercise.sets} × {exercise.reps}
@@ -177,7 +180,7 @@ export default function SessionSelectorModal({
                       ))}
                       {session.exercises.length > 3 && (
                         <Text style={styles.moreExercises}>
-                          +{session.exercises.length - 3} more
+                          +{session.exercises.length - 3} more exercises
                         </Text>
                       )}
                     </View>
@@ -266,63 +269,81 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'flex-start' as const,
-    marginBottom: SPACING.xs,
+    marginBottom: SPACING.md,
+  },
+  sessionInfoContainer: {
+    flex: 1,
+    marginRight: SPACING.sm,
   },
   sessionTitleRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: SPACING.sm,
-    flex: 1,
+    marginBottom: 4,
   },
   sessionName: {
-    fontSize: 17,
-    fontWeight: '700' as const,
+    fontSize: 20,
+    fontWeight: '800' as const,
     color: COLORS.textPrimary,
+    flex: 1,
   },
   dayBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    minWidth: 60,
+    alignItems: 'center' as const,
   },
   dayBadgeText: {
-    fontSize: 11,
-    fontWeight: '600' as const,
+    fontSize: 12,
+    fontWeight: '700' as const,
   },
   checkmark: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
   exerciseCount: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
-    marginBottom: SPACING.sm,
+    fontWeight: '600' as const,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: `${COLORS.textSecondary}20`,
+    marginBottom: SPACING.md,
   },
   exerciseList: {
-    gap: SPACING.xs,
+    gap: 10,
   },
   exerciseRow: {
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
+    gap: SPACING.sm,
   },
   exerciseName: {
-    fontSize: 13,
+    fontSize: 15,
     color: COLORS.textPrimary,
+    fontWeight: '500' as const,
     flex: 1,
   },
   exerciseSets: {
-    fontSize: 12,
+    fontSize: 14,
     color: COLORS.textSecondary,
-    fontWeight: '500' as const,
+    fontWeight: '600' as const,
+    backgroundColor: `${COLORS.textSecondary}10`,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   moreExercises: {
-    fontSize: 12,
+    fontSize: 13,
     color: COLORS.textSecondary,
-    fontStyle: 'italic' as const,
-    marginTop: 2,
+    fontWeight: '600' as const,
+    marginTop: 4,
   },
   emptyState: {
     paddingVertical: SPACING.xl * 2,
