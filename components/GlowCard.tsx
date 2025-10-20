@@ -1,8 +1,6 @@
 import React, { ReactNode } from 'react';
 import { StyleSheet, View, ViewStyle, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import tinycolor from 'tinycolor2';
 
 type GlowCardProps = {
   children: ReactNode;
@@ -17,189 +15,156 @@ export default function GlowCard({
   style,
   glowIntensity = 'medium'
 }: GlowCardProps) {
-  const glowTint = tinycolor.mix('#FFFFFF', accent, 25).toHexString();
+  const glowOpacity = glowIntensity === 'subtle' ? 0.15 : glowIntensity === 'strong' ? 0.35 : 0.25;
+  const blurAmount = glowIntensity === 'subtle' ? 30 : glowIntensity === 'strong' ? 50 : 40;
   
-  const intensitySettings = {
-    subtle: {
-      blurIntensity: 8,
-      shadowLayers: [
-        { opacity: 0.08, blur: 20, spread: 0 },
-        { opacity: 0.05, blur: 35, spread: 0 },
-      ],
-      gradientOpacity: 0.04,
-    },
-    medium: {
-      blurIntensity: 10,
-      shadowLayers: [
-        { opacity: 0.1, blur: 25, spread: 0 },
-        { opacity: 0.08, blur: 40, spread: 0 },
-        { opacity: 0.05, blur: 60, spread: 0 },
-      ],
-      gradientOpacity: 0.06,
-    },
-    strong: {
-      blurIntensity: 12,
-      shadowLayers: [
-        { opacity: 0.15, blur: 30, spread: 0 },
-        { opacity: 0.1, blur: 50, spread: 0 },
-        { opacity: 0.06, blur: 80, spread: 0 },
-      ],
-      gradientOpacity: 0.08,
-    },
-  };
-
-  const settings = intensitySettings[glowIntensity];
-
   if (Platform.OS === 'web') {
-    const boxShadows = settings.shadowLayers
-      .map((layer) => {
-        const shadowHexOpacity = Math.round(layer.opacity * 255).toString(16).padStart(2, '0');
-        const spreadPx = layer.blur / 6;
-        return `0 0 ${layer.blur}px ${spreadPx}px ${glowTint}${shadowHexOpacity}`;
-      })
-      .join(', ');
-
-    const gradientAlpha = Math.round(settings.gradientOpacity * 255).toString(16).padStart(2, '0');
-
     return (
-      <View style={[styles.wrapper, style]}>
-        <View style={styles.glowLayerWeb}>
-          <LinearGradient
-            colors={[`${glowTint}${gradientAlpha}`, 'transparent']}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1.5 }}
-            style={StyleSheet.absoluteFill}
-          />
-        </View>
+      <View style={[styles.glowContainer, style]}>
         <View
-          // @ts-ignore - boxShadow is web-only
+          // @ts-ignore - web only styles
           style={[
-            styles.glowShadowWeb,
+            styles.glow,
+            styles.glow1,
             {
-              backgroundColor: 'transparent',
-              boxShadow: boxShadows,
-              borderRadius: 24,
+              filter: `blur(${blurAmount}px)`,
             },
           ]}
-        />
-        <BlurView
-          intensity={settings.blurIntensity}
-          tint="dark"
-          style={styles.blurContainer}
         >
-          <View style={styles.contentWrapper}>
-            {children}
-          </View>
-        </BlurView>
+          <LinearGradient
+            colors={[`${accent}${Math.round(glowOpacity * 255).toString(16).padStart(2, '0')}`, 'transparent']}
+            style={styles.gradient}
+            start={{ x: 0.5, y: 0.5 }}
+            end={{ x: 0.5, y: 1.2 }}
+          />
+        </View>
+
+        <View
+          // @ts-ignore - web only styles
+          style={[
+            styles.glow,
+            styles.glow2,
+            {
+              filter: `blur(${blurAmount * 0.7}px)`,
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={[`${accent}${Math.round((glowOpacity * 1.5) * 255).toString(16).padStart(2, '0')}`, 'transparent']}
+            style={styles.gradient}
+            start={{ x: 0.5, y: 0.5 }}
+            end={{ x: 0.5, y: 1.0 }}
+          />
+        </View>
+
+        <View style={styles.cardContent}>
+          {children}
+        </View>
       </View>
     );
   }
 
-  const gradientAlpha = Math.round(settings.gradientOpacity * 255).toString(16).padStart(2, '0');
-
   return (
-    <View style={[styles.wrapper, style]}>
-      <View style={styles.glowContainerNative}>
-        {settings.shadowLayers.map((layer, index) => (
-          <View
-            key={`glow-${index}`}
-            style={[
-              styles.glowLayerNative,
-              {
-                shadowColor: glowTint,
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: layer.opacity,
-                shadowRadius: layer.blur / 2,
-                elevation: 8 + index * 4,
-                backgroundColor: Platform.OS === 'android' ? '#FFFFFF' : 'transparent',
-                opacity: Platform.OS === 'android' ? 0.001 : 1,
-              },
-            ]}
-          />
-        ))}
-      </View>
-      <View style={styles.gradientBackdrop}>
-        <LinearGradient
-          colors={[`${glowTint}${gradientAlpha}`, 'transparent']}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1.5 }}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
+    <View style={[styles.glowContainer, style]}>
+      <View style={styles.glowNativeWrapper}>
+        <View
+          style={[
+            styles.glowNative,
+            {
+              shadowColor: accent,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: glowOpacity * 0.8,
+              shadowRadius: blurAmount * 0.5,
+              elevation: 10,
+            },
+          ]}
+        />
+        <View
+          style={[
+            styles.glowNative,
+            styles.glowNative2,
+            {
+              shadowColor: accent,
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: glowOpacity * 1.2,
+              shadowRadius: blurAmount * 0.35,
+              elevation: 15,
+            },
+          ]}
         />
       </View>
-      <BlurView
-        intensity={settings.blurIntensity}
-        tint="dark"
-        style={styles.blurContainer}
-      >
-        <View style={styles.contentWrapper}>
-          {children}
-        </View>
-      </BlurView>
+
+      <View style={styles.gradientOverlay}>
+        <LinearGradient
+          colors={[`${accent}${Math.round((glowOpacity * 0.3) * 255).toString(16).padStart(2, '0')}`, 'transparent']}
+          style={styles.gradient}
+          start={{ x: 0.5, y: 0.5 }}
+          end={{ x: 0.5, y: 1.2 }}
+        />
+      </View>
+
+      <View style={styles.cardContent}>
+        {children}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
+  glowContainer: {
     position: 'relative' as const,
-    overflow: 'visible' as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
-  glowLayerWeb: {
+  glow: {
     position: 'absolute' as const,
-    top: -24,
-    left: -24,
-    right: -24,
-    bottom: -24,
-    borderRadius: 32,
-    pointerEvents: 'none' as const,
-    zIndex: 0,
-    overflow: 'visible' as const,
+    borderRadius: 24,
   },
-  glowShadowWeb: {
+  glow1: {
+    width: '95%',
+    height: '90%',
+    opacity: 0.6,
+  },
+  glow2: {
+    width: '90%',
+    height: '80%',
+    opacity: 0.8,
+  },
+  gradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 24,
+  },
+  glowNativeWrapper: {
     position: 'absolute' as const,
-    top: -16,
-    left: -16,
-    right: -16,
-    bottom: -16,
-    pointerEvents: 'none' as const,
-    zIndex: 0,
+    width: '100%',
+    height: '100%',
   },
-  glowContainerNative: {
-    position: 'absolute' as const,
-    top: -12,
-    left: -12,
-    right: -12,
-    bottom: -12,
-    zIndex: 0,
-  },
-  glowLayerNative: {
+  glowNative: {
     position: 'absolute' as const,
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     borderRadius: 24,
+    backgroundColor: Platform.OS === 'android' ? '#000000' : 'transparent',
   },
-  gradientBackdrop: {
+  glowNative2: {
+    top: '5%',
+    left: '5%',
+    right: '5%',
+    bottom: '5%',
+  },
+  gradientOverlay: {
     position: 'absolute' as const,
-    top: -20,
-    left: -20,
-    right: -20,
-    bottom: -20,
-    borderRadius: 28,
-    pointerEvents: 'none' as const,
-    zIndex: 0,
-    overflow: 'visible' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 20,
   },
-  blurContainer: {
-    borderRadius: 16,
-    overflow: 'hidden' as const,
-    zIndex: 2,
-  },
-  contentWrapper: {
-    position: 'relative' as const,
-    zIndex: 3,
-    borderRadius: 16,
+  cardContent: {
+    zIndex: 1,
+    width: '100%',
   },
 });
