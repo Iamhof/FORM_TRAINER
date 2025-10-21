@@ -25,4 +25,5 @@ export type AnalyticsData = {
     lastMonth: number;
     average: number;
   };
+  streak: number;
 };

@@ -23,6 +23,70 @@ function generateEmptyMonthlyData(): MonthlyDataPoint[] {
   return last6Months;
 }
 
+function getWeekStart(date: Date): string {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().split('T')[0];
+}
+
+function calculateStreak(
+  workouts: { completed_at: string; programme_id: string }[],
+  schedules: Schedule[]
+): number {
+  if (schedules.length === 0 || workouts.length === 0) return 0;
+
+  const weekDataMap: Map<string, { scheduled: number; completed: number }> = new Map();
+
+  schedules.forEach((schedule) => {
+    const weekStart = schedule.week_start;
+    const scheduledCount = schedule.schedule.filter(
+      (day) => day.status === 'scheduled' || day.status === 'completed'
+    ).length;
+    
+    if (!weekDataMap.has(weekStart)) {
+      weekDataMap.set(weekStart, { scheduled: scheduledCount, completed: 0 });
+    } else {
+      const existing = weekDataMap.get(weekStart)!;
+      existing.scheduled = Math.max(existing.scheduled, scheduledCount);
+    }
+  });
+
+  workouts.forEach((workout) => {
+    const workoutDate = new Date(workout.completed_at);
+    const weekStart = getWeekStart(workoutDate);
+    
+    if (weekDataMap.has(weekStart)) {
+      weekDataMap.get(weekStart)!.completed += 1;
+    } else {
+      weekDataMap.set(weekStart, { scheduled: 0, completed: 1 });
+    }
+  });
+
+  const sortedWeeks = Array.from(weekDataMap.entries())
+    .sort((a, b) => b[0].localeCompare(a[0]));
+
+  let streak = 0;
+  for (const [weekStart, weekData] of sortedWeeks) {
+    const now = new Date();
+    const currentWeekStart = getWeekStart(now);
+    
+    if (weekStart > currentWeekStart) {
+      continue;
+    }
+    
+    if (weekData.scheduled > 0 && weekData.completed >= weekData.scheduled) {
+      streak += 1;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}
+
 function aggregateAnalyticsData(
   rawAnalytics: DBAnalyticsData[],
   workouts: { completed_at: string; programme_id: string }[],
@@ -161,6 +225,8 @@ function aggregateAnalyticsData(
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 
+  const streak = calculateStreak(workouts, schedules);
+
   return {
     sessionsCompleted,
     sessionsMissed,
@@ -172,6 +238,7 @@ function aggregateAnalyticsData(
       lastMonth: restDaysLastMonth,
       average: averageRestDays,
     },
+    streak,
   };
 }
 
@@ -189,6 +256,7 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
       lastMonth: 0,
       average: 0,
     },
+    streak: 0,
   });
 
   const loadAnalytics = useCallback(async () => {
@@ -204,6 +272,7 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
           lastMonth: 0,
           average: 0,
         },
+        streak: 0,
       });
       return;
     }

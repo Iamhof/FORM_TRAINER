@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TrendingUp, TrendingDown, Calendar, Target, Activity, Moon, BarChart3, Plus, Scale, Award } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, Calendar, Target, Activity, Moon, BarChart3, Plus, Scale, Award, Flame } from 'lucide-react-native';
 import Card from '@/components/Card';
 import LineChart from '@/components/LineChart';
 import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
@@ -152,6 +152,17 @@ export default function AnalyticsScreen() {
               </View>
               <Text style={styles.statValue}>{analyticsData.restDays.thisMonth}</Text>
               <Text style={styles.statSubtext}>this month</Text>
+            </Card>
+
+            <Card style={styles.statCard}>
+              <View style={styles.statHeader}>
+                <View style={[styles.statIconBox, { backgroundColor: `${COLORS.accents.orange}20` }]}>
+                  <Flame size={20} color={COLORS.accents.orange} strokeWidth={2} />
+                </View>
+                <Text style={styles.statLabel}>Streak</Text>
+              </View>
+              <Text style={styles.statValue}>{analyticsData.streak}</Text>
+              <Text style={styles.statSubtext}>weeks consistent</Text>
             </Card>
           </View>
 
