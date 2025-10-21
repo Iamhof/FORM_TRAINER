@@ -9,22 +9,14 @@ interface ColorPickerProps {
 }
 
 const PRESET_COLORS = [
-  { name: 'Electric Blue', hex: '#007AFF' },
-  { name: 'Vibrant Purple', hex: '#AF52DE' },
-  { name: 'Mint Green', hex: '#30D158' },
-  { name: 'Sunset Orange', hex: '#FF9500' },
-  { name: 'Hot Pink', hex: '#FF2D55' },
-  { name: 'Turquoise', hex: '#64D2FF' },
-  { name: 'Golden Yellow', hex: '#FFD60A' },
-  { name: 'Forest Green', hex: '#32D74B' },
-  { name: 'Coral Red', hex: '#FF453A' },
-  { name: 'Deep Purple', hex: '#BF5AF2' },
-  { name: 'Sky Blue', hex: '#5AC8FA' },
-  { name: 'Lime Green', hex: '#C0FF00' },
-  { name: 'Crimson', hex: '#DC143C' },
-  { name: 'Royal Blue', hex: '#4169E1' },
-  { name: 'Emerald', hex: '#50C878' },
-  { name: 'Tangerine', hex: '#FF8C00' },
+  { name: 'Red', hex: COLORS.accents.red },
+  { name: 'Orange', hex: COLORS.accents.orange },
+  { name: 'Yellow', hex: COLORS.accents.yellow },
+  { name: 'Green', hex: COLORS.accents.green },
+  { name: 'Teal', hex: COLORS.accents.teal },
+  { name: 'Blue', hex: COLORS.accents.blue },
+  { name: 'Purple', hex: COLORS.accents.purple },
+  { name: 'Pink', hex: COLORS.accents.pink },
 ];
 
 const ColorPicker: React.FC<ColorPickerProps> = ({ selectedColor, onColorSelect }) => {
@@ -92,7 +84,7 @@ const styles = StyleSheet.create({
     gap: SPACING.md,
   },
   colorItemContainer: {
-    width: '30%',
+    width: '22%',
     alignItems: 'center',
     marginBottom: SPACING.lg,
   },
