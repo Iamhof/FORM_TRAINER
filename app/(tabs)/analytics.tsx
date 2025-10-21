@@ -52,7 +52,7 @@ export default function AnalyticsScreen() {
 
   const formatValue = (value: number) => {
     if (selectedMetric === 'volume') {
-      return `${value}k`;
+      return `${value.toLocaleString()} kg`;
     }
     if (selectedMetric === 'completion') {
       return `${value}%`;
@@ -116,8 +116,8 @@ export default function AnalyticsScreen() {
                 </View>
                 <Text style={styles.statLabel}>Total Volume</Text>
               </View>
-              <Text style={styles.statValue}>{totalVolumeThisMonth}k</Text>
-              <Text style={styles.statSubtext}>kg moved this month</Text>
+              <Text style={styles.statValue}>{totalVolumeThisMonth.toLocaleString()}</Text>
+              <Text style={styles.statSubtext}>kg this month</Text>
               {volumeTrend !== 0 && (
                 <View style={styles.trendRow}>
                   {volumeTrend > 0 ? (

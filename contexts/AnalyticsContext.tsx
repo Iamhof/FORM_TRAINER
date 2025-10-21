@@ -31,7 +31,7 @@ function aggregateAnalyticsData(
 ): AnalyticsData {
   const monthlyData: {
     [key: string]: {
-      sessions: number;
+      sessionsCompleted: number;
       volume: number;
       exercises: Set<string>;
     };
@@ -52,12 +52,11 @@ function aggregateAnalyticsData(
     const targetMonth = (currentMonth - i + 12) % 12;
     const targetYear = currentMonth - i < 0 ? currentYear - 1 : currentYear;
     const key = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}`;
-    monthlyData[key] = { sessions: 0, volume: 0, exercises: new Set() };
+    monthlyData[key] = { sessionsCompleted: 0, volume: 0, exercises: new Set() };
   }
 
   const scheduledSessionsByMonth: { [key: string]: number } = {};
   const restDaysByMonth: { [key: string]: number } = {};
-  const completedSessionsByMonth: { [key: string]: Set<string> } = {};
 
   schedules.forEach((schedule) => {
     const weekDate = new Date(schedule.week_start);
@@ -66,17 +65,13 @@ function aggregateAnalyticsData(
     if (!scheduledSessionsByMonth[monthKey]) {
       scheduledSessionsByMonth[monthKey] = 0;
       restDaysByMonth[monthKey] = 0;
-      completedSessionsByMonth[monthKey] = new Set();
     }
 
     schedule.schedule.forEach((day) => {
-      if (day.status === 'scheduled') {
+      if (day.status === 'scheduled' || day.status === 'completed') {
         scheduledSessionsByMonth[monthKey] += 1;
       } else if (day.status === 'rest') {
         restDaysByMonth[monthKey] += 1;
-      } else if (day.status === 'completed') {
-        scheduledSessionsByMonth[monthKey] += 1;
-        completedSessionsByMonth[monthKey].add(`${schedule.week_start}-${day.dayOfWeek}`);
       }
     });
   });
@@ -106,7 +101,7 @@ function aggregateAnalyticsData(
     const workoutDate = new Date(workout.completed_at);
     const monthKey = `${workoutDate.getFullYear()}-${String(workoutDate.getMonth() + 1).padStart(2, '0')}`;
     if (monthlyData[monthKey]) {
-      monthlyData[monthKey].sessions += 1;
+      monthlyData[monthKey].sessionsCompleted += 1;
     }
   });
 
@@ -122,16 +117,17 @@ function aggregateAnalyticsData(
       const monthName = MONTHS[month - 1];
       const data = monthlyData[key];
 
-      sessionsCompleted.push({ month: monthName, value: data.sessions });
-      totalVolume.push({ month: monthName, value: Math.round(data.volume) });
-      
+      const completedForMonth = data.sessionsCompleted;
       const scheduledForMonth = scheduledSessionsByMonth[key] || 0;
-      const completedForMonth = completedSessionsByMonth[key]?.size || 0;
       const missed = Math.max(0, scheduledForMonth - completedForMonth);
       
+      sessionsCompleted.push({ month: monthName, value: completedForMonth });
+      totalVolume.push({ month: monthName, value: Math.round(data.volume) });
       sessionsMissed.push({ month: monthName, value: missed });
       
-      const rate = scheduledForMonth > 0 ? Math.round((completedForMonth / scheduledForMonth) * 100) : 0;
+      const rate = scheduledForMonth > 0 
+        ? Math.round((completedForMonth / scheduledForMonth) * 100) 
+        : (completedForMonth > 0 ? 100 : 0);
       completionRate.push({ month: monthName, value: rate });
     });
 

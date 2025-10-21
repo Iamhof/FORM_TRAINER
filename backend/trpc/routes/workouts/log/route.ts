@@ -61,6 +61,53 @@ export const logWorkoutProcedure = protectedProcedure
 
     console.log('[logWorkout] Workout logged successfully:', workout.id);
 
+    const getWeekStart = (date: Date): string => {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(d.setDate(diff));
+      monday.setHours(0, 0, 0, 0);
+      return monday.toISOString().split('T')[0];
+    };
+
+    try {
+      const completedDate = new Date(completedAt);
+      const weekStart = getWeekStart(completedDate);
+      const dayOfWeek = completedDate.getDay() === 0 ? 6 : completedDate.getDay() - 1;
+
+      console.log('[logWorkout] Updating schedule:', { weekStart, dayOfWeek });
+
+      const { data: scheduleData, error: scheduleError } = await supabaseAdmin
+        .from('schedules')
+        .select('*')
+        .eq('user_id', ctx.userId)
+        .eq('week_start', weekStart)
+        .maybeSingle();
+
+      if (scheduleData && !scheduleError) {
+        const updatedSchedule = scheduleData.schedule.map((day: any) => 
+          day.dayOfWeek === dayOfWeek 
+            ? { ...day, status: 'completed' } 
+            : day
+        );
+
+        const { error: updateError } = await supabaseAdmin
+          .from('schedules')
+          .update({ schedule: updatedSchedule })
+          .eq('id', scheduleData.id);
+
+        if (updateError) {
+          console.error('[logWorkout] Error updating schedule:', updateError);
+        } else {
+          console.log('[logWorkout] Schedule updated successfully');
+        }
+      } else {
+        console.log('[logWorkout] No schedule found for this week, skipping update');
+      }
+    } catch (scheduleUpdateError) {
+      console.error('[logWorkout] Error in schedule update:', scheduleUpdateError);
+    }
+
     const prChecks = exercises.map(async (exercise) => {
       const completedSets = exercise.sets.filter((set) => set.completed);
       if (completedSets.length === 0) return;
