@@ -8,19 +8,19 @@ export const COLORS = {
   textMuted: 'rgb(100, 100, 100)',
   
   accents: {
-    orange: 'rgb(255, 107, 85)',
-    purple: 'rgb(178, 102, 255)',
-    blue: 'rgb(102, 153, 255)',
-    red: 'rgb(244, 67, 54)',
-    yellow: 'rgb(255, 193, 7)',
-    green: 'rgb(76, 175, 80)',
-    teal: 'rgb(0, 150, 136)',
-    pink: 'rgb(236, 64, 122)',
+    orange: '#FF6B55',
+    purple: '#B266FF',
+    blue: '#6699FF',
+    red: '#F44336',
+    yellow: '#FFC107',
+    green: '#4CAF50',
+    teal: '#009688',
+    pink: '#EC407A',
   },
   
-  success: 'rgb(76, 175, 80)',
-  warning: 'rgb(255, 152, 0)',
-  error: 'rgb(244, 67, 54)',
+  success: '#4CAF50',
+  warning: '#FF9800',
+  error: '#F44336',
 } as const;
 
 export const TYPOGRAPHY = {
