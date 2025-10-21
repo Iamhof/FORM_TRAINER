@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Users, UserCheck, Settings, LogOut, ChevronRight } from 'lucide-react-native';
+import { Users, UserCheck, Settings, LogOut, ChevronRight, User } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
 import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
@@ -55,6 +55,21 @@ export default function ProfileScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
+
+            <Pressable onPress={() => router.push('/edit-profile')}>
+              <Card style={styles.menuCard}>
+                <View style={styles.menuItem}>
+                  <View style={[styles.menuIcon, { backgroundColor: `${accent}20` }]}>
+                    <User size={20} color={accent} strokeWidth={2} />
+                  </View>
+                  <View style={styles.menuContent}>
+                    <Text style={styles.menuTitle}>Edit Profile</Text>
+                    <Text style={styles.menuSubtitle}>Update your name and theme color</Text>
+                  </View>
+                  <ChevronRight size={20} color={COLORS.textTertiary} strokeWidth={2} />
+                </View>
+              </Card>
+            </Pressable>
 
             {isPT ? (
               <Pressable onPress={() => router.push('/pt/clients')}>
