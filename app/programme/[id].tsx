@@ -26,6 +26,8 @@ export default function ProgrammeOverviewScreen() {
   const [currentWeek, setCurrentWeek] = useState(0);
   const weekScrollRef = useRef<ScrollView>(null);
   const screenWidth = Dimensions.get('window').width;
+  const [hasScrolledToCurrentWeek, setHasScrolledToCurrentWeek] = useState(false);
+  const [scrollViewReady, setScrollViewReady] = useState(false);
 
   const loadWorkouts = useCallback(async () => {
     if (!programmeId) return;
@@ -152,19 +154,27 @@ export default function ProgrammeOverviewScreen() {
   }, [programme, workouts, programmeId, isSessionCompleted]);
 
   useEffect(() => {
-    if (transformedProgramme && transformedProgramme.calculatedCurrentWeek !== undefined) {
+    if (transformedProgramme && transformedProgramme.calculatedCurrentWeek !== undefined && !hasScrolledToCurrentWeek) {
       const calculatedWeek = transformedProgramme.calculatedCurrentWeek;
       console.log('[ProgrammeOverview] Auto-setting current week to:', calculatedWeek + 1);
       setCurrentWeek(calculatedWeek);
+    }
+  }, [transformedProgramme?.calculatedCurrentWeek, hasScrolledToCurrentWeek]);
+
+  useEffect(() => {
+    if (scrollViewReady && !hasScrolledToCurrentWeek && transformedProgramme?.calculatedCurrentWeek !== undefined) {
+      const calculatedWeek = transformedProgramme.calculatedCurrentWeek;
+      console.log('[ProgrammeOverview] Scrolling to current week:', calculatedWeek + 1);
       
       setTimeout(() => {
         weekScrollRef.current?.scrollTo({ 
           x: calculatedWeek * screenWidth, 
           animated: false 
         });
-      }, 100);
+        setHasScrolledToCurrentWeek(true);
+      }, 300);
     }
-  }, [transformedProgramme?.calculatedCurrentWeek, screenWidth]);
+  }, [scrollViewReady, hasScrolledToCurrentWeek, transformedProgramme?.calculatedCurrentWeek, screenWidth]);
 
   function getDayName(day: number, totalDays: number): string {
     if (totalDays === 2) {
@@ -313,6 +323,10 @@ export default function ProgrammeOverviewScreen() {
           onScroll={handleScroll}
           scrollEventThrottle={16}
           style={styles.weekScroller}
+          onLayout={() => {
+            console.log('[ProgrammeOverview] ScrollView layout complete');
+            setScrollViewReady(true);
+          }}
         >
           {transformedProgramme.sessionsByWeek.map((weekData, weekIndex) => (
             <ScrollView
