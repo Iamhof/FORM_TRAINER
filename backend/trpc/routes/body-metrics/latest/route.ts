@@ -1,6 +1,6 @@
 import { protectedProcedure } from '../../../create-context';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth';
+import { supabaseAdmin } from '@/backend/lib/auth';
 
 export const getLatestBodyMetricsProcedure = protectedProcedure.query(async ({ ctx }) => {
   const { data: bodyMetric, error } = await supabaseAdmin

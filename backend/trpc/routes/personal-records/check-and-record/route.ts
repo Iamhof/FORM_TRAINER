@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { protectedProcedure } from '../../../create-context';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth';
+import { supabaseAdmin } from '@/backend/lib/auth';
 
 export const checkAndRecordPRProcedure = protectedProcedure
   .input(
