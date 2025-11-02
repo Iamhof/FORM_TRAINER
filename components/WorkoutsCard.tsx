@@ -140,14 +140,6 @@ export default function WorkoutsCard({
                 <Text style={styles.comparisonText}>{getComparisonText()}</Text>
               </View>
             )}
-
-            {workoutsPeriod === 'total' && (
-              <View style={styles.totalInfo}>
-                <Text style={styles.totalInfoText}>
-                  {workoutsData?.totalVolumeKg.toLocaleString() || 0} kg total volume
-                </Text>
-              </View>
-            )}
           </>
         )}
       </View>
