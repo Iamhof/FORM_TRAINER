@@ -268,6 +268,8 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
       enabled: isAuthenticated && !!user,
       refetchOnWindowFocus: false,
       staleTime: 0,
+      retry: false,
+      refetchOnMount: false,
     }
   );
 
