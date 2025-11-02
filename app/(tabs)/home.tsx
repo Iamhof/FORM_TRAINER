@@ -12,6 +12,7 @@ import SessionSelectorModal, { Session } from '@/components/SessionSelectorModal
 import { EXERCISES } from '@/constants/exercises';
 import { useUser } from '@/contexts/UserContext';
 import { useSchedule } from '@/contexts/ScheduleContext';
+import { useAnalytics } from '@/contexts/AnalyticsContext';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DAY_LABELS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -55,6 +56,7 @@ export default function DashboardScreen() {
   const { activeProgramme } = useProgrammes();
   const { stats } = useUser();
   const { schedule, assignSession, isLoading: scheduleLoading } = useSchedule();
+  const { volumePeriod, setVolumePeriod, volumeData, volumeLoading } = useAnalytics();
   const insets = useSafeAreaInsets();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [showSessionModal, setShowSessionModal] = useState(false);
@@ -302,7 +304,7 @@ export default function DashboardScreen() {
             <Card style={[styles.statCard, styles.statCardLarge]}>
               <Text style={styles.statLabel}>Current Streak</Text>
               <View style={styles.statRow}>
-                <Text style={styles.statValue}>{stats.currentStreak} days</Text>
+                <Text style={styles.statValue}>{stats.currentStreak} weeks</Text>
                 <View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>
                   <Flame size={28} color={accent} strokeWidth={2} fill={accent} />
                 </View>
@@ -310,12 +312,9 @@ export default function DashboardScreen() {
             </Card>
 
             <Card style={styles.statCard}>
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationBadgeText}>9</Text>
-              </View>
-              <Text style={styles.statLabel}>Workouts This Week</Text>
+              <Text style={styles.statLabel}>Workouts {volumePeriod === 'week' ? 'This Week' : volumePeriod === 'month' ? 'This Month' : 'Total'}</Text>
               <View style={styles.statRow}>
-                <Text style={styles.statValue}>{stats.weekWorkouts}/{stats.weekTotal || activeProgramme?.days || 0}</Text>
+                <Text style={styles.statValue}>{volumeLoading ? '-' : volumeData?.workoutCount || 0}</Text>
                 <View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>
                   <Target size={28} color={accent} strokeWidth={2} />
                 </View>
@@ -323,9 +322,45 @@ export default function DashboardScreen() {
             </Card>
 
             <Card style={styles.statCard}>
-              <Text style={styles.statLabel}>Total Volume</Text>
+              <View style={styles.volumeHeader}>
+                <Text style={styles.statLabel}>Total Volume</Text>
+                <View style={styles.periodSelector}>
+                  <Pressable 
+                    style={[styles.periodButton, volumePeriod === 'week' && { backgroundColor: `${accent}20` }]}
+                    onPress={() => setVolumePeriod('week')}
+                  >
+                    <Text style={[styles.periodButtonText, volumePeriod === 'week' && { color: accent, fontWeight: '700' as const }]}>Week</Text>
+                  </Pressable>
+                  <Pressable 
+                    style={[styles.periodButton, volumePeriod === 'month' && { backgroundColor: `${accent}20` }]}
+                    onPress={() => setVolumePeriod('month')}
+                  >
+                    <Text style={[styles.periodButtonText, volumePeriod === 'month' && { color: accent, fontWeight: '700' as const }]}>Month</Text>
+                  </Pressable>
+                  <Pressable 
+                    style={[styles.periodButton, volumePeriod === 'total' && { backgroundColor: `${accent}20` }]}
+                    onPress={() => setVolumePeriod('total')}
+                  >
+                    <Text style={[styles.periodButtonText, volumePeriod === 'total' && { color: accent, fontWeight: '700' as const }]}>All</Text>
+                  </Pressable>
+                </View>
+              </View>
               <View style={styles.statRow}>
-                <Text style={styles.statValue}>{stats.totalVolume}k kg</Text>
+                <View>
+                  <Text style={styles.statValue}>
+                    {volumeLoading ? '-' : volumeData ? `${volumeData.totalVolumeKg.toLocaleString()}` : '0'} kg
+                  </Text>
+                  {volumeData && volumeData.percentageChange !== 0 && volumePeriod !== 'total' && (
+                    <View style={styles.changeContainer}>
+                      <Text style={[styles.changeText, { color: volumeData.percentageChange > 0 ? COLORS.success : COLORS.error }]}>
+                        {volumeData.percentageChange > 0 ? '+' : ''}{volumeData.percentageChange.toFixed(1)}%
+                      </Text>
+                      <Text style={styles.changePeriodText}>
+                        {' vs last {volumePeriod}'}
+                      </Text>
+                    </View>
+                  )}
+                </View>
                 <View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>
                   <TrendingUp size={28} color={accent} strokeWidth={2} />
                 </View>
@@ -679,5 +714,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600' as const,
     color: COLORS.background,
+  },
+  volumeHeader: {
+    marginBottom: SPACING.sm,
+  },
+  periodSelector: {
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: SPACING.xs,
+  },
+  periodButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: COLORS.cardBorder,
+  },
+  periodButtonText: {
+    fontSize: 11,
+    fontWeight: '500' as const,
+    color: COLORS.textSecondary,
+  },
+  changeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  changeText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+  },
+  changePeriodText: {
+    fontSize: 11,
+    color: COLORS.textTertiary,
   },
 });

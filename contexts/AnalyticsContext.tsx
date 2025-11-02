@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useUser } from './UserContext';
 import { AnalyticsData as DBAnalyticsData, Schedule } from '@/types/database';
 import { useProgrammes } from './ProgrammeContext';
+import { trpc } from '@/lib/trpc';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -259,6 +260,17 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
     streak: 0,
   });
 
+  const [volumePeriod, setVolumePeriod] = useState<'week' | 'month' | 'total'>('week');
+
+  const volumeQuery = trpc.analytics.getVolume.useQuery(
+    { period: volumePeriod },
+    { 
+      enabled: isAuthenticated && !!user,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5,
+    }
+  );
+
   const loadAnalytics = useCallback(async () => {
     if (!isAuthenticated || !user) {
       setAnalyticsData({
@@ -408,5 +420,24 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
     totalVolumeThisMonth,
     syncAnalytics,
     refetch: loadAnalytics,
-  }), [analyticsData, calculateCompletionPercentage, totalSessionsThisMonth, totalVolumeThisMonth, syncAnalytics, loadAnalytics]);
+    volumePeriod,
+    setVolumePeriod,
+    volumeData: volumeQuery.data,
+    volumeLoading: volumeQuery.isLoading,
+    volumeError: volumeQuery.error,
+    refetchVolume: volumeQuery.refetch,
+  }), [
+    analyticsData,
+    calculateCompletionPercentage,
+    totalSessionsThisMonth,
+    totalVolumeThisMonth,
+    syncAnalytics,
+    loadAnalytics,
+    volumePeriod,
+    setVolumePeriod,
+    volumeQuery.data,
+    volumeQuery.isLoading,
+    volumeQuery.error,
+    volumeQuery.refetch,
+  ]);
 });
