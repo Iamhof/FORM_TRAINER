@@ -78,7 +78,7 @@ export default function VolumeCard({
   return (
     <Card style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Total Volume</Text>
+        <Text style={styles.title}>Volume</Text>
         <View style={styles.segmentedControl}>
           <Pressable
             style={[

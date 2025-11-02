@@ -341,6 +341,8 @@ export default function DashboardScreen() {
             accentColor={accent}
           />
 
+          <View style={{ marginTop: SPACING.lg }} />
+
           <Pressable onPress={() => router.push('/exercises' as any)}>
             <Card style={styles.exerciseLibraryCard}>
               <View style={styles.exerciseLibraryContent}>
