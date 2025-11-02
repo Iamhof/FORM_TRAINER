@@ -8,14 +8,13 @@ export default function TabLayout() {
   const router = useRouter();
   const segments = useSegments();
   
-  const currentRoute = segments[segments.length - 1] || 'home';
+  const currentRoute = React.useMemo(() => {
+    if ((segments as string[]).includes('exercises')) return 'exercises';
+    return (segments[segments.length - 1] as string) || 'home';
+  }, [segments]);
 
   const handleNavigate = (route: string) => {
-    if (route === 'exercises') {
-      router.push('/exercises');
-    } else {
-      router.push(`/(tabs)/${route}` as any);
-    }
+    router.push(`/(tabs)/${route}` as any);
   };
 
   return (
@@ -24,7 +23,7 @@ export default function TabLayout() {
         <Stack.Screen name="home" />
         <Stack.Screen name="workouts" />
         <Stack.Screen name="analytics" />
-        <Stack.Screen name="progress" />
+        <Stack.Screen name="exercises" options={{ headerShown: false }} />
         <Stack.Screen name="profile" />
       </Stack>
       <BottomNav currentRoute={currentRoute} onNavigate={handleNavigate} />

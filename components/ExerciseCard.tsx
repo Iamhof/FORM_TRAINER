@@ -31,7 +31,7 @@ export const ExerciseCard = React.memo(({ exercise }: ExerciseCardProps) => {
   };
 
   const handlePress = () => {
-    router.push(`/exercises/${exercise.id}` as any);
+    router.push(`/(tabs)/exercises/${exercise.id}` as any);
   };
 
   return (
