@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Flame, Target, Check, Moon, ChevronRight, Dumbbell, User, Bell } from 'lucide-react-native';
+import { Flame, Target, Check, Moon, ChevronRight, Dumbbell, User, Bell, BookOpen } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
 import GlowCard from '@/components/GlowCard';
@@ -330,6 +330,21 @@ export default function DashboardScreen() {
             isLoading={volumeLoading}
             accentColor={accent}
           />
+
+          <Pressable onPress={() => router.push('/exercises' as any)}>
+            <Card style={styles.exerciseLibraryCard}>
+              <View style={styles.exerciseLibraryContent}>
+                <View style={[styles.exerciseLibraryIcon, { backgroundColor: `${accent}20` }]}>
+                  <BookOpen size={28} color={accent} strokeWidth={2} />
+                </View>
+                <View style={styles.exerciseLibraryText}>
+                  <Text style={styles.exerciseLibraryTitle}>Exercise Library</Text>
+                  <Text style={styles.exerciseLibrarySubtitle}>Browse 30+ exercises with video demos</Text>
+                </View>
+                <ChevronRight size={24} color={COLORS.textTertiary} strokeWidth={2} />
+              </View>
+            </Card>
+          </Pressable>
         </ScrollView>
 
         {selectedDay !== null && (
@@ -678,5 +693,33 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: COLORS.background,
   },
-
+  exerciseLibraryCard: {
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  exerciseLibraryContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  exerciseLibraryIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  exerciseLibraryText: {
+    flex: 1,
+  },
+  exerciseLibraryTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: COLORS.textPrimary,
+    marginBottom: 4,
+  },
+  exerciseLibrarySubtitle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
 });
