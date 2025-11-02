@@ -22,6 +22,7 @@ app.use("*", async (c, next) => {
   console.log('[Hono] Incoming request:', c.req.method, c.req.url);
   console.log('[Hono] Request path:', c.req.path);
   console.log('[Hono] Request pathname:', new URL(c.req.url).pathname);
+  console.log('[Hono] Request query:', new URL(c.req.url).search);
   await next();
 });
 
@@ -37,7 +38,19 @@ app.use(
 );
 
 app.get("/", (c) => {
-  return c.json({ status: "ok", message: "API is running" });
+  return c.json({ 
+    status: "ok", 
+    message: "API is running",
+    availableRoutes: Object.keys(appRouter._def.procedures),
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get("/health", (c) => {
+  return c.json({ 
+    status: "healthy", 
+    procedures: Object.keys(appRouter._def.procedures)
+  });
 });
 
 app.notFound((c) => {
