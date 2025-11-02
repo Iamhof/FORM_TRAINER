@@ -15,11 +15,13 @@ export default function SettingsScreen() {
       <Stack.Screen
         options={{
           title: 'Settings',
+          headerShown: true,
           headerStyle: {
             backgroundColor: COLORS.background,
           },
           headerTintColor: COLORS.textPrimary,
           headerShadowVisible: false,
+          headerBackTitle: 'Back',
         }}
       />
 
