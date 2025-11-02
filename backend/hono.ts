@@ -4,7 +4,7 @@ import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./trpc/app-router";
 import { createContext } from "./trpc/create-context";
 
-const app = new Hono();
+const app = new Hono().basePath('/api');
 
 app.use(
   "*",
@@ -21,15 +21,15 @@ app.use(
 app.use("*", async (c, next) => {
   console.log('[Hono] Incoming request:', c.req.method, c.req.url);
   console.log('[Hono] Request path:', c.req.path);
+  console.log('[Hono] Request pathname:', new URL(c.req.url).pathname);
   await next();
 });
 
 app.use(
-  "/api/trpc/*",
+  "/trpc/*",
   trpcServer({
     router: appRouter,
     createContext,
-    endpoint: '/api/trpc',
     onError: ({ path, error }) => {
       console.error('[Hono tRPC] Error on path', path, ':', error);
     },

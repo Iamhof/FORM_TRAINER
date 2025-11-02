@@ -5,8 +5,15 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   console.log('[API Handler] Pathname:', url.pathname);
   console.log('[API Handler] Search:', url.search);
+  
+  const honoRequest = new Request(request.url, {
+    method: request.method,
+    headers: request.headers,
+    body: request.body,
+  });
+  
   try {
-    const response = await honoApp.fetch(request);
+    const response = await honoApp.fetch(honoRequest);
     console.log('[API Handler] GET response status:', response.status);
     return response;
   } catch (error) {
@@ -20,8 +27,15 @@ export async function POST(request: Request) {
   const url = new URL(request.url);
   console.log('[API Handler] Pathname:', url.pathname);
   console.log('[API Handler] Search:', url.search);
+  
+  const honoRequest = new Request(request.url, {
+    method: request.method,
+    headers: request.headers,
+    body: request.body,
+  });
+  
   try {
-    const response = await honoApp.fetch(request);
+    const response = await honoApp.fetch(honoRequest);
     console.log('[API Handler] POST response status:', response.status);
     return response;
   } catch (error) {
