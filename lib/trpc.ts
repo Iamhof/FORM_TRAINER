@@ -7,23 +7,23 @@ import { supabase } from '@/lib/supabase';
 export const trpc = createTRPCReact<AppRouter>();
 
 const getBaseUrl = () => {
-  const apiBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
-  
-  if (apiBaseUrl) {
-    console.log('[TRPC] Using EXPO_PUBLIC_RORK_API_BASE_URL:', apiBaseUrl);
-    const cleanUrl = apiBaseUrl.replace(/\/+$/, '');
-    return cleanUrl;
-  }
-  
   if (typeof window !== 'undefined') {
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
     const port = window.location.port;
     
     const url = `${protocol}//${hostname}${port ? ':' + port : ''}`;
-    console.log('[TRPC] Fallback to window location:', url);
+    console.log('[TRPC] Using window location (web):', url);
     console.log('[TRPC] Window details - protocol:', protocol, 'hostname:', hostname, 'port:', port);
     return url;
+  }
+  
+  const apiBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
+  
+  if (apiBaseUrl) {
+    console.log('[TRPC] Using EXPO_PUBLIC_RORK_API_BASE_URL (native):', apiBaseUrl);
+    const cleanUrl = apiBaseUrl.replace(/\/+$/, '');
+    return cleanUrl;
   }
   
   console.error('[TRPC] ERROR: No base URL configured! Set EXPO_PUBLIC_RORK_API_BASE_URL in .env file');
