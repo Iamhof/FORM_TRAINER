@@ -15,6 +15,15 @@ export default function ExercisesScreen() {
     toggleCategory,
   } = useExerciseFilters();
 
+  const getItemLayout = React.useCallback(
+    (_data: any, index: number) => ({
+      length: 208,
+      offset: 208 * Math.floor(index / 2),
+      index,
+    }),
+    []
+  );
+
   const renderHeader = () => (
     <View style={styles.header}>
       <Text style={styles.title}>Exercise Library</Text>
@@ -62,10 +71,15 @@ export default function ExercisesScreen() {
         renderItem={({ item }) => <ExerciseCard exercise={item} />}
         keyExtractor={(item) => item.id}
         numColumns={2}
+        columnWrapperStyle={styles.row}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
+        getItemLayout={getItemLayout}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={5}
       />
     </SafeAreaView>
   );
@@ -98,8 +112,11 @@ const styles = StyleSheet.create({
   filtersContainer: {
     paddingHorizontal: SPACING.md,
   },
+  row: {
+    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+  },
   listContent: {
-    paddingHorizontal: SPACING.xs,
     paddingBottom: SPACING.xl,
   },
   emptyState: {

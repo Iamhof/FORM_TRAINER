@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, ImageBackground, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronRight } from 'lucide-react-native';
+import { ArrowRight } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Exercise } from '@/types/exercises';
 import { COLORS, SPACING } from '@/constants/theme';
 
@@ -9,7 +10,7 @@ interface ExerciseCardProps {
   exercise: Exercise;
 }
 
-export function ExerciseCard({ exercise }: ExerciseCardProps) {
+export const ExerciseCard = React.memo(({ exercise }: ExerciseCardProps) => {
   const router = useRouter();
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
@@ -42,96 +43,104 @@ export function ExerciseCard({ exercise }: ExerciseCardProps) {
         onPressOut={handlePressOut}
         testID={`exercise-card-${exercise.id}`}
       >
-        <View style={styles.card}>
-          <Image
-            source={{ uri: exercise.thumbnail }}
-            style={styles.thumbnail}
-            resizeMode="cover"
-          />
-          
-          <View style={styles.content}>
-            <Text style={styles.exerciseName} numberOfLines={2}>
-              {exercise.name}
-            </Text>
-            
-            <View style={styles.categoriesContainer}>
-              {exercise.categories.slice(0, 2).map((category, index) => (
-                <View key={index} style={styles.categoryPill}>
-                  <Text style={styles.categoryText}>{category}</Text>
+        <ImageBackground
+          source={{ uri: exercise.thumbnail }}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        >
+          <LinearGradient
+            colors={[
+              'rgba(0, 0, 0, 0)',
+              'rgba(0, 0, 0, 0.3)',
+              'rgba(0, 0, 0, 0.85)'
+            ]}
+            locations={[0, 0.4, 1]}
+            style={styles.gradient}
+          >
+            <View style={styles.contentContainer}>
+              <Text style={styles.exerciseTitle} numberOfLines={2}>
+                {exercise.name}
+              </Text>
+              
+              <View style={styles.bottomRow}>
+                <View style={styles.tagsContainer}>
+                  {exercise.categories.slice(0, 2).map((category, index) => (
+                    <View key={index} style={styles.tag}>
+                      <Text style={styles.tagText}>{category}</Text>
+                    </View>
+                  ))}
                 </View>
-              ))}
+                
+                <ArrowRight 
+                  size={20} 
+                  color="white" 
+                  style={styles.arrow}
+                />
+              </View>
             </View>
-
-            <View style={styles.exploreButton}>
-              <Text style={styles.exploreText}>Explore</Text>
-              <ChevronRight size={16} color={COLORS.textPrimary} />
-            </View>
-          </View>
-        </View>
+          </LinearGradient>
+        </ImageBackground>
       </TouchableOpacity>
     </Animated.View>
   );
-}
+});
+
+ExerciseCard.displayName = 'ExerciseCard';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     margin: SPACING.xs,
   },
-  card: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.cardBorder,
+  backgroundImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 20,
     overflow: 'hidden',
   },
-  thumbnail: {
-    width: '100%',
-    height: 140,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  content: {
+  gradient: {
+    flex: 1,
+    justifyContent: 'flex-end',
     padding: SPACING.md,
   },
-  exerciseName: {
-    fontSize: 16,
-    fontWeight: '600' as const,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-    minHeight: 40,
+  contentContainer: {
+    gap: SPACING.sm,
   },
-  categoriesContainer: {
+  exerciseTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: 'white',
+    letterSpacing: 0.3,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  bottomRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.xs,
-    marginBottom: SPACING.sm,
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  categoryPill: {
-    backgroundColor: 'rgba(255, 107, 85, 0.15)',
-    borderRadius: 12,
+  tagsContainer: {
+    flexDirection: 'row',
+    gap: 6,
+    flex: 1,
+  },
+  tag: {
+    backgroundColor: 'rgba(255, 107, 85, 0.25)',
     paddingHorizontal: 10,
     paddingVertical: 4,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 85, 0.3)',
+    borderColor: 'rgba(255, 107, 85, 0.5)',
   },
-  categoryText: {
+  tagText: {
     fontSize: 11,
     fontWeight: '600' as const,
     color: COLORS.accents.orange,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
-  exploreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 8,
-    paddingVertical: SPACING.sm,
-    gap: 4,
-    marginTop: SPACING.xs,
-  },
-  exploreText: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: COLORS.textPrimary,
+  arrow: {
+    opacity: 0.9,
   },
 });
