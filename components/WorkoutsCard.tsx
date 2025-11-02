@@ -68,11 +68,13 @@ export default function WorkoutsCard({
     return COLORS.textSecondary;
   };
 
+  console.log('[WorkoutsCard] Rendering with period:', workoutsPeriod);
+  
   return (
     <Card style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Workouts</Text>
-        <View style={styles.segmentedControl}>
+        <View style={styles.segmentedControl} testID="workouts-tabs">
           <Pressable
             style={[
               styles.segment,
