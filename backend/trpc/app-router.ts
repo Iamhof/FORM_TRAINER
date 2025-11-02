@@ -9,6 +9,7 @@ import { logWorkoutProcedure } from "./routes/workouts/log/route";
 import { getWorkoutHistoryProcedure } from "./routes/workouts/history/route";
 import { getAnalyticsProcedure } from "./routes/analytics/get/route";
 import { syncAnalyticsProcedure } from "./routes/analytics/sync/route";
+import { getVolumeProcedure } from "./routes/analytics/get-volume/route";
 import { inviteClientProcedure } from "./routes/pt/invite-client/route";
 import { acceptInvitationProcedure } from "./routes/pt/accept-invitation/route";
 import { listInvitationsProcedure } from "./routes/pt/list-invitations/route";
@@ -52,6 +53,7 @@ export const appRouter = createTRPCRouter({
   analytics: createTRPCRouter({
     get: getAnalyticsProcedure,
     sync: syncAnalyticsProcedure,
+    getVolume: getVolumeProcedure,
   }),
   pt: createTRPCRouter({
     inviteClient: inviteClientProcedure,
