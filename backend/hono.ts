@@ -30,19 +30,9 @@ app.use(
   trpcServer({
     router: appRouter,
     createContext,
+    endpoint: '/trpc',
     onError: ({ path, error }) => {
       console.error('[Hono tRPC] Error on path', path, ':', error);
-    },
-  })
-);
-
-app.use(
-  "/api/trpc/*",
-  trpcServer({
-    router: appRouter,
-    createContext,
-    onError: ({ path, error }) => {
-      console.error('[Hono tRPC] Error on path (via /api)', path, ':', error);
     },
   })
 );
