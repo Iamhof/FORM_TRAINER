@@ -76,9 +76,19 @@ export default function EditProfileScreen() {
         await updateProfile(updates);
         
         if (updates.accentColor) {
-          const validColors = ['orange', 'purple', 'blue', 'red', 'yellow', 'green', 'teal', 'pink'] as const;
-          const defaultColor = 'blue';
-          const colorName = validColors.find(c => c === 'blue') || defaultColor;
+          const colorMap: Record<string, 'orange' | 'purple' | 'blue' | 'red' | 'yellow' | 'green' | 'teal' | 'pink'> = {
+            '#FF6B55': 'orange',
+            '#B266FF': 'purple',
+            '#6699FF': 'blue',
+            '#F44336': 'red',
+            '#FFC107': 'yellow',
+            '#4CAF50': 'green',
+            '#009688': 'teal',
+            '#EC407A': 'pink',
+          };
+          
+          const colorName = colorMap[updates.accentColor.toUpperCase()] || colorMap[updates.accentColor] || 'orange';
+          console.log('[EditProfile] Setting accent color to:', colorName, 'from hex:', updates.accentColor);
           setAccentColor(colorName);
         }
 
@@ -91,7 +101,20 @@ export default function EditProfileScreen() {
       }
     } catch (error: any) {
       console.error('[EditProfile] Error updating profile:', error);
-      Alert.alert('Error', error.message || 'Failed to update profile');
+      
+      let errorMessage = 'Failed to update profile';
+      
+      if (error?.message) {
+        if (error.message.includes('<!DOCTYPE') || error.message.includes('HTML')) {
+          errorMessage = 'Server error. Please check if the backend is running correctly.';
+        } else {
+          errorMessage = error.message;
+        }
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsSaving(false);
     }

@@ -3,10 +3,13 @@ import honoApp from '@/backend/hono';
 export async function GET(request: Request) {
   console.log('[API Handler] GET request:', request.url);
   const url = new URL(request.url);
-  console.log('[API Handler] Pathname:', url.pathname);
+  console.log('[API Handler] Original pathname:', url.pathname);
+  
+  url.pathname = url.pathname.replace(/^\/api/, '');
+  console.log('[API Handler] Transformed pathname:', url.pathname);
   console.log('[API Handler] Search:', url.search);
   
-  const honoRequest = new Request(request.url, {
+  const honoRequest = new Request(url.toString(), {
     method: request.method,
     headers: request.headers,
     body: request.body,
@@ -25,10 +28,13 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   console.log('[API Handler] POST request:', request.url);
   const url = new URL(request.url);
-  console.log('[API Handler] Pathname:', url.pathname);
+  console.log('[API Handler] Original pathname:', url.pathname);
+  
+  url.pathname = url.pathname.replace(/^\/api/, '');
+  console.log('[API Handler] Transformed pathname:', url.pathname);
   console.log('[API Handler] Search:', url.search);
   
-  const honoRequest = new Request(request.url, {
+  const honoRequest = new Request(url.toString(), {
     method: request.method,
     headers: request.headers,
     body: request.body,
@@ -45,17 +51,53 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  return honoApp.fetch(request);
+  const url = new URL(request.url);
+  url.pathname = url.pathname.replace(/^\/api/, '');
+  
+  const honoRequest = new Request(url.toString(), {
+    method: request.method,
+    headers: request.headers,
+    body: request.body,
+  });
+  
+  return honoApp.fetch(honoRequest);
 }
 
 export async function DELETE(request: Request) {
-  return honoApp.fetch(request);
+  const url = new URL(request.url);
+  url.pathname = url.pathname.replace(/^\/api/, '');
+  
+  const honoRequest = new Request(url.toString(), {
+    method: request.method,
+    headers: request.headers,
+    body: request.body,
+  });
+  
+  return honoApp.fetch(honoRequest);
 }
 
 export async function PATCH(request: Request) {
-  return honoApp.fetch(request);
+  const url = new URL(request.url);
+  url.pathname = url.pathname.replace(/^\/api/, '');
+  
+  const honoRequest = new Request(url.toString(), {
+    method: request.method,
+    headers: request.headers,
+    body: request.body,
+  });
+  
+  return honoApp.fetch(honoRequest);
 }
 
 export async function OPTIONS(request: Request) {
-  return honoApp.fetch(request);
+  const url = new URL(request.url);
+  url.pathname = url.pathname.replace(/^\/api/, '');
+  
+  const honoRequest = new Request(url.toString(), {
+    method: request.method,
+    headers: request.headers,
+    body: request.body,
+  });
+  
+  return honoApp.fetch(honoRequest);
 }

@@ -36,6 +36,17 @@ app.use(
   })
 );
 
+app.use(
+  "/api/trpc/*",
+  trpcServer({
+    router: appRouter,
+    createContext,
+    onError: ({ path, error }) => {
+      console.error('[Hono tRPC] Error on path (via /api)', path, ':', error);
+    },
+  })
+);
+
 app.get("/", (c) => {
   return c.json({ status: "ok", message: "API is running" });
 });
