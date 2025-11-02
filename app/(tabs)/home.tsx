@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Flame, Target, TrendingUp, Check, Moon, ChevronRight, Dumbbell, User, Bell } from 'lucide-react-native';
+import { Flame, Target, Check, Moon, ChevronRight, Dumbbell, User, Bell } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
 import GlowCard from '@/components/GlowCard';
@@ -9,6 +9,7 @@ import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
 import SessionSelectorModal, { Session } from '@/components/SessionSelectorModal';
+import VolumeCard from '@/components/VolumeCard';
 import { EXERCISES } from '@/constants/exercises';
 import { useUser } from '@/contexts/UserContext';
 import { useSchedule } from '@/contexts/ScheduleContext';
@@ -320,53 +321,15 @@ export default function DashboardScreen() {
                 </View>
               </View>
             </Card>
-
-            <Card style={styles.statCard}>
-              <View style={styles.volumeHeader}>
-                <Text style={styles.statLabel}>Total Volume</Text>
-                <View style={styles.periodSelector}>
-                  <Pressable 
-                    style={[styles.periodButton, volumePeriod === 'week' && { backgroundColor: `${accent}20` }]}
-                    onPress={() => setVolumePeriod('week')}
-                  >
-                    <Text style={[styles.periodButtonText, volumePeriod === 'week' && { color: accent, fontWeight: '700' as const }]}>Week</Text>
-                  </Pressable>
-                  <Pressable 
-                    style={[styles.periodButton, volumePeriod === 'month' && { backgroundColor: `${accent}20` }]}
-                    onPress={() => setVolumePeriod('month')}
-                  >
-                    <Text style={[styles.periodButtonText, volumePeriod === 'month' && { color: accent, fontWeight: '700' as const }]}>Month</Text>
-                  </Pressable>
-                  <Pressable 
-                    style={[styles.periodButton, volumePeriod === 'total' && { backgroundColor: `${accent}20` }]}
-                    onPress={() => setVolumePeriod('total')}
-                  >
-                    <Text style={[styles.periodButtonText, volumePeriod === 'total' && { color: accent, fontWeight: '700' as const }]}>All</Text>
-                  </Pressable>
-                </View>
-              </View>
-              <View style={styles.statRow}>
-                <View>
-                  <Text style={styles.statValue}>
-                    {volumeLoading ? '-' : volumeData ? `${volumeData.totalVolumeKg.toLocaleString()}` : '0'} kg
-                  </Text>
-                  {volumeData && volumeData.percentageChange !== 0 && volumePeriod !== 'total' && (
-                    <View style={styles.changeContainer}>
-                      <Text style={[styles.changeText, { color: volumeData.percentageChange > 0 ? COLORS.success : COLORS.error }]}>
-                        {volumeData.percentageChange > 0 ? '+' : ''}{volumeData.percentageChange.toFixed(1)}%
-                      </Text>
-                      <Text style={styles.changePeriodText}>
-                        {' vs last {volumePeriod}'}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-                <View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>
-                  <TrendingUp size={28} color={accent} strokeWidth={2} />
-                </View>
-              </View>
-            </Card>
           </View>
+
+          <VolumeCard
+            volumePeriod={volumePeriod}
+            onPeriodChange={setVolumePeriod}
+            volumeData={volumeData}
+            isLoading={volumeLoading}
+            accentColor={accent}
+          />
         </ScrollView>
 
         {selectedDay !== null && (
@@ -715,36 +678,5 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: COLORS.background,
   },
-  volumeHeader: {
-    marginBottom: SPACING.sm,
-  },
-  periodSelector: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: SPACING.xs,
-  },
-  periodButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: COLORS.cardBorder,
-  },
-  periodButtonText: {
-    fontSize: 11,
-    fontWeight: '500' as const,
-    color: COLORS.textSecondary,
-  },
-  changeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  changeText: {
-    fontSize: 12,
-    fontWeight: '600' as const,
-  },
-  changePeriodText: {
-    fontSize: 11,
-    color: COLORS.textTertiary,
-  },
+
 });
