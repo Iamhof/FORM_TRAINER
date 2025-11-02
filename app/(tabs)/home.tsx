@@ -59,15 +59,25 @@ export default function DashboardScreen() {
   const { activeProgramme } = useProgrammes();
   const { stats, user } = useUser();
   const { schedule, assignSession, isLoading: scheduleLoading } = useSchedule();
-  const { volumePeriod, setVolumePeriod, volumeData, volumeLoading } = useAnalytics();
+  const { } = useAnalytics();
   const insets = useSafeAreaInsets();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [availableSessions, setAvailableSessions] = useState<Session[]>([]);
   
   const [workoutsPeriod, setWorkoutsPeriod] = useState<'week' | 'month' | 'total'>('week');
+  const [volumePeriod, setVolumePeriod] = useState<'week' | 'month' | 'total'>('week');
   const workoutsQuery = trpc.analytics.getVolume.useQuery(
     { period: workoutsPeriod },
+    { 
+      enabled: !!user,
+      refetchOnWindowFocus: false,
+      staleTime: 0,
+    }
+  );
+
+  const volumeQuery = trpc.analytics.getVolume.useQuery(
+    { period: volumePeriod },
     { 
       enabled: !!user,
       refetchOnWindowFocus: false,
@@ -336,8 +346,8 @@ export default function DashboardScreen() {
           <VolumeCard
             volumePeriod={volumePeriod}
             onPeriodChange={setVolumePeriod}
-            volumeData={volumeData}
-            isLoading={volumeLoading}
+            volumeData={volumeQuery.data}
+            isLoading={volumeQuery.isLoading}
             accentColor={accent}
           />
 
