@@ -11,7 +11,11 @@ export default function TabLayout() {
   const currentRoute = segments[segments.length - 1] || 'home';
 
   const handleNavigate = (route: string) => {
-    router.push(`/(tabs)/${route}` as any);
+    if (route === 'exercises') {
+      router.push('/exercises');
+    } else {
+      router.push(`/(tabs)/${route}` as any);
+    }
   };
 
   return (
