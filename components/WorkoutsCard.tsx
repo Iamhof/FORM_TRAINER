@@ -26,19 +26,6 @@ export default function WorkoutsCard({
   isLoading,
   accentColor,
 }: WorkoutsCardProps) {
-  const getPeriodLabel = (): string => {
-    switch (workoutsPeriod) {
-      case 'week':
-        return 'This Week';
-      case 'month':
-        return 'This Month';
-      case 'total':
-        return 'All Time';
-      default:
-        return 'This Week';
-    }
-  };
-
   const getComparisonText = (): string => {
     if (workoutsPeriod === 'total') return '';
     return workoutsPeriod === 'week' ? 'vs last week' : 'vs last month';
@@ -76,57 +63,48 @@ export default function WorkoutsCard({
         <Text style={styles.title}>Workouts</Text>
         <View style={styles.segmentedControl} testID="workouts-tabs">
           <Pressable
-            style={[
-              styles.segment,
-              workoutsPeriod === 'week' && [
-                styles.segmentActive,
-                { backgroundColor: accentColor },
-              ],
-            ]}
+            style={styles.segment}
             onPress={() => onPeriodChange('week')}
           >
             <Text
               style={[
                 styles.segmentText,
-                workoutsPeriod === 'week' && styles.segmentTextActive,
+                workoutsPeriod === 'week' && [
+                  styles.segmentTextActive,
+                  { color: accentColor },
+                ],
               ]}
             >
               Week
             </Text>
           </Pressable>
           <Pressable
-            style={[
-              styles.segment,
-              workoutsPeriod === 'month' && [
-                styles.segmentActive,
-                { backgroundColor: accentColor },
-              ],
-            ]}
+            style={styles.segment}
             onPress={() => onPeriodChange('month')}
           >
             <Text
               style={[
                 styles.segmentText,
-                workoutsPeriod === 'month' && styles.segmentTextActive,
+                workoutsPeriod === 'month' && [
+                  styles.segmentTextActive,
+                  { color: accentColor },
+                ],
               ]}
             >
               Month
             </Text>
           </Pressable>
           <Pressable
-            style={[
-              styles.segment,
-              workoutsPeriod === 'total' && [
-                styles.segmentActive,
-                { backgroundColor: accentColor },
-              ],
-            ]}
+            style={styles.segment}
             onPress={() => onPeriodChange('total')}
           >
             <Text
               style={[
                 styles.segmentText,
-                workoutsPeriod === 'total' && styles.segmentTextActive,
+                workoutsPeriod === 'total' && [
+                  styles.segmentTextActive,
+                  { color: accentColor },
+                ],
               ]}
             >
               Total
@@ -147,9 +125,7 @@ export default function WorkoutsCard({
                 {workoutsData?.workoutCount || 0}
                 <Text style={styles.workoutsUnit}> sessions</Text>
               </Text>
-              <View style={styles.periodBadge}>
-                <Text style={styles.periodBadgeText}>{getPeriodLabel()}</Text>
-              </View>
+
             </View>
 
             {workoutsData && workoutsPeriod !== 'total' && (
@@ -188,33 +164,24 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.sm,
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.md,
     textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
   segmentedControl: {
     flexDirection: 'row',
-    backgroundColor: COLORS.cardBorder,
-    borderRadius: 10,
-    padding: 3,
+    gap: SPACING.md,
   },
   segment: {
     flex: 1,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-    borderRadius: 8,
+    paddingVertical: SPACING.xs,
     alignItems: 'center',
     justifyContent: 'center',
   },
   segmentActive: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   segmentText: {
     fontSize: 13,
@@ -222,7 +189,6 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
   },
   segmentTextActive: {
-    color: COLORS.textPrimary,
     fontWeight: '700' as const,
   },
   content: {
@@ -250,20 +216,7 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: COLORS.textSecondary,
   },
-  periodBadge: {
-    backgroundColor: COLORS.cardBorder,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginBottom: 4,
-  },
-  periodBadgeText: {
-    fontSize: 11,
-    fontWeight: '600' as const,
-    color: COLORS.textSecondary,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
-  },
+
   comparison: {
     flexDirection: 'row',
     alignItems: 'center',
