@@ -39,6 +39,12 @@ export default function RootLayout() {
       queries: {
         retry: 1,
         staleTime: 5 * 60 * 1000,
+        networkMode: 'offlineFirst',
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+      },
+      mutations: {
+        networkMode: 'offlineFirst',
       },
     },
   }));

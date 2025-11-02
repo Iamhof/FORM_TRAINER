@@ -36,16 +36,29 @@ export const [UserProvider, useUser] = createContextHook(() => {
     console.log('[UserContext] Initializing auth state...');
     
     const initializeAuth = async () => {
-      const connectionTest = await testSupabaseConnection();
-      
-      if (!connectionTest.success) {
-        console.error('[UserContext] Connection test failed:', connectionTest.error);
-        setIsLoading(false);
-        return;
-      }
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Auth timeout')), 10000)
+      );
 
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const connectionTest = await Promise.race([
+          testSupabaseConnection(),
+          timeoutPromise
+        ]).catch(() => ({ success: false, error: 'Connection timeout' })) as { success: boolean; error?: string };
+        
+        if (!connectionTest.success) {
+          console.error('[UserContext] Connection test failed:', connectionTest.error);
+          setIsLoading(false);
+          return;
+        }
+
+        const sessionResult = await Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ]).catch(() => ({ data: { session: null }, error: null })) as { data: { session: Session | null }; error: any };
+        
+        const session = sessionResult.data.session;
+        
         console.log('[UserContext] Initial session:', session ? 'Found' : 'None');
         setSession(session);
         if (session?.user) {
