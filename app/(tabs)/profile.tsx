@@ -103,18 +103,20 @@ export default function ProfileScreen() {
               </Pressable>
             )}
 
-            <Card style={styles.menuCard}>
-              <View style={styles.menuItem}>
-                <View style={[styles.menuIcon, { backgroundColor: `${accent}20` }]}>
-                  <Settings size={20} color={accent} strokeWidth={2} />
+            <Pressable onPress={() => router.push('/settings')}>
+              <Card style={styles.menuCard}>
+                <View style={styles.menuItem}>
+                  <View style={[styles.menuIcon, { backgroundColor: `${accent}20` }]}>
+                    <Settings size={20} color={accent} strokeWidth={2} />
+                  </View>
+                  <View style={styles.menuContent}>
+                    <Text style={styles.menuTitle}>Settings</Text>
+                    <Text style={styles.menuSubtitle}>App preferences and account settings</Text>
+                  </View>
+                  <ChevronRight size={20} color={COLORS.textTertiary} strokeWidth={2} />
                 </View>
-                <View style={styles.menuContent}>
-                  <Text style={styles.menuTitle}>Settings</Text>
-                  <Text style={styles.menuSubtitle}>App preferences and account settings</Text>
-                </View>
-                <ChevronRight size={20} color={COLORS.textTertiary} strokeWidth={2} />
-              </View>
-            </Card>
+              </Card>
+            </Pressable>
           </View>
 
           <View style={styles.section}>
