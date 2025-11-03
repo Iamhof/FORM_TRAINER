@@ -95,8 +95,8 @@ export default function SessionSelectorModal({
       onRequestClose={onClose}
     >
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-          <View style={styles.header} {...panResponder.panHandlers}>
+        <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()} {...panResponder.panHandlers}>
+          <View style={styles.header}>
             <View style={styles.swipeContainer}>
               <View style={styles.swipeHandle} />
             </View>
