@@ -245,14 +245,14 @@ export default function AnalyticsScreen() {
                         styles.percentageBadge,
                         {
                           backgroundColor:
-                            exercise.percentageIncrease > 0 ? `${COLORS.success}20` : `${COLORS.textSecondary}20`,
+                            exercise.percentageIncrease > 0 ? `${COLORS.success}20` : COLORS.cardBorder,
                         },
                       ]}
                     >
                       <Text
                         style={[
                           styles.percentageText,
-                          { color: exercise.percentageIncrease > 0 ? COLORS.success : COLORS.textSecondary },
+                          { color: exercise.percentageIncrease > 0 ? COLORS.success : COLORS.textPrimary },
                         ]}
                       >
                         {exercise.percentageIncrease > 0 ? '+' : ''}
