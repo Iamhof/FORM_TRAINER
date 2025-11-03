@@ -27,7 +27,7 @@ app.use("*", async (c, next) => {
 });
 
 app.use(
-  "/trpc/*",
+  "/trpc",
   trpcServer({
     router: appRouter,
     createContext,
