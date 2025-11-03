@@ -1,23 +1,27 @@
-import { protectedProcedure } from '../../../create-context';
-import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '@/backend/lib/auth';
+import { protectedProcedure } from "../../../create-context";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.EXPO_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export const getLatestBodyMetricsProcedure = protectedProcedure.query(async ({ ctx }) => {
-  const { data: bodyMetric, error } = await supabaseAdmin
-    .from('body_metrics')
-    .select('*')
-    .eq('user_id', ctx.userId)
-    .order('date', { ascending: false })
+  const { data, error } = await supabase
+    .from("body_metrics")
+    .select("*")
+    .eq("user_id", ctx.userId)
+    .order("logged_at", { ascending: false })
     .limit(1)
     .single();
 
-  if (error && error.code !== 'PGRST116') {
-    console.error('[getLatestBodyMetrics] Error:', error);
-    throw new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Failed to fetch latest body metrics',
-    });
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null;
+    }
+    console.error("[Body Metrics Latest] Error:", error);
+    throw new Error("Failed to fetch latest body metric");
   }
 
-  return bodyMetric || null;
+  return data;
 });

@@ -1,44 +1,30 @@
-import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context';
-import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '@/backend/lib/auth';
+import { z } from "zod";
+import { protectedProcedure } from "../../../create-context";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.EXPO_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export const listBodyMetricsProcedure = protectedProcedure
   .input(
     z.object({
-      startDate: z.string().optional(),
-      endDate: z.string().optional(),
-      limit: z.number().optional(),
+      limit: z.number().optional().default(12),
     })
   )
   .query(async ({ ctx, input }) => {
-    let query = supabaseAdmin
-      .from('body_metrics')
-      .select('*')
-      .eq('user_id', ctx.userId)
-      .order('date', { ascending: false });
-
-    if (input.startDate) {
-      query = query.gte('date', input.startDate);
-    }
-
-    if (input.endDate) {
-      query = query.lte('date', input.endDate);
-    }
-
-    if (input.limit) {
-      query = query.limit(input.limit);
-    }
-
-    const { data: bodyMetrics, error } = await query;
+    const { data, error } = await supabase
+      .from("body_metrics")
+      .select("*")
+      .eq("user_id", ctx.userId)
+      .order("logged_at", { ascending: false })
+      .limit(input.limit);
 
     if (error) {
-      console.error('[listBodyMetrics] Error:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to fetch body metrics',
-      });
+      console.error("[Body Metrics List] Error:", error);
+      throw new Error("Failed to fetch body metrics");
     }
 
-    return bodyMetrics || [];
+    return data || [];
   });

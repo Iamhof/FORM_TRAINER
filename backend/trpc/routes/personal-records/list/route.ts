@@ -1,34 +1,25 @@
-import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context';
-import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '@/backend/lib/auth';
+import { z } from "zod";
+import { protectedProcedure } from "../../../create-context";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.EXPO_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export const listPersonalRecordsProcedure = protectedProcedure
-  .input(
-    z.object({
-      exerciseId: z.string().optional(),
-    })
-  )
-  .query(async ({ ctx, input }) => {
-    let query = supabaseAdmin
-      .from('personal_records')
-      .select('*')
-      .eq('user_id', ctx.userId)
-      .order('date', { ascending: false });
-
-    if (input.exerciseId) {
-      query = query.eq('exercise_id', input.exerciseId);
-    }
-
-    const { data: personalRecords, error } = await query;
+  .input(z.object({}).optional())
+  .query(async ({ ctx }) => {
+    const { data, error } = await supabase
+      .from("personal_records")
+      .select("*")
+      .eq("user_id", ctx.userId)
+      .order("achieved_at", { ascending: false });
 
     if (error) {
-      console.error('[listPersonalRecords] Error:', error);
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to fetch personal records',
-      });
+      console.error("[Personal Records List] Error:", error);
+      throw new Error("Failed to fetch personal records");
     }
 
-    return personalRecords || [];
+    return data || [];
   });
