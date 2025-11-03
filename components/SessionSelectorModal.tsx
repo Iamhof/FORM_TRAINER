@@ -54,8 +54,10 @@ export default function SessionSelectorModal({
         return Math.abs(gestureState.dx) > 10;
       },
       onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx > SWIPE_THRESHOLD && dayIndex > 0) {
-          onDayChange(dayIndex - 1);
+        if (gestureState.dx > SWIPE_THRESHOLD) {
+          if (dayIndex === 6) {
+            onDayChange(dayIndex - 1);
+          }
         } else if (gestureState.dx < -SWIPE_THRESHOLD && dayIndex < 6) {
           onDayChange(dayIndex + 1);
         }
@@ -97,18 +99,23 @@ export default function SessionSelectorModal({
             <View style={styles.swipeContainer}>
               <View style={styles.swipeHandle} />
             </View>
+            <View style={styles.closeContainer}>
+              <Pressable onPress={onClose} style={styles.closeButton}>
+                <X size={24} color={COLORS.textPrimary} strokeWidth={2} />
+              </Pressable>
+            </View>
             <View style={styles.headerContent}>
-              <View>
+              <View style={styles.titleContainer}>
                 <Text style={styles.title}>Choose Session</Text>
                 <Text style={styles.subtitle}>{dayName}</Text>
               </View>
               <View style={styles.dayNavigator}>
                 <Pressable
-                  style={[styles.navButton, dayIndex === 0 && styles.navButtonDisabled]}
-                  onPress={() => dayIndex > 0 && onDayChange(dayIndex - 1)}
-                  disabled={dayIndex === 0}
+                  style={[styles.navButton, dayIndex !== 6 && styles.navButtonDisabled]}
+                  onPress={() => dayIndex === 6 && onDayChange(dayIndex - 1)}
+                  disabled={dayIndex !== 6}
                 >
-                  <Text style={[styles.navText, dayIndex === 0 && styles.navTextDisabled]}>←</Text>
+                  <Text style={[styles.navText, dayIndex !== 6 && styles.navTextDisabled]}>←</Text>
                 </Pressable>
                 <Text style={styles.dayIndicator}>
                   {dayIndex + 1}/7
@@ -121,11 +128,6 @@ export default function SessionSelectorModal({
                   <Text style={[styles.navText, dayIndex === 6 && styles.navTextDisabled]}>→</Text>
                 </Pressable>
               </View>
-            </View>
-            <View style={styles.closeContainer}>
-              <Pressable onPress={onClose} style={styles.closeButton}>
-                <X size={24} color={COLORS.textPrimary} strokeWidth={2} />
-              </Pressable>
             </View>
           </View>
 
@@ -303,11 +305,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'flex-start' as const,
+    marginTop: SPACING.md,
+  },
+  titleContainer: {
+    flex: 1,
+    marginRight: SPACING.sm,
   },
   closeContainer: {
-    position: 'absolute' as const,
-    top: 12,
-    right: SPACING.lg,
+    alignItems: 'flex-end' as const,
+    paddingBottom: SPACING.sm,
   },
   dayNavigator: {
     flexDirection: 'row' as const,

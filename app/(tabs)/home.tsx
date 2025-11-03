@@ -433,6 +433,8 @@ export default function DashboardScreen() {
             selectedSessionId={'sessionId' in safeSchedule[selectedDay] ? safeSchedule[selectedDay].sessionId || null : null}
             dayName={DAY_LABELS_FULL[selectedDay]}
             accentColor={accent}
+            dayIndex={selectedDay}
+            onDayChange={(newDayIndex) => setSelectedDay(newDayIndex)}
           />
         )}
       </SafeAreaView>
