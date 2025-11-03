@@ -48,17 +48,18 @@ export default function SessionSelectorModal({
   onDayChange,
 }: SessionSelectorModalProps) {
   const SWIPE_THRESHOLD = 50;
+  const canScrollBack = dayIndex > 0;
+  const canScrollForward = dayIndex < 6;
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
         return Math.abs(gestureState.dx) > 10;
       },
       onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx > SWIPE_THRESHOLD) {
-          if (dayIndex === 6) {
-            onDayChange(dayIndex - 1);
-          }
-        } else if (gestureState.dx < -SWIPE_THRESHOLD && dayIndex < 6) {
+        if (gestureState.dx > SWIPE_THRESHOLD && canScrollBack) {
+          onDayChange(dayIndex - 1);
+        } else if (gestureState.dx < -SWIPE_THRESHOLD && canScrollForward) {
           onDayChange(dayIndex + 1);
         }
       },
@@ -111,21 +112,21 @@ export default function SessionSelectorModal({
               </View>
               <View style={styles.dayNavigator}>
                 <Pressable
-                  style={[styles.navButton, dayIndex !== 6 && styles.navButtonDisabled]}
-                  onPress={() => dayIndex === 6 && onDayChange(dayIndex - 1)}
-                  disabled={dayIndex !== 6}
+                  style={[styles.navButton, !canScrollBack && styles.navButtonDisabled]}
+                  onPress={() => canScrollBack && onDayChange(dayIndex - 1)}
+                  disabled={!canScrollBack}
                 >
-                  <Text style={[styles.navText, dayIndex !== 6 && styles.navTextDisabled]}>←</Text>
+                  <Text style={[styles.navText, !canScrollBack && styles.navTextDisabled]}>←</Text>
                 </Pressable>
                 <Text style={styles.dayIndicator}>
                   {dayIndex + 1}/7
                 </Text>
                 <Pressable
-                  style={[styles.navButton, dayIndex === 6 && styles.navButtonDisabled]}
-                  onPress={() => dayIndex < 6 && onDayChange(dayIndex + 1)}
-                  disabled={dayIndex === 6}
+                  style={[styles.navButton, !canScrollForward && styles.navButtonDisabled]}
+                  onPress={() => canScrollForward && onDayChange(dayIndex + 1)}
+                  disabled={!canScrollForward}
                 >
-                  <Text style={[styles.navText, dayIndex === 6 && styles.navTextDisabled]}>→</Text>
+                  <Text style={[styles.navText, !canScrollForward && styles.navTextDisabled]}>→</Text>
                 </Pressable>
               </View>
             </View>
@@ -312,8 +313,10 @@ const styles = StyleSheet.create({
     marginRight: SPACING.sm,
   },
   closeContainer: {
-    alignItems: 'flex-end' as const,
-    paddingBottom: SPACING.sm,
+    position: 'absolute' as const,
+    top: 0,
+    right: 0,
+    zIndex: 10,
   },
   dayNavigator: {
     flexDirection: 'row' as const,
