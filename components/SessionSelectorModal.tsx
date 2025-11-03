@@ -53,13 +53,25 @@ export default function SessionSelectorModal({
 
   const panResponder = useRef(
     PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dx) > 10;
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 2;
+        const hasMinMovement = Math.abs(gestureState.dx) > 15;
+        return isHorizontalSwipe && hasMinMovement;
       },
+      onPanResponderTerminationRequest: () => false,
       onPanResponderRelease: (_, gestureState) => {
+        console.log('[SessionSelectorModal] Pan gesture released:', {
+          dx: gestureState.dx,
+          threshold: SWIPE_THRESHOLD,
+          canScrollBack,
+          canScrollForward,
+        });
         if (gestureState.dx > SWIPE_THRESHOLD && canScrollBack) {
+          console.log('[SessionSelectorModal] Swiping to previous day');
           onDayChange(dayIndex - 1);
         } else if (gestureState.dx < -SWIPE_THRESHOLD && canScrollForward) {
+          console.log('[SessionSelectorModal] Swiping to next day');
           onDayChange(dayIndex + 1);
         }
       },
@@ -95,8 +107,8 @@ export default function SessionSelectorModal({
       onRequestClose={onClose}
     >
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-          <View style={styles.header} {...panResponder.panHandlers}>
+        <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()} {...panResponder.panHandlers}>
+          <View style={styles.header}>
             <View style={styles.swipeContainer}>
               <View style={styles.swipeHandle} />
             </View>
@@ -306,7 +318,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'flex-start' as const,
-    marginTop: SPACING.md,
+    marginTop: SPACING.sm,
   },
   titleContainer: {
     flex: 1,
