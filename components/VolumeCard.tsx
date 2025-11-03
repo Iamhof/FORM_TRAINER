@@ -146,10 +146,10 @@ export default function VolumeCard({
               </View>
             )}
 
-            {volumePeriod === 'total' && (
+            {volumePeriod === 'total' && volumeData && volumeData.workoutCount > 0 && (
               <View style={styles.totalInfo}>
                 <Text style={styles.totalInfoText}>
-                  {volumeData?.workoutCount || 0} workouts completed
+                  {volumeData.workoutCount} workouts completed
                 </Text>
               </View>
             )}
