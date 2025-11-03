@@ -9,7 +9,8 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import { X, Scale, Dumbbell, Droplet, Calendar } from 'lucide-react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { X, Scale, Dumbbell, Droplet, Calendar, ChevronDown } from 'lucide-react-native';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useBodyMetrics } from '@/contexts/BodyMetricsContext';
 import Button from './Button';
@@ -27,6 +28,7 @@ export default function BodyMetricsModal({ visible, onClose }: BodyMetricsModalP
   const [bodyFat, setBodyFat] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
 
   useEffect(() => {
     if (visible) {
@@ -37,8 +39,28 @@ export default function BodyMetricsModal({ visible, onClose }: BodyMetricsModalP
       setBodyFat(latestMetrics?.body_fat_percentage?.toString() || '');
       setNotes('');
       setError('');
+      setShowDatePicker(false);
     }
   }, [visible, latestMetrics]);
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (selectedDate) {
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      setDate(formattedDate);
+    }
+    if (Platform.OS === 'ios' && event.type === 'dismissed') {
+      setShowDatePicker(false);
+    }
+  };
+
+  const formatDateForDisplay = (dateString: string) => {
+    if (!dateString) return 'Select date';
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
 
   const handleSubmit = async () => {
     setError('');
@@ -107,14 +129,35 @@ export default function BodyMetricsModal({ visible, onClose }: BodyMetricsModalP
                 <Calendar size={18} color={COLORS.textSecondary} strokeWidth={2} />
                 <Text style={styles.fieldLabelText}>Date</Text>
               </View>
-              <TextInput
-                style={styles.input}
-                value={date}
-                onChangeText={setDate}
-                placeholder="YYYY-MM-DD"
-                placeholderTextColor={COLORS.textSecondary}
-                keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
-              />
+              <Pressable
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={styles.dateButtonText}>{formatDateForDisplay(date)}</Text>
+                <ChevronDown size={20} color={COLORS.textSecondary} strokeWidth={2} />
+              </Pressable>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={date ? new Date(date + 'T00:00:00') : new Date()}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handleDateChange}
+                  maximumDate={new Date()}
+                  {...(Platform.OS === 'ios' && {
+                    themeVariant: 'dark',
+                  })}
+                />
+              )}
+              {showDatePicker && Platform.OS === 'ios' && (
+                <View style={styles.datePickerActions}>
+                  <Pressable
+                    style={styles.datePickerButton}
+                    onPress={() => setShowDatePicker(false)}
+                  >
+                    <Text style={styles.datePickerButtonText}>Done</Text>
+                  </Pressable>
+                </View>
+              )}
             </View>
 
             <View style={styles.field}>
@@ -197,7 +240,7 @@ export default function BodyMetricsModal({ visible, onClose }: BodyMetricsModalP
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'flex-end',
   },
   container: {
@@ -257,6 +300,35 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     borderWidth: 1,
     borderColor: COLORS.cardBorder,
+  },
+  dateButton: {
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+    padding: SPACING.md,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    fontWeight: '500' as const,
+  },
+  datePickerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: SPACING.xs,
+  },
+  datePickerButton: {
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+  },
+  datePickerButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: COLORS.accents.orange,
   },
   textArea: {
     height: 80,
