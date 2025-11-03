@@ -173,28 +173,56 @@ function aggregateAnalyticsData(
   const sessionsCompleted: MonthlyDataPoint[] = [];
   const sessionsMissed: MonthlyDataPoint[] = [];
   const totalVolume: MonthlyDataPoint[] = [];
-  const completionRate: MonthlyDataPoint[] = [];
+  const strengthProgressionRate: MonthlyDataPoint[] = [];
 
-  Object.keys(monthlyData)
-    .sort()
-    .forEach((key) => {
-      const [, month] = key.split('-').map(Number);
-      const monthName = MONTHS[month - 1];
-      const data = monthlyData[key];
+  const sortedMonthKeys = Object.keys(monthlyData).sort();
 
-      const completedForMonth = data.sessionsCompleted;
-      const scheduledForMonth = scheduledSessionsByMonth[key] || 0;
-      const missed = Math.max(0, scheduledForMonth - completedForMonth);
+  sortedMonthKeys.forEach((key, index) => {
+    const [, month] = key.split('-').map(Number);
+    const monthName = MONTHS[month - 1];
+    const data = monthlyData[key];
+
+    const completedForMonth = data.sessionsCompleted;
+    const scheduledForMonth = scheduledSessionsByMonth[key] || 0;
+    const missed = Math.max(0, scheduledForMonth - completedForMonth);
+    
+    sessionsCompleted.push({ month: monthName, value: completedForMonth });
+    totalVolume.push({ month: monthName, value: Math.round(data.volume) });
+    sessionsMissed.push({ month: monthName, value: missed });
+    
+    let progressRate = 0;
+    if (index > 0) {
+      const previousMonthKey = sortedMonthKeys[index - 1];
+      const exerciseProgressions: number[] = [];
       
-      sessionsCompleted.push({ month: monthName, value: completedForMonth });
-      totalVolume.push({ month: monthName, value: Math.round(data.volume) });
-      sessionsMissed.push({ month: monthName, value: missed });
+      Object.entries(exerciseData).forEach(([exerciseId, exerciseInfo]) => {
+        const currentMonthWeights = exerciseInfo.data
+          .filter(d => d.date.startsWith(key))
+          .map(d => d.weight);
+        const previousMonthWeights = exerciseInfo.data
+          .filter(d => d.date.startsWith(previousMonthKey))
+          .map(d => d.weight);
+        
+        if (currentMonthWeights.length > 0 && previousMonthWeights.length > 0) {
+          const avgCurrent = currentMonthWeights.reduce((sum, w) => sum + w, 0) / currentMonthWeights.length;
+          const avgPrevious = previousMonthWeights.reduce((sum, w) => sum + w, 0) / previousMonthWeights.length;
+          
+          if (avgPrevious > 0) {
+            const percentageChange = ((avgCurrent - avgPrevious) / avgPrevious) * 100;
+            exerciseProgressions.push(percentageChange);
+          }
+        }
+      });
       
-      const rate = scheduledForMonth > 0 
-        ? Math.round((completedForMonth / scheduledForMonth) * 100) 
-        : (completedForMonth > 0 ? 100 : 0);
-      completionRate.push({ month: monthName, value: rate });
-    });
+      if (exerciseProgressions.length > 0) {
+        progressRate = Math.round(
+          exerciseProgressions.reduce((sum, val) => sum + val, 0) / exerciseProgressions.length
+        );
+      }
+    }
+    
+    strengthProgressionRate.push({ month: monthName, value: progressRate });
+  });
 
   const currentMonthKey = Object.keys(monthlyData).sort().pop();
   const lastMonthKeys = Object.keys(monthlyData).sort();
@@ -231,7 +259,7 @@ function aggregateAnalyticsData(
   return {
     sessionsCompleted,
     sessionsMissed,
-    completionRate,
+    strengthProgressionRate,
     totalVolume,
     exerciseProgress,
     restDays: {
@@ -249,7 +277,7 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
     sessionsCompleted: generateEmptyMonthlyData(),
     sessionsMissed: generateEmptyMonthlyData(),
-    completionRate: generateEmptyMonthlyData(),
+    strengthProgressionRate: generateEmptyMonthlyData(),
     totalVolume: generateEmptyMonthlyData(),
     exerciseProgress: [],
     restDays: {
@@ -278,7 +306,7 @@ export const [AnalyticsProvider, useAnalytics] = createContextHook(() => {
       setAnalyticsData({
         sessionsCompleted: generateEmptyMonthlyData(),
         sessionsMissed: generateEmptyMonthlyData(),
-        completionRate: generateEmptyMonthlyData(),
+        strengthProgressionRate: generateEmptyMonthlyData(),
         totalVolume: generateEmptyMonthlyData(),
         exerciseProgress: [],
         restDays: {

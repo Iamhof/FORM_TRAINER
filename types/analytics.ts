@@ -17,7 +17,7 @@ export type ExerciseProgress = {
 export type AnalyticsData = {
   sessionsCompleted: MonthlyDataPoint[];
   sessionsMissed: MonthlyDataPoint[];
-  completionRate: MonthlyDataPoint[];
+  strengthProgressionRate: MonthlyDataPoint[];
   totalVolume: MonthlyDataPoint[];
   exerciseProgress: ExerciseProgress[];
   restDays: {

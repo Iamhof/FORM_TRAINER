@@ -10,7 +10,7 @@ import { useAnalytics } from '@/contexts/AnalyticsContext';
 import { useBodyMetrics } from '@/contexts/BodyMetricsContext';
 import BodyMetricsModal from '@/components/BodyMetricsModal';
 
-type MetricTab = 'sessions' | 'volume' | 'completion';
+type MetricTab = 'sessions' | 'volume' | 'progression';
 
 export default function AnalyticsScreen() {
   const { accent } = useTheme();
@@ -30,8 +30,8 @@ export default function AnalyticsScreen() {
         return analyticsData.sessionsCompleted;
       case 'volume':
         return analyticsData.totalVolume;
-      case 'completion':
-        return analyticsData.completionRate;
+      case 'progression':
+        return analyticsData.strengthProgressionRate;
       default:
         return analyticsData.sessionsCompleted;
     }
@@ -43,8 +43,8 @@ export default function AnalyticsScreen() {
         return 'Sessions Completed';
       case 'volume':
         return 'Total Volume (kg)';
-      case 'completion':
-        return 'Completion Rate (%)';
+      case 'progression':
+        return 'Strength Progression Rate (%)';
       default:
         return 'Sessions Completed';
     }
@@ -54,8 +54,8 @@ export default function AnalyticsScreen() {
     if (selectedMetric === 'volume') {
       return `${value.toLocaleString()} kg`;
     }
-    if (selectedMetric === 'completion') {
-      return `${value}%`;
+    if (selectedMetric === 'progression') {
+      return `${value > 0 ? '+' : ''}${value}%`;
     }
     return value.toString();
   };
@@ -190,11 +190,11 @@ export default function AnalyticsScreen() {
                 </Text>
               </Pressable>
               <Pressable
-                style={[styles.tab, selectedMetric === 'completion' && { backgroundColor: accent }]}
-                onPress={() => setSelectedMetric('completion')}
+                style={[styles.tab, selectedMetric === 'progression' && { backgroundColor: accent }]}
+                onPress={() => setSelectedMetric('progression')}
               >
-                <Text style={[styles.tabText, selectedMetric === 'completion' && { color: COLORS.textPrimary, fontWeight: '600' as const }]}>
-                  Rate
+                <Text style={[styles.tabText, selectedMetric === 'progression' && { color: COLORS.textPrimary, fontWeight: '600' as const }]}>
+                  Strength
                 </Text>
               </Pressable>
             </View>
