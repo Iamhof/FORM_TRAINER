@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable, Animated } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Flame, Check, Moon, ChevronRight, Dumbbell, User, Bell, BookOpen } from 'lucide-react-native';
+import { Flame, Check, Moon, ChevronRight, Dumbbell, User, Bell, BookOpen, CalendarClock, AlertCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
 import GlowCard from '@/components/GlowCard';
@@ -59,11 +59,12 @@ export default function DashboardScreen() {
   const { activeProgramme } = useProgrammes();
   const { stats, user } = useUser();
   const { schedule, assignSession, isLoading: scheduleLoading } = useSchedule();
-  const { } = useAnalytics();
+  useAnalytics();
   const insets = useSafeAreaInsets();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [availableSessions, setAvailableSessions] = useState<Session[]>([]);
+  const [pulseAnim] = useState(new Animated.Value(1));
   
   const [workoutsPeriod, setWorkoutsPeriod] = useState<'week' | 'month' | 'total'>('week');
   const [volumePeriod, setVolumePeriod] = useState<'week' | 'month' | 'total'>('week');
@@ -88,6 +89,41 @@ export default function DashboardScreen() {
   const scrollPaddingBottom = useMemo(() => {
     return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
   }, [insets.bottom]);
+
+  const safeSchedule = useMemo(() => {
+    return Array.isArray(schedule) && schedule.length === 7
+      ? schedule
+      : Array.from({ length: 7 }, (_, i) => ({
+          dayOfWeek: i,
+          status: 'empty' as const,
+          weekStart: new Date().toISOString().split('T')[0],
+        }));
+  }, [schedule]);
+
+  const isWeekUnscheduled = useMemo(() => {
+    if (!activeProgramme) return false;
+    const scheduled = safeSchedule.filter((d) => d?.status === 'scheduled' || d?.status === 'completed').length;
+    return scheduled === 0;
+  }, [safeSchedule, activeProgramme]);
+
+  useEffect(() => {
+    if (isWeekUnscheduled) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.05,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+  }, [isWeekUnscheduled, pulseAnim]);
 
   const loadAvailableSessions = useCallback(async () => {
     if (!activeProgramme) {
@@ -182,12 +218,6 @@ export default function DashboardScreen() {
     return availableSessions.find(s => s.id === daySchedule.sessionId) || null;
   };
 
-  const safeSchedule = Array.isArray(schedule) && schedule.length === 7 ? schedule : Array.from({ length: 7 }, (_, i) => ({
-    dayOfWeek: i,
-    status: 'empty' as const,
-    weekStart: new Date().toISOString().split('T')[0],
-  }));
-
   return (
     <View style={styles.background}>
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -212,7 +242,36 @@ export default function DashboardScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.section}>
-            {activeProgramme && (() => {
+            {activeProgramme && isWeekUnscheduled && (
+              <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+                <Pressable
+                  onPress={() => handleDayPress(0)}
+                  style={[styles.schedulePrompt, { borderColor: accent }]}
+                >
+                  <View style={[styles.schedulePromptIconContainer, { backgroundColor: `${accent}15` }]}>
+                    <CalendarClock size={32} color={accent} strokeWidth={2.5} />
+                  </View>
+                  <View style={styles.schedulePromptContent}>
+                    <View style={styles.schedulePromptHeader}>
+                      <Text style={styles.schedulePromptTitle}>Schedule Your Week</Text>
+                      <View style={[styles.urgentBadge, { backgroundColor: accent }]}>
+                        <AlertCircle size={12} color={COLORS.background} strokeWidth={3} />
+                        <Text style={styles.urgentBadgeText}>New Week</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.schedulePromptDescription}>
+                      Plan your {activeProgramme.days} training sessions for this week to stay on track
+                    </Text>
+                    <View style={[styles.schedulePromptButton, { backgroundColor: accent }]}>
+                      <Text style={styles.schedulePromptButtonText}>Start Scheduling</Text>
+                      <ChevronRight size={16} color={COLORS.background} strokeWidth={2.5} />
+                    </View>
+                  </View>
+                </Pressable>
+              </Animated.View>
+            )}
+
+            {activeProgramme && !isWeekUnscheduled && (() => {
               const actualScheduled = safeSchedule.filter((d) => d?.status === 'scheduled').length;
               const completed = safeSchedule.filter((d) => d?.status === 'completed').length;
               const total = actualScheduled + completed;
@@ -597,6 +656,72 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 11,
     color: COLORS.textSecondary,
+  },
+  schedulePrompt: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 20,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+    borderWidth: 2,
+    flexDirection: 'row',
+    gap: SPACING.md,
+    alignItems: 'center',
+  },
+  schedulePromptIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  schedulePromptContent: {
+    flex: 1,
+    gap: SPACING.sm,
+  },
+  schedulePromptHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  schedulePromptTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: COLORS.textPrimary,
+  },
+  urgentBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  urgentBadgeText: {
+    fontSize: 10,
+    fontWeight: '700' as const,
+    color: COLORS.background,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+  },
+  schedulePromptDescription: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
+  schedulePromptButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: SPACING.md,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  schedulePromptButtonText: {
+    fontSize: 14,
+    fontWeight: '700' as const,
+    color: COLORS.background,
   },
   viewAllButton: {
     flexDirection: 'row',
