@@ -57,6 +57,10 @@ export default function WeekScheduler({
     await assignSession(selectedDay, session?.id || null);
   };
 
+  const handleDayChange = (newDayIndex: number) => {
+    setSelectedDay(newDayIndex);
+  };
+
   const getDayStatus = (dayIndex: number) => {
     const daySchedule = schedule[dayIndex];
     if (!daySchedule) return 'empty';
@@ -198,6 +202,8 @@ export default function WeekScheduler({
           selectedSessionId={schedule[selectedDay]?.sessionId || null}
           dayName={DAYS_FULL[selectedDay]}
           accentColor={accentColor}
+          dayIndex={selectedDay}
+          onDayChange={handleDayChange}
         />
       )}
     </View>

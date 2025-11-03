@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
+  PanResponder,
 } from 'react-native';
 import { X, Check } from 'lucide-react-native';
 
@@ -30,6 +31,8 @@ type SessionSelectorModalProps = {
   selectedSessionId: string | null;
   dayName: string;
   accentColor: string;
+  dayIndex: number;
+  onDayChange: (newDayIndex: number) => void;
 };
 
 export default function SessionSelectorModal({
@@ -41,13 +44,32 @@ export default function SessionSelectorModal({
   selectedSessionId,
   dayName,
   accentColor,
+  dayIndex,
+  onDayChange,
 }: SessionSelectorModalProps) {
+  const SWIPE_THRESHOLD = 50;
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 10;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx > SWIPE_THRESHOLD && dayIndex > 0) {
+          onDayChange(dayIndex - 1);
+        } else if (gestureState.dx < -SWIPE_THRESHOLD && dayIndex < 6) {
+          onDayChange(dayIndex + 1);
+        }
+      },
+    })
+  ).current;
+
   console.log('[SessionSelectorModal] Rendered with:', {
     visible,
     sessionsCount: sessions.length,
     dayName,
     selectedSessionId,
     scheduledSessionIds,
+    dayIndex,
   });
 
   const availableSessions = sessions.filter(
@@ -71,14 +93,40 @@ export default function SessionSelectorModal({
     >
       <Pressable style={styles.overlay} onPress={onClose}>
         <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-          <View style={styles.header}>
-            <View>
-              <Text style={styles.title}>Choose Session</Text>
-              <Text style={styles.subtitle}>{dayName}</Text>
+          <View style={styles.header} {...panResponder.panHandlers}>
+            <View style={styles.swipeContainer}>
+              <View style={styles.swipeHandle} />
             </View>
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <X size={24} color={COLORS.textPrimary} strokeWidth={2} />
-            </Pressable>
+            <View style={styles.headerContent}>
+              <View>
+                <Text style={styles.title}>Choose Session</Text>
+                <Text style={styles.subtitle}>{dayName}</Text>
+              </View>
+              <View style={styles.dayNavigator}>
+                <Pressable
+                  style={[styles.navButton, dayIndex === 0 && styles.navButtonDisabled]}
+                  onPress={() => dayIndex > 0 && onDayChange(dayIndex - 1)}
+                  disabled={dayIndex === 0}
+                >
+                  <Text style={[styles.navText, dayIndex === 0 && styles.navTextDisabled]}>←</Text>
+                </Pressable>
+                <Text style={styles.dayIndicator}>
+                  {dayIndex + 1}/7
+                </Text>
+                <Pressable
+                  style={[styles.navButton, dayIndex === 6 && styles.navButtonDisabled]}
+                  onPress={() => dayIndex < 6 && onDayChange(dayIndex + 1)}
+                  disabled={dayIndex === 6}
+                >
+                  <Text style={[styles.navText, dayIndex === 6 && styles.navTextDisabled]}>→</Text>
+                </Pressable>
+              </View>
+            </View>
+            <View style={styles.closeContainer}>
+              <Pressable onPress={onClose} style={styles.closeButton}>
+                <X size={24} color={COLORS.textPrimary} strokeWidth={2} />
+              </Pressable>
+            </View>
           </View>
 
           <ScrollView
@@ -237,11 +285,65 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.lg,
   },
   header: {
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  swipeContainer: {
+    alignItems: 'center' as const,
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  swipeHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  headerContent: {
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,
     alignItems: 'flex-start' as const,
-    paddingHorizontal: SPACING.lg,
-    marginBottom: SPACING.md,
+  },
+  closeContainer: {
+    position: 'absolute' as const,
+    top: 12,
+    right: SPACING.lg,
+  },
+  dayNavigator: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 12,
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  navButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
+  navButtonDisabled: {
+    backgroundColor: 'transparent',
+    opacity: 0.3,
+  },
+  navText: {
+    fontSize: 18,
+    fontWeight: '600' as const,
+    color: COLORS.textPrimary,
+  },
+  navTextDisabled: {
+    color: COLORS.textSecondary,
+  },
+  dayIndicator: {
+    fontSize: 13,
+    fontWeight: '700' as const,
+    color: COLORS.textSecondary,
+    minWidth: 30,
+    textAlign: 'center' as const,
   },
   title: {
     fontSize: 26,
