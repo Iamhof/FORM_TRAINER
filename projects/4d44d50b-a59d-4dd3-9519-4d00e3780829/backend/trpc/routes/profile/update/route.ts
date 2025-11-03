@@ -11,7 +11,7 @@ export const updateProfileProcedure = protectedProcedure
     accentColor: hexColorSchema.optional(),
   }))
   .mutation(async ({ ctx, input }) => {
-    console.log('[UPDATE_PROFILE] Updating profile for user:', ctx.userId, input);
+    console.log('[UPDATE_PROFILE] Updating profile for user:', ctx.user.id, input);
     
     const updates: Record<string, any> = {};
     
@@ -33,7 +33,7 @@ export const updateProfileProcedure = protectedProcedure
     const { error } = await supabaseAdmin
       .from('profiles')
       .update(updates)
-      .eq('user_id', ctx.userId);
+      .eq('user_id', ctx.user.id);
 
     if (error) {
       console.error('[UPDATE_PROFILE] Error updating profile:', error);
