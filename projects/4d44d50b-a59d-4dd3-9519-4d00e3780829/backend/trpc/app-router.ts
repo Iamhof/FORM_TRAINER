@@ -24,6 +24,8 @@ import { getScheduleProcedure } from "./routes/schedules/get/route";
 import { updateScheduleProcedure } from "./routes/schedules/update/route";
 import { assignSessionProcedure } from "./routes/schedules/assign-session/route";
 import { updateColorProcedure } from "./routes/profile/update-color/route";
+import { getVolumeProcedure } from "./routes/analytics/get-volume/route";
+import { updateProfileProcedure } from "./routes/profile/update/route";
 import { logBodyMetricProcedure } from "./routes/body-metrics/log/route";
 import { listBodyMetricsProcedure } from "./routes/body-metrics/list/route";
 import { latestBodyMetricProcedure } from "./routes/body-metrics/latest/route";
@@ -51,6 +53,7 @@ export const appRouter = router({
   analytics: router({
     get: getAnalyticsProcedure,
     sync: syncAnalyticsProcedure,
+    getVolume: getVolumeProcedure,
   }),
   pt: router({
     inviteClient: inviteClientProcedure,
@@ -74,6 +77,7 @@ export const appRouter = router({
   }),
   profile: router({
     updateColor: updateColorProcedure,
+    update: updateProfileProcedure,
   }),
   bodyMetrics: router({
     log: logBodyMetricProcedure,
