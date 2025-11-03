@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Animated } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Flame, Check, Moon, ChevronRight, Dumbbell, User, Bell, BookOpen, CalendarClock, AlertCircle } from 'lucide-react-native';
+import { Flame, Check, Moon, ChevronRight, Dumbbell, User, Bell, BookOpen, CalendarClock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
 import GlowCard from '@/components/GlowCard';
@@ -246,27 +246,16 @@ export default function DashboardScreen() {
               <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
                 <Pressable
                   onPress={() => handleDayPress(0)}
-                  style={[styles.schedulePrompt, { borderColor: accent }]}
+                  style={[styles.schedulePromptSubtle, { backgroundColor: `${accent}08`, borderLeftColor: accent }]}
                 >
-                  <View style={[styles.schedulePromptIconContainer, { backgroundColor: `${accent}15` }]}>
-                    <CalendarClock size={32} color={accent} strokeWidth={2.5} />
-                  </View>
-                  <View style={styles.schedulePromptContent}>
-                    <View style={styles.schedulePromptHeader}>
-                      <Text style={styles.schedulePromptTitle}>Schedule Your Week</Text>
-                      <View style={[styles.urgentBadge, { backgroundColor: accent }]}>
-                        <AlertCircle size={12} color={COLORS.background} strokeWidth={3} />
-                        <Text style={styles.urgentBadgeText}>New Week</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.schedulePromptDescription}>
-                      Plan your {activeProgramme.days} training sessions for this week to stay on track
+                  <CalendarClock size={18} color={accent} strokeWidth={2.5} />
+                  <View style={styles.schedulePromptTextContainer}>
+                    <Text style={styles.schedulePromptTextSubtle}>
+                      <Text style={[styles.schedulePromptBold, { color: accent }]}>New week</Text>
+                      <Text style={styles.schedulePromptRegular}> • Tap to schedule your {activeProgramme.days} sessions</Text>
                     </Text>
-                    <View style={[styles.schedulePromptButton, { backgroundColor: accent }]}>
-                      <Text style={styles.schedulePromptButtonText}>Start Scheduling</Text>
-                      <ChevronRight size={16} color={COLORS.background} strokeWidth={2.5} />
-                    </View>
                   </View>
+                  <ChevronRight size={16} color={accent} strokeWidth={2} />
                 </Pressable>
               </Animated.View>
             )}
@@ -657,71 +646,29 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.textSecondary,
   },
-  schedulePrompt: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 20,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-    borderWidth: 2,
+  schedulePromptSubtle: {
     flexDirection: 'row',
-    gap: SPACING.md,
     alignItems: 'center',
-  },
-  schedulePromptIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  schedulePromptContent: {
-    flex: 1,
     gap: SPACING.sm,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: 10,
+    marginBottom: SPACING.md,
+    borderLeftWidth: 3,
   },
-  schedulePromptHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  schedulePromptTextContainer: {
+    flex: 1,
   },
-  schedulePromptTitle: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: COLORS.textPrimary,
-  },
-  urgentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  urgentBadgeText: {
-    fontSize: 10,
-    fontWeight: '700' as const,
-    color: COLORS.background,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
-  },
-  schedulePromptDescription: {
+  schedulePromptTextSubtle: {
     fontSize: 13,
-    color: COLORS.textSecondary,
     lineHeight: 18,
   },
-  schedulePromptButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: SPACING.md,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  schedulePromptButtonText: {
-    fontSize: 14,
+  schedulePromptBold: {
     fontWeight: '700' as const,
-    color: COLORS.background,
+  },
+  schedulePromptRegular: {
+    fontWeight: '400' as const,
+    color: COLORS.textSecondary,
   },
   viewAllButton: {
     flexDirection: 'row',
