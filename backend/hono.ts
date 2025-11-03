@@ -27,10 +27,11 @@ app.use("*", async (c, next) => {
 });
 
 app.use(
-  "/trpc",
+  "/trpc/*",
   trpcServer({
     router: appRouter,
     createContext,
+    endpoint: '/trpc',
     onError: ({ path, error }) => {
       console.error('[Hono tRPC] Error on path', path, ':', error);
     },
