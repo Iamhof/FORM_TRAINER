@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   Dimensions,
   PanResponder,
+  Animated,
 } from 'react-native';
 import { X, Check } from 'lucide-react-native';
 
@@ -47,32 +48,82 @@ export default function SessionSelectorModal({
   dayIndex,
   onDayChange,
 }: SessionSelectorModalProps) {
-  const SWIPE_THRESHOLD = 50;
+  const HORIZONTAL_SWIPE_THRESHOLD = 50;
+  const VERTICAL_SWIPE_THRESHOLD = 100;
   const canScrollBack = dayIndex > 0;
   const canScrollForward = dayIndex < 6;
+  
+  const [translateY] = useState(new Animated.Value(0));
+  const dragY = useRef(0);
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) => {
-        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 2;
-        const hasMinMovement = Math.abs(gestureState.dx) > 15;
-        return isHorizontalSwipe && hasMinMovement;
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+        const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.5;
+        const hasMinMovement = Math.abs(gestureState.dx) > 10 || Math.abs(gestureState.dy) > 10;
+        
+        console.log('[SessionSelectorModal] Move detected:', {
+          dx: gestureState.dx,
+          dy: gestureState.dy,
+          isHorizontal: isHorizontalSwipe,
+          isVertical: isVerticalSwipe,
+          hasMinMovement,
+        });
+        
+        return (isHorizontalSwipe || isVerticalSwipe) && hasMinMovement;
+      },
+      onPanResponderGrant: () => {
+        console.log('[SessionSelectorModal] Pan gesture started');
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          dragY.current = gestureState.dy;
+          translateY.setValue(gestureState.dy);
+        }
       },
       onPanResponderTerminationRequest: () => false,
       onPanResponderRelease: (_, gestureState) => {
         console.log('[SessionSelectorModal] Pan gesture released:', {
           dx: gestureState.dx,
-          threshold: SWIPE_THRESHOLD,
+          dy: gestureState.dy,
+          horizontalThreshold: HORIZONTAL_SWIPE_THRESHOLD,
+          verticalThreshold: VERTICAL_SWIPE_THRESHOLD,
           canScrollBack,
           canScrollForward,
         });
-        if (gestureState.dx > SWIPE_THRESHOLD && canScrollBack) {
-          console.log('[SessionSelectorModal] Swiping to previous day');
-          onDayChange(dayIndex - 1);
-        } else if (gestureState.dx < -SWIPE_THRESHOLD && canScrollForward) {
-          console.log('[SessionSelectorModal] Swiping to next day');
-          onDayChange(dayIndex + 1);
+        
+        const isHorizontalSwipe = Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+        const isVerticalSwipe = Math.abs(gestureState.dy) > Math.abs(gestureState.dx) * 1.5;
+        
+        if (isVerticalSwipe && gestureState.dy > VERTICAL_SWIPE_THRESHOLD) {
+          console.log('[SessionSelectorModal] Swiping down to close');
+          Animated.timing(translateY, {
+            toValue: 500,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            translateY.setValue(0);
+            onClose();
+          });
+        } else if (isHorizontalSwipe) {
+          if (gestureState.dx > HORIZONTAL_SWIPE_THRESHOLD && canScrollBack) {
+            console.log('[SessionSelectorModal] Swiping to previous day');
+            onDayChange(dayIndex - 1);
+          } else if (gestureState.dx < -HORIZONTAL_SWIPE_THRESHOLD && canScrollForward) {
+            console.log('[SessionSelectorModal] Swiping to next day');
+            onDayChange(dayIndex + 1);
+          }
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        } else {
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
         }
       },
     })
@@ -107,7 +158,15 @@ export default function SessionSelectorModal({
       onRequestClose={onClose}
     >
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()} {...panResponder.panHandlers}>
+        <Animated.View 
+          style={[
+            styles.modalContent,
+            {
+              transform: [{ translateY }],
+            },
+          ]} 
+          {...panResponder.panHandlers}
+        >
           <View style={styles.header}>
             <View style={styles.swipeContainer}>
               <View style={styles.swipeHandle} />
@@ -277,7 +336,7 @@ export default function SessionSelectorModal({
               );
             })}
           </ScrollView>
-        </Pressable>
+        </Animated.View>
       </Pressable>
     </Modal>
   );
