@@ -1,4 +1,12 @@
-import honoApp from '@/backend/hono';
+let honoApp: any = null;
+
+async function getHonoApp() {
+  if (!honoApp) {
+    const module = await import('@/backend/hono');
+    honoApp = module.default;
+  }
+  return honoApp;
+}
 
 export async function GET(request: Request) {
   console.log('[API Handler] GET request:', request.url);
@@ -16,7 +24,8 @@ export async function GET(request: Request) {
   });
   
   try {
-    const response = await honoApp.fetch(honoRequest);
+    const app = await getHonoApp();
+    const response = await app.fetch(honoRequest);
     console.log('[API Handler] GET response status:', response.status);
     return response;
   } catch (error) {
@@ -41,7 +50,8 @@ export async function POST(request: Request) {
   });
   
   try {
-    const response = await honoApp.fetch(honoRequest);
+    const app = await getHonoApp();
+    const response = await app.fetch(honoRequest);
     console.log('[API Handler] POST response status:', response.status);
     return response;
   } catch (error) {
@@ -60,7 +70,8 @@ export async function PUT(request: Request) {
     body: request.body,
   });
   
-  return honoApp.fetch(honoRequest);
+  const app = await getHonoApp();
+  return app.fetch(honoRequest);
 }
 
 export async function DELETE(request: Request) {
@@ -73,7 +84,8 @@ export async function DELETE(request: Request) {
     body: request.body,
   });
   
-  return honoApp.fetch(honoRequest);
+  const app = await getHonoApp();
+  return app.fetch(honoRequest);
 }
 
 export async function PATCH(request: Request) {
@@ -86,7 +98,8 @@ export async function PATCH(request: Request) {
     body: request.body,
   });
   
-  return honoApp.fetch(honoRequest);
+  const app = await getHonoApp();
+  return app.fetch(honoRequest);
 }
 
 export async function OPTIONS(request: Request) {
@@ -99,5 +112,6 @@ export async function OPTIONS(request: Request) {
     body: request.body,
   });
   
-  return honoApp.fetch(honoRequest);
+  const app = await getHonoApp();
+  return app.fetch(honoRequest);
 }
