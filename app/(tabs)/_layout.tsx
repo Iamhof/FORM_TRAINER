@@ -10,6 +10,7 @@ export default function TabLayout() {
   
   const currentRoute = React.useMemo(() => {
     if ((segments as string[]).includes('exercises')) return 'exercises';
+    if ((segments as string[]).includes('leaderboard')) return 'leaderboard';
     return (segments[segments.length - 1] as string) || 'home';
   }, [segments]);
 
@@ -24,6 +25,7 @@ export default function TabLayout() {
         <Stack.Screen name="workouts" />
         <Stack.Screen name="analytics" />
         <Stack.Screen name="exercises" options={{ headerShown: false }} />
+        <Stack.Screen name="leaderboard" />
         <Stack.Screen name="profile" />
       </Stack>
       <BottomNav currentRoute={currentRoute} onNavigate={handleNavigate} />
