@@ -4,11 +4,15 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { TrendingUp, TrendingDown, Calendar, Target, Activity, Moon, BarChart3, Plus, Scale, Award, Flame } from 'lucide-react-native';
 import Card from '@/components/Card';
 import LineChart from '@/components/LineChart';
+import VolumeCard from '@/components/VolumeCard';
+import WorkoutsCard from '@/components/WorkoutsCard';
 import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAnalytics } from '@/contexts/AnalyticsContext';
 import { useBodyMetrics } from '@/contexts/BodyMetricsContext';
+import { useUser } from '@/contexts/UserContext';
 import BodyMetricsModal from '@/components/BodyMetricsModal';
+import { trpc } from '@/lib/trpc';
 
 type MetricTab = 'sessions' | 'volume' | 'progression';
 
@@ -16,9 +20,30 @@ export default function AnalyticsScreen() {
   const { accent } = useTheme();
   const { analyticsData, calculateCompletionPercentage, totalSessionsThisMonth, totalVolumeThisMonth } = useAnalytics();
   const { latestMetrics, personalRecords } = useBodyMetrics();
+  const { stats, user } = useUser();
   const [selectedMetric, setSelectedMetric] = useState<MetricTab>('sessions');
   const [showBodyMetricsModal, setShowBodyMetricsModal] = useState<boolean>(false);
+  const [workoutsPeriod, setWorkoutsPeriod] = useState<'week' | 'month' | 'total'>('week');
+  const [volumePeriod, setVolumePeriod] = useState<'week' | 'month' | 'total'>('week');
   const insets = useSafeAreaInsets();
+
+  const workoutsQuery = trpc.analytics.getVolume.useQuery(
+    { period: workoutsPeriod },
+    { 
+      enabled: !!user,
+      refetchOnWindowFocus: false,
+      staleTime: 0,
+    }
+  );
+
+  const volumeQuery = trpc.analytics.getVolume.useQuery(
+    { period: volumePeriod },
+    { 
+      enabled: !!user,
+      refetchOnWindowFocus: false,
+      staleTime: 0,
+    }
+  );
 
   const scrollPaddingBottom = useMemo(() => {
     return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
@@ -85,6 +110,34 @@ export default function AnalyticsScreen() {
         </View>
 
         <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]} showsVerticalScrollIndicator={false}>
+          <View style={styles.quickStatsSection}>
+            <Card style={[styles.statCard, styles.statCardLarge]}>
+              <Text style={styles.statLabelQuick}>Current Streak</Text>
+              <View style={styles.statRowQuick}>
+                <Text style={styles.statValueQuick}>{stats.currentStreak} weeks</Text>
+                <View style={[styles.statIconQuick, { backgroundColor: `${accent}20` }]}>
+                  <Flame size={28} color={accent} strokeWidth={2} fill={accent} />
+                </View>
+              </View>
+            </Card>
+          </View>
+
+          <WorkoutsCard
+            workoutsPeriod={workoutsPeriod}
+            onPeriodChange={setWorkoutsPeriod}
+            workoutsData={workoutsQuery.data}
+            isLoading={workoutsQuery.isLoading}
+            accentColor={accent}
+          />
+
+          <VolumeCard
+            volumePeriod={volumePeriod}
+            onPeriodChange={setVolumePeriod}
+            volumeData={volumeQuery.data}
+            isLoading={volumeQuery.isLoading}
+            accentColor={accent}
+          />
+
           <View style={styles.statsGrid}>
             <Card style={styles.statCard}>
               <View style={styles.statHeader}>
@@ -703,5 +756,34 @@ const styles = StyleSheet.create({
   prDate: {
     fontSize: 11,
     color: COLORS.textSecondary,
+  },
+  quickStatsSection: {
+    marginBottom: SPACING.lg,
+  },
+  statCardLarge: {
+    width: '100%',
+  },
+  statLabelQuick: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '500' as const,
+  },
+  statRowQuick: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: SPACING.xs,
+  },
+  statValueQuick: {
+    fontSize: 28,
+    fontWeight: '700' as const,
+    color: COLORS.textPrimary,
+  },
+  statIconQuick: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

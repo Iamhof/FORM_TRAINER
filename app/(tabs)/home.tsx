@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Animated } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Flame, Check, Moon, ChevronRight, Dumbbell, User, Bell, BookOpen, CalendarClock } from 'lucide-react-native';
+import { Check, Moon, ChevronRight, Dumbbell, User, Bell, BookOpen, CalendarClock } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Card from '@/components/Card';
 import GlowCard from '@/components/GlowCard';
@@ -9,13 +9,10 @@ import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
 import SessionSelectorModal, { Session } from '@/components/SessionSelectorModal';
-import VolumeCard from '@/components/VolumeCard';
-import WorkoutsCard from '@/components/WorkoutsCard';
+
 import { EXERCISES } from '@/constants/exercises';
-import { useUser } from '@/contexts/UserContext';
 import { useSchedule } from '@/contexts/ScheduleContext';
 import { useAnalytics } from '@/contexts/AnalyticsContext';
-import { trpc } from '@/lib/trpc';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const DAY_LABELS_FULL = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -57,7 +54,7 @@ export default function DashboardScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const { activeProgramme } = useProgrammes();
-  const { stats, user } = useUser();
+
   const { schedule, assignSession, isLoading: scheduleLoading } = useSchedule();
   useAnalytics();
   const insets = useSafeAreaInsets();
@@ -66,25 +63,7 @@ export default function DashboardScreen() {
   const [availableSessions, setAvailableSessions] = useState<Session[]>([]);
   const [pulseAnim] = useState(new Animated.Value(1));
   
-  const [workoutsPeriod, setWorkoutsPeriod] = useState<'week' | 'month' | 'total'>('week');
-  const [volumePeriod, setVolumePeriod] = useState<'week' | 'month' | 'total'>('week');
-  const workoutsQuery = trpc.analytics.getVolume.useQuery(
-    { period: workoutsPeriod },
-    { 
-      enabled: !!user,
-      refetchOnWindowFocus: false,
-      staleTime: 0,
-    }
-  );
 
-  const volumeQuery = trpc.analytics.getVolume.useQuery(
-    { period: volumePeriod },
-    { 
-      enabled: !!user,
-      refetchOnWindowFocus: false,
-      staleTime: 0,
-    }
-  );
 
   const scrollPaddingBottom = useMemo(() => {
     return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
@@ -371,35 +350,7 @@ export default function DashboardScreen() {
             )}
           </View>
 
-          <View style={styles.statsGrid}>
-            <Card style={[styles.statCard, styles.statCardLarge]}>
-              <Text style={styles.statLabel}>Current Streak</Text>
-              <View style={styles.statRow}>
-                <Text style={styles.statValue}>{stats.currentStreak} weeks</Text>
-                <View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>
-                  <Flame size={28} color={accent} strokeWidth={2} fill={accent} />
-                </View>
-              </View>
-            </Card>
-          </View>
 
-          <WorkoutsCard
-            workoutsPeriod={workoutsPeriod}
-            onPeriodChange={setWorkoutsPeriod}
-            workoutsData={workoutsQuery.data}
-            isLoading={workoutsQuery.isLoading}
-            accentColor={accent}
-          />
-
-          <VolumeCard
-            volumePeriod={volumePeriod}
-            onPeriodChange={setVolumePeriod}
-            volumeData={volumeQuery.data}
-            isLoading={volumeQuery.isLoading}
-            accentColor={accent}
-          />
-
-          <View style={{ marginTop: SPACING.lg }} />
 
           <Pressable onPress={() => router.push('/exercises' as any)}>
             <Card style={styles.exerciseLibraryCard}>
