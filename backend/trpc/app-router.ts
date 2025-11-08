@@ -32,6 +32,10 @@ import { updateScheduleProcedure } from "./routes/schedules/update/route";
 import { assignSessionProcedure } from "./routes/schedules/assign-session/route";
 import { updateColorProcedure } from "./routes/profile/update-color/route";
 import { updateProfileProcedure } from "./routes/profile/update/route";
+import { updateLeaderboardProfileProcedure } from "./routes/leaderboard/update-profile/route";
+import { getLeaderboardProfileProcedure } from "./routes/leaderboard/get-profile/route";
+import { getLeaderboardRankingsProcedure } from "./routes/leaderboard/get-rankings/route";
+import { getMyRankProcedure } from "./routes/leaderboard/get-my-rank/route";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
@@ -88,6 +92,12 @@ export const appRouter = createTRPCRouter({
   profile: createTRPCRouter({
     updateColor: updateColorProcedure,
     update: updateProfileProcedure,
+  }),
+  leaderboard: createTRPCRouter({
+    updateProfile: updateLeaderboardProfileProcedure,
+    getProfile: getLeaderboardProfileProcedure,
+    getRankings: getLeaderboardRankingsProcedure,
+    getMyRank: getMyRankProcedure,
   }),
 });
 
