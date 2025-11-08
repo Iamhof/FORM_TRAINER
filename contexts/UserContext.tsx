@@ -110,15 +110,16 @@ export const [UserProvider, useUser] = createContextHook(() => {
 
       if (!profile) {
         console.warn('[UserContext] No profile found for user, creating default user object');
+        setIsFirstVisit(true);
       } else {
         console.log('[UserContext] Profile loaded successfully:', { 
           name: profile.name, 
           is_pt: profile.is_pt,
           accentColor: profile.accent_color 
         });
+        setIsFirstVisit(false);
       }
 
-      setIsFirstVisit(true);
       setUser({
         id: authUser.id,
         email: authUser.email || '',

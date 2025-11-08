@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, Modal, Pressable } from 'react-native';
 import { Clock } from 'lucide-react-native';
 import { COLORS, SPACING } from '@/constants/theme';
@@ -19,6 +19,7 @@ export default function RestTimerModal({
 }: RestTimerModalProps) {
   const { accent } = useTheme();
   const [timeRemaining, setTimeRemaining] = useState(duration);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -27,12 +28,21 @@ export default function RestTimerModal({
   }, [visible, duration]);
 
   useEffect(() => {
-    if (!visible || timeRemaining <= 0) return;
+    if (!visible || timeRemaining <= 0) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
 
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev <= 1) {
-          clearInterval(interval);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
           setTimeout(onComplete, 100);
           return 0;
         }
@@ -40,7 +50,12 @@ export default function RestTimerModal({
       });
     }, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [visible, timeRemaining, onComplete]);
 
   const formatTime = (seconds: number) => {
