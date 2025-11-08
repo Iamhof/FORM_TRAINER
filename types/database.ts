@@ -4,6 +4,9 @@ export interface User {
   name: string;
   is_pt: boolean;
   accent_color?: string;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  leaderboard_enabled?: boolean;
+  leaderboard_display_name?: string;
   created_at: string;
   updated_at: string;
 }
@@ -126,4 +129,77 @@ export interface PersonalRecord {
   date: string;
   workout_id: string | null;
   created_at: string;
+}
+
+export interface LeaderboardStats {
+  id: string;
+  user_id: string;
+  total_visits: number;
+  current_month_visits: number;
+  total_volume_kg: number;
+  current_month_volume_kg: number;
+  avg_strength_increase_percent: number;
+  current_month_strength_increase_percent: number;
+  current_streak_weeks: number;
+  longest_streak_weeks: number;
+  exercise_records: Record<string, ExerciseRecord>;
+  last_calculated_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExerciseRecord {
+  weight: number;
+  reps: number;
+  date: string;
+}
+
+export interface UserVisit {
+  id: string;
+  user_id: string;
+  visit_date: string;
+  created_at: string;
+}
+
+export interface WeeklyCompletion {
+  id: string;
+  user_id: string;
+  programme_id: string | null;
+  week_start_date: string;
+  week_number: number;
+  total_sessions: number;
+  completed_sessions: number;
+  is_complete: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type LeaderboardCategory = 
+  | 'total_visits'
+  | 'month_visits'
+  | 'total_volume'
+  | 'month_volume'
+  | 'month_strength_increase'
+  | 'streak'
+  | 'squat'
+  | 'deadlift'
+  | 'bench_press';
+
+export type Gender = 'all' | 'male' | 'female';
+
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  display_name: string;
+  value: number;
+  is_current_user: boolean;
+}
+
+export interface LeaderboardData {
+  category: LeaderboardCategory;
+  gender: Gender;
+  entries: LeaderboardEntry[];
+  current_user_entry: LeaderboardEntry | null;
+  total_participants: number;
+  last_updated: string;
 }
