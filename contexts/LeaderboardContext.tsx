@@ -7,18 +7,22 @@ export const [LeaderboardProvider, useLeaderboard] = createContextHook(() => {
   const [selectedType, setSelectedType] = useState<LeaderboardType>('total_volume');
   const [selectedGender, setSelectedGender] = useState<GenderFilter>('all');
 
-  const profileQuery = trpc.leaderboard.getProfile.useQuery();
+  const profileQuery = trpc.leaderboard.getProfile.useQuery(undefined, {
+    enabled: false,
+  });
   const rankingsQuery = trpc.leaderboard.getRankings.useQuery({
     type: selectedType,
     gender: selectedGender,
     limit: 50,
     offset: 0,
+  }, {
+    enabled: false,
   });
   const myRankQuery = trpc.leaderboard.getMyRank.useQuery({
     type: selectedType,
     gender: selectedGender,
   }, {
-    enabled: profileQuery.data?.is_opted_in === true,
+    enabled: false,
   });
 
   const updateProfileMutation = trpc.leaderboard.updateProfile.useMutation({
