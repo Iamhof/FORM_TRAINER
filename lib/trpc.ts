@@ -9,20 +9,42 @@ export const trpc = createTRPCReact<AppRouter>();
 const getBaseUrl = () => {
   const apiBaseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   
-  if (apiBaseUrl) {
+  // Validate the API base URL if provided
+  if (apiBaseUrl && apiBaseUrl.trim() !== '') {
     const cleanUrl = apiBaseUrl.replace(/\/+$/, '');
-    console.log('[TRPC] Using EXPO_PUBLIC_RORK_API_BASE_URL:', cleanUrl);
-    return cleanUrl;
+    
+    // Check if URL is valid
+    try {
+      new URL(cleanUrl);
+      console.log('[TRPC] Using EXPO_PUBLIC_RORK_API_BASE_URL:', cleanUrl);
+      return cleanUrl;
+    } catch (error) {
+      console.error('[TRPC] Invalid EXPO_PUBLIC_RORK_API_BASE_URL:', cleanUrl);
+      console.error('[TRPC] Falling back to local URL');
+    }
+  } else {
+    console.warn('[TRPC] EXPO_PUBLIC_RORK_API_BASE_URL is not set or empty');
   }
   
+  // For web, use the current origin (works for development and production)
   if (typeof window !== 'undefined') {
     const origin = window.location.origin;
     console.log('[TRPC] Using local web URL:', origin);
     return origin;
   }
   
-  console.log('[TRPC] Using empty base URL for native (will use relative paths)');
-  return '';
+  // For React Native, try common local development URLs
+  const platform = process.env.EXPO_PUBLIC_PLATFORM;
+  if (platform === 'ios') {
+    console.log('[TRPC] Using iOS simulator localhost');
+    return 'http://localhost:8081';
+  } else if (platform === 'android') {
+    console.log('[TRPC] Using Android emulator localhost');
+    return 'http://10.0.2.2:8081';
+  }
+  
+  console.log('[TRPC] Using default localhost for native');
+  return 'http://localhost:8081';
 };
 
 export const trpcClient = trpc.createClient({
@@ -48,15 +70,22 @@ export const trpcClient = trpc.createClient({
         }
       },
       async fetch(url, options) {
+        const baseUrl = getBaseUrl();
         console.log('[TRPC] Making request to:', url);
         console.log('[TRPC] Request method:', options?.method || 'GET');
-        console.log('[TRPC] Request headers:', JSON.stringify(options?.headers || {}));
         
         try {
-          const response = await fetch(url, options);
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+          
+          const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+          });
+          
+          clearTimeout(timeoutId);
           
           console.log('[TRPC] Response status:', response.status, response.statusText);
-          console.log('[TRPC] Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
           
           if (!response.ok) {
             const text = await response.text();
@@ -64,7 +93,7 @@ export const trpcClient = trpc.createClient({
             console.error('[TRPC] Response body:', text.substring(0, 500));
             
             if (text.startsWith('<')) {
-              throw new Error(`Server returned HTML instead of JSON. Status: ${response.status}. Check if backend is running at ${getBaseUrl()}`);
+              throw new Error(`Server returned HTML instead of JSON (Status: ${response.status}). Backend may not be running at ${baseUrl}`);
             }
             
             throw new Error(`HTTP ${response.status}: ${text.substring(0, 200)}`);
@@ -73,12 +102,31 @@ export const trpcClient = trpc.createClient({
           console.log('[TRPC] Request successful');
           return response;
         } catch (error) {
-          console.error('[TRPC] Network error:', error instanceof Error ? error.message : String(error));
-          console.error('[TRPC] Error stack:', error instanceof Error ? error.stack : 'No stack');
-          console.error('[TRPC] Base URL:', getBaseUrl());
-          console.error('[TRPC] Full request URL:', url);
-          console.error('[TRPC] Make sure the backend server is running and EXPO_PUBLIC_RORK_API_BASE_URL is correct');
-          throw error;
+          if (error instanceof Error) {
+            if (error.name === 'AbortError') {
+              console.error('[TRPC] Request timeout (30s) - Backend may be unresponsive');
+              throw new Error(`Request timeout: Backend at ${baseUrl} did not respond within 30 seconds`);
+            }
+            
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+              console.error('[TRPC] Network connection failed');
+              console.error('[TRPC] Possible issues:');
+              console.error('[TRPC]   1. Backend server is not running');
+              console.error('[TRPC]   2. EXPO_PUBLIC_RORK_API_BASE_URL is incorrect:', process.env.EXPO_PUBLIC_RORK_API_BASE_URL);
+              console.error('[TRPC]   3. CORS issues (check backend CORS configuration)');
+              console.error('[TRPC]   4. Network connectivity problems');
+              console.error('[TRPC] Current base URL:', baseUrl);
+              console.error('[TRPC] Full request URL:', url);
+              
+              throw new Error(`Network error: Cannot reach backend at ${baseUrl}. Check if backend is running and EXPO_PUBLIC_RORK_API_BASE_URL is correct.`);
+            }
+            
+            console.error('[TRPC] Request error:', error.message);
+            throw error;
+          }
+          
+          console.error('[TRPC] Unknown error:', String(error));
+          throw new Error(`Unknown error occurred: ${String(error)}`);
         }
       },
     }),
