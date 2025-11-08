@@ -4,6 +4,10 @@ import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./trpc/app-router";
 import { createContext } from "./trpc/create-context";
 
+console.log('[Hono] Backend server initializing...');
+console.log('[Hono] App router loaded:', !!appRouter);
+console.log('[Hono] Create context loaded:', !!createContext);
+
 const app = new Hono();
 
 app.use(

@@ -3,12 +3,16 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
+console.log('[AUTH] Initializing Supabase Admin client...');
+console.log('[AUTH] URL present:', !!supabaseUrl);
+console.log('[AUTH] Service Key present:', !!supabaseServiceKey);
+
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('[AUTH] Missing Supabase environment variables:', {
+  console.warn('[AUTH] WARNING: Missing Supabase environment variables:', {
     url: supabaseUrl ? 'present' : 'MISSING',
     serviceKey: supabaseServiceKey ? 'present' : 'MISSING',
   });
-  console.error('[AUTH] Please ensure .env file exists with EXPO_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+  console.warn('[AUTH] Using placeholder values - database operations will fail');
 }
 
 export const supabaseAdmin = createClient(
@@ -21,6 +25,8 @@ export const supabaseAdmin = createClient(
     }
   }
 );
+
+console.log('[AUTH] Supabase Admin client initialized');
 
 export interface SupabaseUser {
   id: string;
