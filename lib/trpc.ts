@@ -12,12 +12,16 @@ const getBaseUrl = () => {
   if (apiBaseUrl) {
     const cleanUrl = apiBaseUrl.replace(/\/+$/, '');
     console.log('[TRPC] Using EXPO_PUBLIC_RORK_API_BASE_URL:', cleanUrl);
-    console.log('[TRPC] Platform:', typeof window !== 'undefined' ? 'web' : 'native');
     return cleanUrl;
   }
   
-  console.error('[TRPC] ERROR: No base URL configured! Set EXPO_PUBLIC_RORK_API_BASE_URL in .env file');
-  console.error('[TRPC] Current env vars:', JSON.stringify(process.env, null, 2).substring(0, 500));
+  if (typeof window !== 'undefined') {
+    const origin = window.location.origin;
+    console.log('[TRPC] Using local web URL:', origin);
+    return origin;
+  }
+  
+  console.log('[TRPC] Using empty base URL for native (will use relative paths)');
   return '';
 };
 
