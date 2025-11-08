@@ -6,6 +6,7 @@
     "start": "bunx rork start -p mv67vqriwoe5fscxfu5r0 --tunnel",
     "start-web": "bunx rork start -p mv67vqriwoe5fscxfu5r0 --web --tunnel",
     "start-web-dev": "DEBUG=expo* bunx rork start -p mv67vqriwoe5fscxfu5r0 --web --tunnel",
+    "backend": "bun backend/index.ts",
     "lint": "expo lint"
   },
   "dependencies": {
