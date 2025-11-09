@@ -9,7 +9,7 @@ export const updateLeaderboardProfileProcedure = protectedProcedure
       is_opted_in: z.boolean().optional(),
       display_name: z.string().min(1).max(50).optional(),
       show_real_name: z.boolean().optional(),
-      gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional(),
+      gender: z.enum(['male', 'female']).optional(),
       show_in_total_volume: z.boolean().optional(),
       show_in_monthly_volume: z.boolean().optional(),
       show_in_total_sessions: z.boolean().optional(),

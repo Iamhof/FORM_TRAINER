@@ -8,20 +8,18 @@ import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLeaderboard } from '@/contexts/LeaderboardContext';
 
-type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
+type Gender = 'male' | 'female';
 
 const GENDER_OPTIONS: { value: Gender; label: string }[] = [
   { value: 'male', label: 'Male' },
   { value: 'female', label: 'Female' },
-  { value: 'other', label: 'Other' },
-  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
 ];
 
 export default function OptInScreen() {
   const { accent } = useTheme();
   const { optIn } = useLeaderboard();
   const [displayName, setDisplayName] = useState<string>('');
-  const [selectedGender, setSelectedGender] = useState<Gender>('prefer_not_to_say');
+  const [selectedGender, setSelectedGender] = useState<Gender>('male');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const handleSubmit = async () => {
@@ -87,9 +85,9 @@ export default function OptInScreen() {
           </Card>
 
           <Card style={styles.section}>
-            <Text style={styles.sectionTitle}>Gender (Optional)</Text>
+            <Text style={styles.sectionTitle}>Gender</Text>
             <Text style={styles.sectionDescription}>
-              Some leaderboards are filtered by gender for fair competition.
+              Leaderboards are filtered by gender for fair competition.
             </Text>
             <View style={styles.genderOptions}>
               {GENDER_OPTIONS.map((option) => (
