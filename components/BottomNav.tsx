@@ -32,10 +32,10 @@ export default function BottomNav({ currentRoute, onNavigate }: BottomNavProps) 
 
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <View style={styles.container}>
       {Platform.OS === 'ios' ? (
         <BlurView intensity={80} tint="dark" style={styles.blur}>
-          <View style={styles.content}>
+          <View style={[styles.content, { paddingBottom: insets.bottom }]}>
             {TABS.map((tab, index) => {
               const Icon = tab.icon;
               const isActive = tab.name === currentRoute;
@@ -67,7 +67,7 @@ export default function BottomNav({ currentRoute, onNavigate }: BottomNavProps) 
         </BlurView>
       ) : (
         <View style={[styles.blur, styles.webBlur]}>
-          <View style={styles.content}>
+          <View style={[styles.content, { paddingBottom: insets.bottom }]}>
             {TABS.map((tab, index) => {
               const Icon = tab.icon;
               const isActive = tab.name === currentRoute;
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexDirection: 'row',
-    height: BOTTOM_NAV_HEIGHT,
+    minHeight: BOTTOM_NAV_HEIGHT,
     paddingHorizontal: SPACING.md,
     alignItems: 'center',
   },
