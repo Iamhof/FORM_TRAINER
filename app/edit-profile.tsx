@@ -77,17 +77,17 @@ export default function EditProfileScreen() {
         
         if (updates.accentColor) {
           const colorMap: Record<string, 'orange' | 'purple' | 'blue' | 'red' | 'yellow' | 'green' | 'teal' | 'pink'> = {
-            '#FF6B55': 'orange',
-            '#B266FF': 'purple',
-            '#6699FF': 'blue',
-            '#F44336': 'red',
-            '#FFC107': 'yellow',
-            '#4CAF50': 'green',
+            '#ff6b55': 'orange',
+            '#b266ff': 'purple',
+            '#6699ff': 'blue',
+            '#f44336': 'red',
+            '#ffc107': 'yellow',
+            '#4caf50': 'green',
             '#009688': 'teal',
-            '#EC407A': 'pink',
+            '#ec407a': 'pink',
           };
           
-          const colorName = colorMap[updates.accentColor.toUpperCase()] || colorMap[updates.accentColor] || 'orange';
+          const colorName = colorMap[updates.accentColor.toLowerCase()] || 'orange';
           console.log('[EditProfile] Setting accent color to:', colorName, 'from hex:', updates.accentColor);
           setAccentColor(colorName);
         }
