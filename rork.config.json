@@ -1,0 +1,6 @@
+{
+  "backend": {
+    "entry": "backend/index.ts",
+    "runtime": "bun"
+  }
+}

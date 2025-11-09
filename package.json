@@ -1,6 +1,7 @@
 {
   "name": "expo-app",
   "main": "expo-router/entry",
+  "backend": "backend/index.ts",
   "version": "1.0.0",
   "scripts": {
     "start": "bunx rork start -p mv67vqriwoe5fscxfu5r0 --tunnel",

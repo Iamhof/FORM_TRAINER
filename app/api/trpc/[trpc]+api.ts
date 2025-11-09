@@ -9,7 +9,8 @@ async function getHonoApp() {
   if (!honoApp) {
     try {
       console.log('[API Handler] Initializing Hono app...');
-      const module = await import('@/backend/hono');
+      // Use relative path for better compatibility
+      const module = await import('../../../backend/hono');
       honoApp = module.default;
       
       if (!honoApp || typeof honoApp.fetch !== 'function') {
