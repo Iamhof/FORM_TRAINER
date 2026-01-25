@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "Form - Workout Tracker",
+    "slug": "form-workout-tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "formworkout",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1A1A1A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.rork.form",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID for secure authentication",
+        "NSPhotoLibraryUsageDescription": "Save workout progress photos to your library"
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#1A1A1A"
+      },
+      "package": "com.rork.form",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.VIBRATE",
+        "android.permission.INTERNET"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://formworkout.app/"
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Use Face ID for secure authentication"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": "https://formworkout.app/"
+      },
+      "eas": {
+        "projectId": "01342726-aaf1-4f46-a8ad-2974d0069b20"
+      }
+    }
+  }
+}

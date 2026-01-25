@@ -1,0 +1,30 @@
+# Expo local development cache - do not upload to EAS Build
+.expo/
+
+# Node modules (EAS installs fresh)
+node_modules/
+
+# Local environment files
+.env.local
+.env.*.local
+
+# IDE folders
+.idea/
+.vscode/
+
+# Build outputs
+dist/
+build/
+
+# Test coverage
+coverage/
+
+# Bun lockfile (use package-lock.json for EAS)
+bun.lock
+
+# Husky git hooks (not needed on EAS)
+.husky/
+
+# Native folders (EAS generates these during prebuild)
+ios/
+android/

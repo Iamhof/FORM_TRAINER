@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+env:
+  PLAYWRIGHT_BASE_URL: ${{ secrets.PLAYWRIGHT_BASE_URL }}
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run Vitest
+        run: npm run test
+
+      - name: Playwright smoke tests
+        run: npm run e2e
+
+      - name: Set up Supabase CLI
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
+        uses: supabase/setup-cli@v1
+
+      - name: Link Supabase project
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Snapshot policy diff
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
+        run: |
+          supabase db diff --linked --schema public --schema auth --schema storage --file supabase/policy-diff.sql || true
+          if [ ! -s supabase/policy-diff.sql ]; then
+            echo "-- No policy changes detected" > supabase/policy-diff.sql
+          fi
+
+      - name: Upload Supabase policy diff
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-policy-diff
+          path: supabase/policy-diff.sql
+

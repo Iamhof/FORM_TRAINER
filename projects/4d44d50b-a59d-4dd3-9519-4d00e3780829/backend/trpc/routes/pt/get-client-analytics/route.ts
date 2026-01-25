@@ -1,0 +1,44 @@
+import { z } from "zod";
+import { protectedProcedure } from "../../../create-context";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.EXPO_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export const getClientAnalyticsProcedure = protectedProcedure
+  .input(
+    z.object({
+      client_id: z.string(),
+    })
+  )
+  .query(async ({ ctx, input }) => {
+    const { data: relationship } = await supabase
+      .from("pt_client_invitations")
+      .select("*")
+      .eq("pt_id", ctx.user.id)
+      .eq("client_id", input.client_id)
+      .eq("status", "accepted")
+      .single();
+
+    if (!relationship) {
+      throw new Error("Not authorized");
+    }
+
+    const { data, error } = await supabase
+      .from("analytics")
+      .select("*")
+      .eq("user_id", input.client_id)
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return null;
+      }
+      console.error("[PT Get Client Analytics] Error:", error);
+      throw new Error("Failed to fetch client analytics");
+    }
+
+    return data;
+  });
