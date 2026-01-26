@@ -1,11 +1,5 @@
 {
-  "buildCommand": "expo export -p web",
+  "buildCommand": "npx expo export -p web",
   "outputDirectory": "dist",
-  "devCommand": "expo",
-  "installCommand": "npm install --legacy-peer-deps",
-  "framework": "nextjs",
-  "github": {
-    "enabled": true,
-    "autoAlias": true
-  }
+  "installCommand": "npm install --legacy-peer-deps"
 }
