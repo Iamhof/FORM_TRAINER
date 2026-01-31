@@ -53,7 +53,7 @@ export default function DashboardScreen() {
   }, [insets.bottom]);
 
   const recentWorkouts = useMemo(() => {
-    return workoutHistory.slice(0, 5);
+    return workoutHistory?.slice(0, 5) ?? [];
   }, [workoutHistory]);
 
   const handleStartWorkout = () => {
