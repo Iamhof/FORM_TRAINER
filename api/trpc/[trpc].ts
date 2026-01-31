@@ -92,7 +92,7 @@ export default async function handler(request: Request) {
   }
 }
 
+// Vercel Serverless Function configuration
 export const config = {
-  runtime: 'nodejs',
   maxDuration: 30,
 };
