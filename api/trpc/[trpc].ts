@@ -1,4 +1,4 @@
-import { logger } from '../../lib/logger';
+import { logger } from '../../lib/logger.js';
 
 let honoApp: any = null;
 let initializationError: Error | null = null;
@@ -11,7 +11,7 @@ async function getHonoApp() {
   if (!honoApp) {
     try {
       logger.info('[Serverless API] Initializing Hono app...');
-      const module = await import('../../backend/hono');
+      const module = await import('../../backend/hono.js');
       honoApp = module.default;
 
       if (!honoApp) {

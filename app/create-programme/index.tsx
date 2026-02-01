@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, Pressable, ScrollView, TextInput, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ScrollView, TextInput, Dimensions, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack } from 'expo-router';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
@@ -10,10 +10,15 @@ import Button from '@/components/Button';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ITEM_WIDTH = 140;
 const ITEM_HEIGHT = 100;
-const VERTICAL_PADDING = 150; // paddingVertical in verticalPickerContent
 
 const FREQUENCY_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
 const DURATION_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+// Container height for the picker
+const PICKER_HEIGHT = 300;
+// Padding to center the first/last items (half of container minus half of item)
+const VERTICAL_PADDING = (PICKER_HEIGHT - ITEM_HEIGHT) / 2;
+const HORIZONTAL_PADDING = (SCREEN_WIDTH - ITEM_WIDTH) / 2;
 
 export default function CreateProgrammeScreen() {
   const { accent } = useTheme();
@@ -26,10 +31,15 @@ export default function CreateProgrammeScreen() {
   const [centerDuration, setCenterDuration] = useState(4);
   const frequencyScrollRef = useRef<ScrollView>(null);
   const durationScrollRef = useRef<ScrollView>(null);
-  const isScrollingRef = useRef({ frequency: false, duration: false });
 
+  // Track if we've done the initial scroll for each step
+  const hasInitializedFrequency = useRef(false);
+  const hasInitializedDuration = useRef(false);
+
+  // Initial scroll positioning - only runs once when step changes
   useEffect(() => {
-    if (step === 'frequency' && frequencyScrollRef.current) {
+    if (step === 'frequency' && !hasInitializedFrequency.current) {
+      hasInitializedFrequency.current = true;
       const index = FREQUENCY_OPTIONS.indexOf(selectedFrequency);
       if (index >= 0) {
         setTimeout(() => {
@@ -37,89 +47,82 @@ export default function CreateProgrammeScreen() {
             y: index * ITEM_HEIGHT,
             animated: false,
           });
-        }, 100);
+        }, 50);
       }
-    } else if (step === 'duration' && durationScrollRef.current) {
+    } else if (step === 'duration' && !hasInitializedDuration.current) {
+      hasInitializedDuration.current = true;
       const index = DURATION_OPTIONS.indexOf(selectedDuration);
       if (index >= 0) {
-        const targetX = index * ITEM_WIDTH;
         setTimeout(() => {
           durationScrollRef.current?.scrollTo({
-            x: targetX,
+            x: index * ITEM_WIDTH,
             animated: false,
           });
-        }, 100);
+        }, 50);
       }
     }
-  }, [step, selectedFrequency, selectedDuration]);
+  }, [step]);
 
-  const handleFrequencyScroll = useCallback((event: any) => {
+  const handleFrequencyScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetY = event.nativeEvent.contentOffset.y;
-    // Account for paddingVertical: 150 - center is at offsetY = 150
-    // When offsetY = 150, we want index 0 (first item)
-    const adjustedOffset = offsetY - VERTICAL_PADDING + (ITEM_HEIGHT / 2);
-    const index = Math.round(adjustedOffset / ITEM_HEIGHT);
+    // Simple calculation: offsetY / ITEM_HEIGHT gives us the index
+    const index = Math.round(offsetY / ITEM_HEIGHT);
     const boundedIndex = Math.min(Math.max(index, 0), FREQUENCY_OPTIONS.length - 1);
     const centerValue = FREQUENCY_OPTIONS[boundedIndex];
-    
-    // Only update state if value changed to prevent infinite loops
-    if (centerValue !== undefined && centerValue !== centerFrequency) {
+
+    if (centerValue !== undefined) {
       setCenterFrequency(centerValue);
     }
-  }, [centerFrequency]);
+  }, []);
 
-  const handleFrequencyScrollEnd = useCallback((event: any) => {
-    isScrollingRef.current.frequency = false;
-    
+  const handleFrequencyScrollEnd = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetY = event.nativeEvent.contentOffset.y;
-    // Account for paddingVertical: 150
-    const adjustedOffset = offsetY - VERTICAL_PADDING + (ITEM_HEIGHT / 2);
-    const index = Math.round(adjustedOffset / ITEM_HEIGHT);
+    const index = Math.round(offsetY / ITEM_HEIGHT);
     const boundedIndex = Math.min(Math.max(index, 0), FREQUENCY_OPTIONS.length - 1);
     const selectedValue = FREQUENCY_OPTIONS[boundedIndex];
-    
-    if (selectedValue !== undefined && selectedValue !== selectedFrequency) {
+
+    if (selectedValue !== undefined) {
       setSelectedFrequency(selectedValue);
+      setCenterFrequency(selectedValue);
     }
-    
+
     // Snap to exact position
     const targetY = boundedIndex * ITEM_HEIGHT;
     frequencyScrollRef.current?.scrollTo({
       y: targetY,
       animated: true,
     });
-  }, [selectedFrequency]);
+  }, []);
 
-  const handleDurationScroll = useCallback((event: any) => {
+  const handleDurationScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / ITEM_WIDTH);
     const boundedIndex = Math.min(Math.max(index, 0), DURATION_OPTIONS.length - 1);
     const centerValue = DURATION_OPTIONS[boundedIndex];
-    
-    // Only update state if value changed to prevent infinite loops
-    if (centerValue !== undefined && centerValue !== centerDuration) {
+
+    if (centerValue !== undefined) {
       setCenterDuration(centerValue);
     }
-  }, [centerDuration]);
+  }, []);
 
-  const handleDurationScrollEnd = useCallback((event: any) => {
-    isScrollingRef.current.duration = false;
-    
+  const handleDurationScrollEnd = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(offsetX / ITEM_WIDTH);
     const boundedIndex = Math.min(Math.max(index, 0), DURATION_OPTIONS.length - 1);
     const selectedValue = DURATION_OPTIONS[boundedIndex];
-    const targetX = boundedIndex * ITEM_WIDTH;
-    
-    if (selectedValue !== undefined && selectedValue !== selectedDuration) {
+
+    if (selectedValue !== undefined) {
       setSelectedDuration(selectedValue);
+      setCenterDuration(selectedValue);
     }
-    
+
+    // Snap to exact position
+    const targetX = boundedIndex * ITEM_WIDTH;
     durationScrollRef.current?.scrollTo({
       x: targetX,
       animated: true,
     });
-  }, [selectedDuration]);
+  }, []);
 
   const handleContinue = () => {
     if (step === 'name') {
@@ -192,11 +195,9 @@ export default function CreateProgrammeScreen() {
                   showsVerticalScrollIndicator={false}
                   snapToInterval={ITEM_HEIGHT}
                   decelerationRate="fast"
-                  onScrollBeginDrag={() => {
-                    isScrollingRef.current.frequency = true;
-                  }}
                   onScroll={handleFrequencyScroll}
                   onMomentumScrollEnd={handleFrequencyScrollEnd}
+                  onScrollEndDrag={handleFrequencyScrollEnd}
                   scrollEventThrottle={16}
                 >
                   {FREQUENCY_OPTIONS.map((option, index) => {
@@ -206,16 +207,12 @@ export default function CreateProgrammeScreen() {
                         key={option}
                         style={styles.verticalPickerItem}
                         onPress={() => {
-                          isScrollingRef.current.frequency = true;
                           setSelectedFrequency(option);
                           setCenterFrequency(option);
                           frequencyScrollRef.current?.scrollTo({
                             y: index * ITEM_HEIGHT,
                             animated: true,
                           });
-                          setTimeout(() => {
-                            isScrollingRef.current.frequency = false;
-                          }, 300);
                         }}
                       >
                         <Text
@@ -250,13 +247,10 @@ export default function CreateProgrammeScreen() {
                   contentContainerStyle={styles.pickerContent}
                   showsHorizontalScrollIndicator={false}
                   snapToInterval={ITEM_WIDTH}
-                  snapToAlignment="center"
                   decelerationRate="fast"
-                  onScrollBeginDrag={() => {
-                    isScrollingRef.current.duration = true;
-                  }}
                   onScroll={handleDurationScroll}
                   onMomentumScrollEnd={handleDurationScrollEnd}
+                  onScrollEndDrag={handleDurationScrollEnd}
                   scrollEventThrottle={16}
                 >
                   {DURATION_OPTIONS.map((option, index) => {
@@ -266,18 +260,12 @@ export default function CreateProgrammeScreen() {
                         key={option}
                         style={styles.pickerItem}
                         onPress={() => {
-                          isScrollingRef.current.duration = true;
-                          const targetIndex = DURATION_OPTIONS.indexOf(option);
-                          const targetX = targetIndex * ITEM_WIDTH;
                           setSelectedDuration(option);
                           setCenterDuration(option);
                           durationScrollRef.current?.scrollTo({
-                            x: targetX,
+                            x: index * ITEM_WIDTH,
                             animated: true,
                           });
-                          setTimeout(() => {
-                            isScrollingRef.current.duration = false;
-                          }, 300);
                         }}
                       >
                         <Text
@@ -375,7 +363,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   verticalPickerContent: {
-    paddingVertical: 150,
+    paddingVertical: VERTICAL_PADDING,
     alignItems: 'center',
   },
   verticalPickerItem: {
@@ -399,7 +387,7 @@ const styles = StyleSheet.create({
     height: 300,
   },
   pickerContent: {
-    paddingHorizontal: (SCREEN_WIDTH / 2) - (ITEM_WIDTH / 2),
+    paddingHorizontal: HORIZONTAL_PADDING,
     alignItems: 'center',
   },
   pickerItem: {
@@ -425,10 +413,10 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   topLine: {
-    top: 150 - ITEM_HEIGHT,
+    top: VERTICAL_PADDING,
   },
   bottomLine: {
-    top: 150,
+    top: VERTICAL_PADDING + ITEM_HEIGHT,
   },
   selectionLine: {
     position: 'absolute' as const,
@@ -439,10 +427,10 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   leftLine: {
-    left: (SCREEN_WIDTH / 2) - (ITEM_WIDTH / 2),
+    left: HORIZONTAL_PADDING,
   },
   rightLine: {
-    right: (SCREEN_WIDTH / 2) - (ITEM_WIDTH / 2),
+    right: HORIZONTAL_PADDING,
   },
   unit: {
     fontSize: 18,

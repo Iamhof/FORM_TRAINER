@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: add .js extensions for node16 module resolution and fix ScrollView pickers\n\n- Add .js extensions to imports in api/trpc/[trpc].ts for Vercel deployment\n- Fix frequency \\(days\\) picker ScrollView calculation that kept returning to 1\n- Fix duration \\(weeks\\) picker ScrollView that rapidly bounced between values\n- Simplify offset calculations and prevent useEffect dependency loops\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}
