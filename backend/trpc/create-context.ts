@@ -1,11 +1,8 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import superjson from 'superjson';
-import { assertServiceKeys, supabaseAdmin } from '../lib/auth';
+import { supabaseAdmin } from '../lib/auth';
 import { logger } from '@/lib/logger';
-import { z } from 'zod';
-
-assertServiceKeys('backend/trpc/create-context');
 
 const resolveUserFromToken = async (token?: string | null) => {
   if (!token) {
