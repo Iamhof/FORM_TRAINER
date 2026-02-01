@@ -85,13 +85,8 @@ export default function CreateProgrammeScreen() {
       setSelectedFrequency(selectedValue);
       setCenterFrequency(selectedValue);
     }
-
-    // Snap to exact position
-    const targetY = boundedIndex * ITEM_HEIGHT;
-    frequencyScrollRef.current?.scrollTo({
-      y: targetY,
-      animated: true,
-    });
+    // Let snapToInterval handle snapping - don't call scrollTo here
+    // as it interferes with the gesture system and causes freezing
   }, []);
 
   const handleDurationScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -115,13 +110,8 @@ export default function CreateProgrammeScreen() {
       setSelectedDuration(selectedValue);
       setCenterDuration(selectedValue);
     }
-
-    // Snap to exact position
-    const targetX = boundedIndex * ITEM_WIDTH;
-    durationScrollRef.current?.scrollTo({
-      x: targetX,
-      animated: true,
-    });
+    // Let snapToInterval handle snapping - don't call scrollTo here
+    // as it interferes with the gesture system and causes freezing
   }, []);
 
   const handleContinue = () => {
@@ -165,6 +155,7 @@ export default function CreateProgrammeScreen() {
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          scrollEnabled={step === 'name'}
         >
           {step === 'name' ? (
             <>
@@ -195,10 +186,12 @@ export default function CreateProgrammeScreen() {
                   showsVerticalScrollIndicator={false}
                   snapToInterval={ITEM_HEIGHT}
                   decelerationRate="fast"
+                  nestedScrollEnabled={true}
+                  bounces={false}
                   onScroll={handleFrequencyScroll}
                   onMomentumScrollEnd={handleFrequencyScrollEnd}
                   onScrollEndDrag={handleFrequencyScrollEnd}
-                  scrollEventThrottle={16}
+                  scrollEventThrottle={32}
                 >
                   {FREQUENCY_OPTIONS.map((option, index) => {
                     const isSelected = centerFrequency === option;
@@ -248,10 +241,12 @@ export default function CreateProgrammeScreen() {
                   showsHorizontalScrollIndicator={false}
                   snapToInterval={ITEM_WIDTH}
                   decelerationRate="fast"
+                  nestedScrollEnabled={true}
+                  bounces={false}
                   onScroll={handleDurationScroll}
                   onMomentumScrollEnd={handleDurationScrollEnd}
                   onScrollEndDrag={handleDurationScrollEnd}
-                  scrollEventThrottle={16}
+                  scrollEventThrottle={32}
                 >
                   {DURATION_OPTIONS.map((option, index) => {
                     const isSelected = centerDuration === option;
