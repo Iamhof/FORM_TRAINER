@@ -3,10 +3,10 @@ import { cors } from "hono/cors";
 import { trpcServer } from "@hono/trpc-server";
 import { appRouter } from "./trpc/app-router";
 import { createContext } from "./trpc/create-context";
-import { assertServiceKeys } from "./lib/auth";
 import { logger } from "@/lib/logger";
 
-assertServiceKeys('backend/hono');
+// Note: Service keys are now validated lazily when Supabase client is first accessed
+// This reduces cold start time significantly
 
 logger.info('[Hono] Backend server initializing...');
 logger.info('[Hono] App router loaded:', !!appRouter);

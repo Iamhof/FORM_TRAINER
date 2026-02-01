@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { env } from '../../lib/env';
 
 export const assertServiceKeys = (context = 'backend/lib/auth') => {
@@ -14,18 +14,32 @@ export const assertServiceKeys = (context = 'backend/lib/auth') => {
   }
 };
 
-assertServiceKeys('backend/lib/auth');
+// Lazy-loaded Supabase client to avoid cold start delays
+let _supabaseAdmin: SupabaseClient | null = null;
 
-export const supabaseAdmin = createClient(
-  env.EXPO_PUBLIC_SUPABASE_URL,
-  env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
+export const getSupabaseAdmin = (): SupabaseClient => {
+  if (!_supabaseAdmin) {
+    assertServiceKeys('backend/lib/auth');
+    _supabaseAdmin = createClient(
+      env.EXPO_PUBLIC_SUPABASE_URL,
+      env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
   }
-);
+  return _supabaseAdmin;
+};
+
+// Keep backward compatibility - but now it's a getter
+export const supabaseAdmin = new Proxy({} as SupabaseClient, {
+  get(_, prop) {
+    return (getSupabaseAdmin() as any)[prop];
+  },
+});
 
 /**
  * SupabaseProfile - Backend database type
