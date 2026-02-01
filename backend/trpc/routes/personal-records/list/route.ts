@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { protectedProcedure } from "../../../create-context";
+import { protectedProcedure } from "../../../create-context.js";
 import { createClient } from "@supabase/supabase-js";
 import { logger } from '@/lib/logger';
 

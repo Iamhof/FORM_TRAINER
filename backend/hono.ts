@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { trpcServer } from "@hono/trpc-server";
-import { appRouter } from "./trpc/app-router";
-import { createContext } from "./trpc/create-context";
+import { appRouter } from "./trpc/app-router.js";
+import { createContext } from "./trpc/create-context.js";
 import { logger } from "@/lib/logger";
 
 // Note: Service keys are now validated lazily when Supabase client is first accessed

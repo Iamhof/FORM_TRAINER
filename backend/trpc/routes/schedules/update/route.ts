@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { protectedProcedure } from "../../../create-context";
-import { supabaseAdmin } from "../../../../lib/auth";
+import { protectedProcedure } from "../../../create-context.js";
+import { supabaseAdmin } from "../../../../lib/auth.js";
 
 const scheduleDaySchema = z.object({
   dayOfWeek: z.number().min(0).max(6),

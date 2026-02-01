@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context';
+import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
 import { supabaseAdmin } from '@/backend/lib/auth';
 import { logger } from '@/lib/logger';

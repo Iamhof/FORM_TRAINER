@@ -1,6 +1,6 @@
 import { TRPCError } from '@trpc/server';
-import { protectedProcedure } from '../../../create-context';
-import { getProfileByUserId } from '../../../../lib/auth';
+import { protectedProcedure } from '../../../create-context.js';
+import { getProfileByUserId } from '../../../../lib/auth.js';
 
 export const meProcedure = protectedProcedure.query(async ({ ctx }) => {
   const profile = await getProfileByUserId(ctx.userId);

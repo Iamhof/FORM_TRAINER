@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context';
+import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth';
-import { aggregateAnalyticsData, generateEmptyMonthlyData } from '../utils';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { aggregateAnalyticsData, generateEmptyMonthlyData } from '../utils.js';
 import { AnalyticsData as DBAnalyticsData, Schedule, ScheduleDay } from '@/types/database';
 import { logger } from '@/lib/logger';
 

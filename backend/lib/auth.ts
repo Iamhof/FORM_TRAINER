@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { env } from '../../lib/env';
+import { env } from '../../lib/env.js';
 
 export const assertServiceKeys = (context = 'backend/lib/auth') => {
   try {

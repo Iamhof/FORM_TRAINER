@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { protectedProcedure } from "../../../create-context";
-import { supabaseAdmin } from "../../../../lib/auth";
+import { protectedProcedure } from "../../../create-context.js";
+import { supabaseAdmin } from "../../../../lib/auth.js";
 import { TRPCError } from "@trpc/server";
 import { logger } from "@/lib/logger";
 
