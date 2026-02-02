@@ -57,6 +57,33 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
+  errorFormatter({ shape, error }) {
+    // Log detailed error info for debugging
+    logger.error('[tRPC] Error occurred', {
+      code: shape.code,
+      message: shape.message,
+      path: error.path,
+      cause: error.cause instanceof Error ? {
+        name: error.cause.name,
+        message: error.cause.message,
+      } : error.cause,
+      // Include Zod validation details if present
+      zodErrors: error.code === 'BAD_REQUEST' && error.cause instanceof Error && 'issues' in error.cause
+        ? (error.cause as any).issues
+        : undefined,
+    });
+
+    return {
+      ...shape,
+      data: {
+        ...shape.data,
+        // Include validation errors in response for debugging
+        zodError: error.code === 'BAD_REQUEST' && error.cause instanceof Error && 'issues' in error.cause
+          ? (error.cause as any).flatten()
+          : null,
+      },
+    };
+  },
 });
 
 // Input sanitization function

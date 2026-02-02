@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
 import { supabaseAdmin } from '../../../../lib/auth.js';
+import { logger } from '../../../../../lib/logger.js';
 
 const workoutSetSchema = z.object({
   weight: z.number(),
@@ -28,30 +29,76 @@ export const logWorkoutProcedure = protectedProcedure
   .mutation(async ({ ctx, input }) => {
     const { programmeId, programmeName, day, week, exercises, completedAt } = input;
 
-    // Pass user ID explicitly to RPC to avoid relying on session context
-    const { data, error } = await supabaseAdmin.rpc('log_workout_transaction', {
-      p_user_id: ctx.userId,
-      p_programme_id: programmeId,
-      p_programme_name: programmeName,
-      p_day: day,
-      p_week: week,
-      p_exercises: exercises,
-      p_completed_at: completedAt,
+    logger.info('[Workout] Log request received', {
+      userId: ctx.userId,
+      programmeId,
+      programmeName,
+      day,
+      week,
+      exerciseCount: exercises.length,
     });
 
-    if (error) {
+    try {
+      // Pass user ID explicitly to RPC to avoid relying on session context
+      const { data, error } = await supabaseAdmin.rpc('log_workout_transaction', {
+        p_user_id: ctx.userId,
+        p_programme_id: programmeId,
+        p_programme_name: programmeName,
+        p_day: day,
+        p_week: week,
+        p_exercises: exercises,
+        p_completed_at: completedAt,
+      });
+
+      if (error) {
+        logger.error('[Workout] RPC error logging workout', {
+          userId: ctx.userId,
+          programmeId,
+          error: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `RPC error: ${error.message}`,
+        });
+      }
+
+      if (!data) {
+        logger.error('[Workout] RPC returned no data', {
+          userId: ctx.userId,
+          programmeId,
+        });
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Workout RPC returned no data',
+        });
+      }
+
+      logger.info('[Workout] Logged successfully', {
+        userId: ctx.userId,
+        programmeId,
+        workoutId: data.workout_id,
+      });
+
+      return data;
+    } catch (err) {
+      if (err instanceof TRPCError) {
+        throw err;
+      }
+
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logger.error('[Workout] Unexpected error', {
+        userId: ctx.userId,
+        programmeId,
+        message: errorMessage,
+        stack: err instanceof Error ? err.stack : undefined,
+      });
+
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        message: error.message ?? 'Failed to log workout',
+        message: `Unexpected error: ${errorMessage}`,
       });
     }
-
-    if (!data) {
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Workout RPC returned no data',
-      });
-    }
-
-    return data;
   });
