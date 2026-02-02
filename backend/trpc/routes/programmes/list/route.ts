@@ -1,7 +1,7 @@
 import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
 import { supabaseAdmin } from '../../../../lib/auth.js';
-import { logger } from '@/lib/logger';
+import { logger } from '../../../../../lib/logger.js';
 
 export const listProgrammesProcedure = protectedProcedure.query(async ({ ctx }) => {
   const { data: programmes, error } = await supabaseAdmin

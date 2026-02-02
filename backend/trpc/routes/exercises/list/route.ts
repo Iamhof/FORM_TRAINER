@@ -1,7 +1,7 @@
 import { publicProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
 import { supabaseAdmin } from '../../../../lib/auth.js';
-import { logger } from '@/lib/logger';
+import { logger } from '../../../../../lib/logger.js';
 
 export const listExercisesProcedure = publicProcedure.query(async () => {
   const { data: exercises, error } = await supabaseAdmin

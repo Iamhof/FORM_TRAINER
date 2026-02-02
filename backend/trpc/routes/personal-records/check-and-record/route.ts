@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '@/backend/lib/auth';
-import { logger } from '@/lib/logger';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { logger } from '../../../../../lib/logger.js';
 
 export const checkAndRecordPRProcedure = protectedProcedure
   .input(

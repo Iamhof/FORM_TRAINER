@@ -1,6 +1,6 @@
 import { protectedProcedure } from "../../../create-context.js";
 import { createClient } from "@supabase/supabase-js";
-import { logger } from '@/lib/logger';
+import { logger } from '../../../../../lib/logger.js';
 
 const supabase = createClient(
   process.env.EXPO_PUBLIC_SUPABASE_URL!,

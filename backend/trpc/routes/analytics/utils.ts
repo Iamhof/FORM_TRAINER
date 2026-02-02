@@ -1,6 +1,6 @@
-import { AnalyticsData, MonthlyDataPoint } from '@/types/analytics';
-import { AnalyticsData as DBAnalyticsData, Schedule } from '@/types/database';
-import { getLocalDateString } from '@/lib/date-utils';
+import { AnalyticsData, MonthlyDataPoint } from '../../../../types/analytics.js';
+import { AnalyticsData as DBAnalyticsData, Schedule } from '../../../../types/database.js';
+import { getLocalDateString } from '../../../../lib/date-utils.js';
 
 type WorkoutSummary = {
   completed_at: string;

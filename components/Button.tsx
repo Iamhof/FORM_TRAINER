@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, ViewStyle, ActivityIndicator } from 'react-native';
+
 import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -8,15 +9,17 @@ type ButtonProps = {
   onPress: () => void;
   variant?: 'primary' | 'outline';
   disabled?: boolean;
+  loading?: boolean;
   style?: ViewStyle;
   testID?: string;
 };
 
-export default function Button({ 
-  title, 
-  onPress, 
-  variant = 'primary', 
+export default function Button({
+  title,
+  onPress,
+  variant = 'primary',
   disabled = false,
+  loading = false,
   style,
   testID,
 }: ButtonProps) {
@@ -74,29 +77,36 @@ export default function Button({
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        disabled={disabled}
+        disabled={disabled || loading}
         testID={testID}
       >
         <Animated.View
           style={[
             styles.button,
             variant === 'primary' && { backgroundColor: accent },
-            variant === 'outline' && { 
+            variant === 'outline' && {
               backgroundColor,
-              borderWidth: 2, 
-              borderColor: accent 
+              borderWidth: 2,
+              borderColor: accent
             },
-            disabled && styles.disabled,
+            (disabled || loading) && styles.disabled,
           ]}
         >
-          <Text
-            style={[
-              styles.text,
-              variant === 'outline' && { color: accent },
-            ]}
-          >
-            {title}
-          </Text>
+          {loading ? (
+            <ActivityIndicator
+              size="small"
+              color={variant === 'outline' ? accent : COLORS.textPrimary}
+            />
+          ) : (
+            <Text
+              style={[
+                styles.text,
+                variant === 'outline' && { color: accent },
+              ]}
+            >
+              {title}
+            </Text>
+          )}
         </Animated.View>
       </Pressable>
     </Animated.View>

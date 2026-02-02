@@ -1,11 +1,13 @@
-import { createTRPCReact } from "@trpc/react-query";
 import { httpLink, httpBatchLink } from "@trpc/client";
-import type { AppRouter } from "@/backend/trpc/app-router";
-import superjson from "superjson";
-import { supabase } from '@/lib/supabase';
+import { createTRPCReact } from "@trpc/react-query";
 import Constants from "expo-constants";
-import { errorService } from '@/services/error.service';
+import superjson from "superjson";
+
 import { logger } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
+import { errorService } from '@/services/error.service';
+
+import type { AppRouter } from "@/backend/trpc/app-router";
 
 // Timeout configuration for different network conditions
 const TIMEOUT_CONFIG = {
@@ -148,17 +150,31 @@ try {
       transformer: superjson,
       async headers() {
         try {
-          const result = await supabase.auth.getSession();
-          const session = result?.data?.session;
-          const token = session?.access_token;
-          
-          logger.debug('[TRPC] Request headers - Token present:', !!token);
-          
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+          if (sessionError) {
+            logger.error('[tRPC] Failed to get auth session:', sessionError.message);
+            // Still return empty - let backend handle UNAUTHORIZED
+            return {
+              authorization: '',
+            };
+          }
+
+          if (!session) {
+            logger.warn('[tRPC] No active session, request will be unauthenticated');
+            return {
+              authorization: '',
+            };
+          }
+
+          const token = session.access_token;
+          logger.debug('[tRPC] Request headers - Token present:', !!token);
+
           return {
             authorization: token ? `Bearer ${token}` : '',
           };
         } catch (error) {
-          logger.warn('[TRPC] Failed to get session for headers:', error);
+          logger.error('[tRPC] Unexpected error getting session for headers:', error);
           return {
             authorization: '',
           };

@@ -1,27 +1,41 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import superjson from 'superjson';
+
 import { supabaseAdmin } from '../lib/auth.js';
-import { logger } from '@/lib/logger';
+import { logger } from '../../lib/logger.js';
 
 const resolveUserFromToken = async (token?: string | null) => {
   if (!token) {
+    logger.debug('[Auth] No token provided, request will be unauthenticated');
     return { userId: null, userEmail: null };
   }
 
-  const {
-    data: { user },
-    error,
-  } = await supabaseAdmin.auth.getUser(token);
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabaseAdmin.auth.getUser(token);
 
-  if (error || !user) {
+    if (error) {
+      logger.warn('[Auth] Token validation failed:', { error: error.message });
+      return { userId: null, userEmail: null };
+    }
+
+    if (!user) {
+      logger.warn('[Auth] Token valid but no user returned');
+      return { userId: null, userEmail: null };
+    }
+
+    logger.debug('[Auth] User authenticated:', { userId: user.id });
+    return {
+      userId: user.id,
+      userEmail: user.email ?? null,
+    };
+  } catch (error) {
+    logger.error('[Auth] Unexpected error resolving user from token:', error);
     return { userId: null, userEmail: null };
   }
-
-  return {
-    userId: user.id,
-    userEmail: user.email ?? null,
-  };
 };
 
 export const createContext = async (opts: FetchCreateContextFnOptions) => {

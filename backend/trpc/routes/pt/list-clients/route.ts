@@ -1,7 +1,7 @@
 import { protectedProcedure } from "../../../create-context.js";
 import { supabaseAdmin } from "../../../../lib/auth.js";
 import { TRPCError } from "@trpc/server";
-import { logger } from "@/lib/logger";
+import { logger } from "../../../../../lib/logger.js";
 
 export const listClientsProcedure = protectedProcedure.query(async ({ ctx }) => {
   logger.debug("[PT] Listing clients for PT:", ctx.userId);

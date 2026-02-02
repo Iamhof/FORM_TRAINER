@@ -3,7 +3,7 @@ import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
 import { supabaseAdmin } from '../../../../lib/auth.js';
 import { randomBytes } from 'crypto';
-import { logger } from '@/lib/logger';
+import { logger } from '../../../../../lib/logger.js';
 
 export const resendInvitationProcedure = protectedProcedure
   .input(

@@ -3,8 +3,8 @@ import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
 import { supabaseAdmin } from '../../../../lib/auth.js';
 import { aggregateAnalyticsData, generateEmptyMonthlyData } from '../utils.js';
-import { AnalyticsData as DBAnalyticsData, Schedule, ScheduleDay } from '@/types/database';
-import { logger } from '@/lib/logger';
+import { AnalyticsData as DBAnalyticsData, Schedule, ScheduleDay } from '../../../../../types/database.js';
+import { logger } from '../../../../../lib/logger.js';
 
 const normaliseSchedule = (payload: unknown): Schedule['schedule'] => {
   if (Array.isArray(payload)) {

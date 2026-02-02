@@ -1,11 +1,12 @@
-import React from 'react';
-import { StyleSheet, Text, View, Pressable, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { X, ChevronLeft, Check } from 'lucide-react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, Pressable, ScrollView, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import Button from '@/components/Button';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
-import Button from '@/components/Button';
 import { logger } from '@/lib/logger';
 
 type DayExercise = {
@@ -25,58 +26,69 @@ export default function ReviewProgrammeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { addProgramme } = useProgrammes();
-  
+  const [isSaving, setIsSaving] = useState(false);
+
   const programmeName = params.name as string || '';
   const frequency = parseInt(params.frequency as string) || 3;
   const duration = parseInt(params.duration as string) || 4;
   const days: TrainingDay[] = JSON.parse(params.days as string || '[]');
 
   const handleSave = async () => {
-    try {
-      const exercises: any[] = [];
-      
-      days.forEach((day, dayIndex) => {
-        day.exercises.forEach(exercise => {
-          exercises.push({
-            day: dayIndex + 1,
-            exerciseId: exercise.id,
-            sets: exercise.sets,
-            reps: exercise.reps.toString(),
-            rest: exercise.rest,
-          });
+    // Prevent double-tap
+    if (isSaving) return;
+
+    const exercises: any[] = [];
+
+    days.forEach((day, dayIndex) => {
+      day.exercises.forEach(exercise => {
+        exercises.push({
+          day: dayIndex + 1,
+          exerciseId: exercise.id,
+          sets: exercise.sets,
+          reps: exercise.reps.toString(),
+          rest: exercise.rest,
         });
       });
+    });
 
-      logger.debug('[ReviewScreen] Creating programme:', {
-        name: programmeName,
-        days: frequency,
-        weeks: duration,
-        exerciseCount: exercises.length,
-      });
+    logger.debug('[ReviewScreen] Creating programme:', {
+      name: programmeName,
+      days: frequency,
+      weeks: duration,
+      exerciseCount: exercises.length,
+    });
 
-      if (!programmeName || programmeName.trim() === '') {
-        alert('Please enter a programme name.');
-        return;
-      }
+    if (!programmeName || programmeName.trim() === '') {
+      Alert.alert('Validation Error', 'Please enter a programme name.');
+      return;
+    }
 
-      if (exercises.length === 0) {
-        alert('Please add at least one exercise to your programme.');
-        return;
-      }
+    if (exercises.length === 0) {
+      Alert.alert('Validation Error', 'Please add at least one exercise to your programme.');
+      return;
+    }
 
+    setIsSaving(true);
+    try {
       await addProgramme({
         name: programmeName,
         days: frequency,
         weeks: duration,
         exercises,
       });
-      
+
       logger.debug('[ReviewScreen] Programme saved successfully, navigating home');
       router.push('/(tabs)/home');
     } catch (error) {
       logger.error('[ReviewScreen] Failed to save programme:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save programme. Please try again.';
-      alert(errorMessage);
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      Alert.alert(
+        'Failed to Save',
+        `Could not save your programme: ${message}`,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -138,10 +150,12 @@ export default function ReviewProgrammeScreen() {
           </Pressable>
 
           <Button
-            title="Save Programme"
+            title={isSaving ? 'Saving...' : 'Save Programme'}
             onPress={handleSave}
             variant="primary"
             style={styles.continueButton}
+            disabled={isSaving}
+            loading={isSaving}
           />
           <Check size={20} color={COLORS.background} strokeWidth={2.5} style={styles.chevron} />
         </View>

@@ -2,7 +2,7 @@ import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
 import { supabaseAdmin } from '../../../../lib/auth.js';
 import { z } from 'zod';
-import { logger } from '@/lib/logger';
+import { logger } from '../../../../../lib/logger.js';
 
 const hexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format. Must be #RRGGBB');
 
