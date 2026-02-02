@@ -53,13 +53,16 @@ function createErrorResponse(error: unknown, status: number = 500): Response {
           stack: errorStack,
   });
 
-  return Response.json(
-      {
+  return new Response(
+      JSON.stringify({
                 error: 'Internal Server Error',
                 message: errorMessage,
                 ...(process.env.NODE_ENV === 'development' && { stack: errorStack }),
-      },
-      { status, headers: { 'Content-Type': 'application/json' } }
+      }),
+      {
+                status,
+                headers: { 'Content-Type': 'application/json' }
+      }
         );
 }
 

@@ -57,12 +57,12 @@ export type Context = Awaited<ReturnType<typeof createContext>>;
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
-  errorFormatter({ shape, error }) {
+  errorFormatter({ shape, error, path }) {
     // Log detailed error info for debugging
     logger.error('[tRPC] Error occurred', {
       code: shape.code,
       message: shape.message,
-      path: error.path,
+      path,
       cause: error.cause instanceof Error ? {
         name: error.cause.name,
         message: error.cause.message,
