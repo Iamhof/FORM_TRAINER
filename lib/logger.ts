@@ -30,6 +30,19 @@ function getIsDev(): boolean {
 const isDev = getIsDev();
 const logLevel = (process.env.EXPO_PUBLIC_LOG_LEVEL || (isDev ? 'debug' : 'error')) as 'debug' | 'info' | 'warn' | 'error';
 
+// Detect if running in serverless/Node.js environment (not React Native)
+// This prevents trying to load @sentry/react-native in Vercel functions
+function isServerless(): boolean {
+  return typeof process !== 'undefined' && (
+    process.env.VERCEL === '1' ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined ||
+    // No React Native globals present (navigator exists in RN but not pure Node)
+    typeof navigator === 'undefined'
+  );
+}
+
+const isServerlessEnv = isServerless();
+
 const sensitiveKeys = ['token', 'password', 'access_token', 'authorization', 'secret', 'key'];
 
 function sanitize(data: any): any {
@@ -70,10 +83,14 @@ class LoggerService {
 
   constructor() {
     // Initialize Sentry integration if available
-    this.initSentry();
-    
+    // Skip in serverless - @sentry/react-native won't work in Node.js
+    if (!isServerlessEnv) {
+      this.initSentry();
+    }
+
     // Start periodic flush in production
-    if (!isDev) {
+    // Skip in serverless - functions are stateless, no point buffering
+    if (!isDev && !isServerlessEnv) {
       this.startPeriodicFlush();
     }
   }
@@ -81,7 +98,10 @@ class LoggerService {
   private initSentry() {
     // Only initialize in production with DSN configured
     if (isDev) return;
-    
+
+    // Skip in serverless environments - @sentry/react-native doesn't work in Node.js
+    if (isServerlessEnv) return;
+
     const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
     if (!sentryDsn) return;
 
