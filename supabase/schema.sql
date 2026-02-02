@@ -3,6 +3,33 @@
 -- Project: yshbcfifmkflhahjengk
 
 -- ===========================================
+-- TABLE: exercises
+-- Reference data for workout exercises (populated by seed_exercises.sql)
+-- ===========================================
+CREATE TABLE IF NOT EXISTS public.exercises (
+    id text PRIMARY KEY,
+    name text NOT NULL,
+    category text NOT NULL,
+    muscle_group text NOT NULL,
+    type text NOT NULL CHECK (type IN ('compound', 'isolation')),
+    created_at timestamp with time zone DEFAULT now()
+);
+
+-- Enable RLS but allow public read access (reference data)
+ALTER TABLE public.exercises ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Anyone can read exercises
+CREATE POLICY "Anyone can read exercises"
+    ON public.exercises
+    FOR SELECT
+    TO public
+    USING (true);
+
+-- Indexes for common queries
+CREATE INDEX IF NOT EXISTS exercises_category_idx ON public.exercises(category);
+CREATE INDEX IF NOT EXISTS exercises_muscle_group_idx ON public.exercises(muscle_group);
+
+-- ===========================================
 -- TABLE: analytics
 -- Stores exercise analytics/stats per user per day
 -- ===========================================
@@ -184,6 +211,7 @@ CREATE TABLE IF NOT EXISTS public.workouts (
 -- ===========================================
 -- FOREIGN KEY RELATIONSHIPS (inferred)
 -- ===========================================
+-- analytics.exercise_id -> exercises.id
 -- analytics.user_id -> auth.users.id
 -- client_progress_sharing.client_id -> auth.users.id
 -- leaderboard_profiles.user_id -> auth.users.id
