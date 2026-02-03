@@ -43,13 +43,31 @@ async function getHonoApp() {
       console.log(`[Serverless] Starting Hono import at ${Date.now() - moduleStartTime}ms`);
       logger.info('[Serverless API] Initializing Hono app...');
 
-      // Dynamic import of hono backend
-      const module = await import('../../backend/hono.js');
-      console.log(`[Serverless] Hono imported in ${Date.now() - importStart}ms (total: ${Date.now() - moduleStartTime}ms)`);
-      honoApp = module.default;
+      // Dynamic import of hono backend - try multiple import paths
+      let module: any;
+      try {
+        // Try with .js extension first (ESM style)
+        module = await import('../../backend/hono.js');
+      } catch (e1) {
+        console.log('[Serverless] .js import failed, trying without extension');
+        try {
+          // Try without extension
+          module = await import('../../backend/hono');
+        } catch (e2) {
+          console.error('[Serverless] Both import attempts failed:', e1, e2);
+          throw e1;
+        }
+      }
 
-      if (!honoApp) {
-        throw new Error('Hono app is null after import');
+      console.log(`[Serverless] Hono imported in ${Date.now() - importStart}ms (total: ${Date.now() - moduleStartTime}ms)`);
+      console.log('[Serverless] Module keys:', Object.keys(module));
+
+      // Handle both default export and named export patterns
+      honoApp = module.default || module.app || module;
+
+      if (!honoApp || typeof honoApp.fetch !== 'function') {
+        console.error('[Serverless] Invalid Hono app. Module:', module);
+        throw new Error(`Hono app is invalid. Got: ${typeof honoApp}, has fetch: ${typeof honoApp?.fetch}`);
       }
 
       logger.info('[Serverless API] Hono app initialized successfully');
