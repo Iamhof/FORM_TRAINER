@@ -74,7 +74,8 @@
     "tinycolor2": "^1.6.0",
     "zod": "^3.23.8",
     "zustand": "^5.0.2",
-    "babel-plugin-module-resolver": "^5.0.2"
+    "babel-plugin-module-resolver": "^5.0.2",
+    "typescript": "~5.9.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -94,7 +95,6 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "husky": "^9.1.4",
     "lint-staged": "^15.2.10",
-    "typescript": "~5.9.2",
     "vitest": "^2.1.5"
   },
   "lint-staged": {
