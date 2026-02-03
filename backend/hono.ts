@@ -23,14 +23,14 @@ app.use(
         // Allow same-origin requests (no origin header)
         return null;
       }
-      
+
       const allowedOrigins = [
         'http://localhost:8081',
         'http://localhost:19006',
         'http://localhost:3000',
         process.env.EXPO_PUBLIC_WEB_URL,
       ].filter(Boolean);
-      
+
       // In development, allow localhost variants
       // Safe runtime check for __DEV__
       let isDev = false;
@@ -45,7 +45,13 @@ app.use(
           return origin;
         }
       }
-      
+
+      // Allow all Vercel preview and production deployments
+      if (origin.includes('.vercel.app')) {
+        logger.debug('[CORS] Allowing Vercel origin:', origin);
+        return origin;
+      }
+
       // In production, only allow whitelisted origins
       const isAllowed = allowedOrigins.includes(origin);
       logger.debug('[CORS] Request from origin:', origin, isAllowed ? 'allowed' : 'blocked');
