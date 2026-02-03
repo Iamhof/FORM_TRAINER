@@ -1,4 +1,10 @@
+// Debug: Track cold start timing
+const moduleStartTime = Date.now();
+console.log(`[Serverless] Module loading started at ${new Date().toISOString()}`);
+
 import { logger } from '../../lib/logger.js';
+
+console.log(`[Serverless] Logger imported in ${Date.now() - moduleStartTime}ms`);
 
 let honoApp: any = null;
 let initializationError: Error | null = null;
@@ -24,8 +30,11 @@ async function getHonoApp() {
 
   if (!honoApp) {
           try {
+                    const importStart = Date.now();
+                    console.log(`[Serverless] Starting Hono import at ${Date.now() - moduleStartTime}ms`);
                     logger.info('[Serverless API] Initializing Hono app...');
                     const module = await import('../../backend/hono.js');
+                    console.log(`[Serverless] Hono imported in ${Date.now() - importStart}ms (total: ${Date.now() - moduleStartTime}ms)`);
                     honoApp = module.default;
 
             if (!honoApp) {
@@ -141,5 +150,5 @@ export default async function handler(request: Request) {
 
 // Vercel Serverless Function configuration
 export const config = {
-      maxDuration: 30,
+      maxDuration: 60, // Increased from 30 to allow for cold start debugging
 };
