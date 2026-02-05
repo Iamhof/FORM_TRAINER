@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { trpcServer } from "@hono/trpc-server";
+import { serve } from "@hono/node-server";
 import { appRouter } from "./trpc/app-router.js";
 import { createContext } from "./trpc/create-context.js";
 import { logger } from "../lib/logger.js";
@@ -120,16 +121,16 @@ app.use("*", async (c, next) => {
   }
 });
 
-app.use(
-  "/trpc/*",
-  trpcServer({
-    router: appRouter,
-    createContext,
-    onError: ({ path, error }) => {
-      logger.error('[Hono tRPC] Error on path', path, ':', error);
-    },
-  })
-);
+const trpcMiddleware = trpcServer({
+  router: appRouter,
+  createContext,
+  onError: ({ path, error }) => {
+    logger.error('[Hono tRPC] Error on path', path, ':', error);
+  },
+});
+
+app.use("/trpc/*", trpcMiddleware);
+app.use("/api/trpc/*", trpcMiddleware);
 
 app.get("/", (c) => {
   return c.json({ 
@@ -155,4 +156,10 @@ app.notFound((c) => {
 });
 
 export default app;
+
+// Start standalone server when run directly (e.g., on Railway/Render)
+const port = Number(process.env.PORT) || 3001;
+serve({ fetch: app.fetch, port }, () => {
+  logger.info(`[Hono] Server running on port ${port}`);
+});
 

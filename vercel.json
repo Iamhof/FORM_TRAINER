@@ -2,11 +2,5 @@
   "framework": null,
   "buildCommand": "npx expo export -p web",
   "outputDirectory": "dist",
-  "installCommand": "npm install --legacy-peer-deps",
-  "rewrites": [
-    {
-      "source": "/api/trpc/:path*",
-      "destination": "/api/trpc/[trpc]"
-    }
-  ]
+  "installCommand": "npm install --legacy-peer-deps"
 }
