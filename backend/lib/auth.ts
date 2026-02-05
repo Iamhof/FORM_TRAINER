@@ -1,15 +1,14 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { env } from '../../lib/env.js';
 
 export const assertServiceKeys = (context = 'backend/lib/auth') => {
-  try {
-    const validated = env;
-    if (!validated.SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY is required');
-    }
-  } catch (error) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
-      `[${context}] ${error instanceof Error ? error.message : 'Environment validation failed'}`
+      `[${context}] SUPABASE_SERVICE_ROLE_KEY is required`
+    );
+  }
+  if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+    throw new Error(
+      `[${context}] EXPO_PUBLIC_SUPABASE_URL is required`
     );
   }
 };
@@ -21,8 +20,8 @@ export const getSupabaseAdmin = (): SupabaseClient => {
   if (!_supabaseAdmin) {
     assertServiceKeys('backend/lib/auth');
     _supabaseAdmin = createClient(
-      env.EXPO_PUBLIC_SUPABASE_URL,
-      env.SUPABASE_SERVICE_ROLE_KEY!,
+      process.env.EXPO_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
         auth: {
           autoRefreshToken: false,
