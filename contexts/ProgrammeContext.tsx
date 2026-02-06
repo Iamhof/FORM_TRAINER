@@ -289,6 +289,20 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
     return progress.percentage === 100;
   }, [getProgrammeProgress]);
 
+  const isWeekUnlocked = useCallback((programmeId: string, weekNumber: number) => {
+    if (weekNumber === 1) return true;
+
+    const programme = (programmes as Programme[]).find(p => p.id === programmeId);
+    if (!programme) return false;
+
+    for (let day = 1; day <= programme.days; day++) {
+      if (!isSessionCompleted(programmeId, day, weekNumber - 1)) {
+        return false;
+      }
+    }
+    return true;
+  }, [programmes, isSessionCompleted]);
+
   // Create stable refetch function using ref
   const refetch = useCallback(async () => {
     await Promise.all([
@@ -310,6 +324,7 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
       getProgrammeProgress,
       isSessionCompleted,
       isProgrammeCompleted,
+      isWeekUnlocked,
       refetch,
     }),
     [
@@ -325,6 +340,7 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
       getProgrammeProgress,
       isSessionCompleted,
       isProgrammeCompleted,
+      isWeekUnlocked,
       refetch,
     ]
   );

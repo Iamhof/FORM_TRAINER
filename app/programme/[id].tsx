@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator, Dimensions, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { ChevronLeft, BarChart3, Check, ChevronRight } from 'lucide-react-native';
+import { ChevronLeft, BarChart3, Check, ChevronRight, Lock } from 'lucide-react-native';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
 
@@ -17,7 +17,7 @@ export default function ProgrammeOverviewScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { programmes, isLoading: programmesLoading, isSessionCompleted } = useProgrammes();
+  const { programmes, isLoading: programmesLoading, isSessionCompleted, isWeekUnlocked } = useProgrammes();
   const { data: allExercises = [] } = useExercises();
   
   const programmeId = params.id as string;
@@ -387,12 +387,21 @@ export default function ProgrammeOverviewScreen() {
                           ))}
                         </View>
 
-                        <Button
-                          title="▶ Start Session"
-                          onPress={() => router.push(`/session/${session.id}` as any)}
-                          variant="primary"
-                          style={styles.startButton}
-                        />
+                        {isWeekUnlocked(programmeId, session.week) ? (
+                          <Button
+                            title="▶ Start Session"
+                            onPress={() => router.push(`/session/${session.id}` as any)}
+                            variant="primary"
+                            style={styles.startButton}
+                          />
+                        ) : (
+                          <View style={styles.lockedButton}>
+                            <Lock size={16} color={COLORS.textTertiary} strokeWidth={2.5} />
+                            <Text style={styles.lockedButtonText}>
+                              Complete Week {session.week - 1} first
+                            </Text>
+                          </View>
+                        )}
                       </Card>
                     ))}
 
@@ -649,6 +658,23 @@ const styles = StyleSheet.create({
   },
   startButton: {
     marginTop: SPACING.sm,
+  },
+  lockedButton: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: SPACING.xs,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: 12,
+    backgroundColor: COLORS.cardBorder,
+    marginTop: SPACING.sm,
+    opacity: 0.6,
+  },
+  lockedButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: COLORS.textTertiary,
   },
   completedCard: {
     opacity: 0.7,

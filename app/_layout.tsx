@@ -6,11 +6,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ProgrammeProvider } from "@/contexts/ProgrammeContext";
 import { UserProvider } from "@/contexts/UserContext";
-// MVP: Backend-dependent providers commented out for initial launch
-// import { AnalyticsProvider } from "@/contexts/AnalyticsContext";
-// import { ScheduleProvider } from "@/contexts/ScheduleContext";
-// import { BodyMetricsProvider } from "@/contexts/BodyMetricsContext";
-// import { LeaderboardProvider } from "@/contexts/LeaderboardContext";
+import { AnalyticsProvider } from "@/contexts/AnalyticsContext";
+import { ScheduleProvider } from "@/contexts/ScheduleContext";
+import { BodyMetricsProvider } from "@/contexts/BodyMetricsContext";
+import { LeaderboardProvider } from "@/contexts/LeaderboardContext";
 import { trpc, trpcClient } from "@/lib/trpc";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { EnvCheck } from "@/components/EnvCheck";
@@ -80,31 +79,20 @@ export default function RootLayout() {
       <EnvCheck>
         <QueryClientProvider client={queryClient}>
           <trpc.Provider client={trpcClient} queryClient={queryClient}>
-            {/* 
-              MVP Context Provider Setup:
-              - Only core providers included for MVP launch
-              - Provider hierarchy:
-                1. UserProvider (root) - auth & user data
-                2. ThemeProvider - depends on UserProvider
-                3. ProgrammeProvider - depends on UserProvider (for workout tracking)
-              - Backend-dependent providers (Analytics, Schedule, BodyMetrics, Leaderboard) 
-                will be added in version 1.1 once backend is deployed
-            */}
             <UserProvider>
               <ThemeProvider>
                 <ProgrammeProvider>
-                  {/* MVP: Backend-dependent providers commented out */}
-                  {/* <AnalyticsProvider> */}
-                  {/*   <ScheduleProvider> */}
-                  {/*     <BodyMetricsProvider> */}
-                  {/*       <LeaderboardProvider> */}
+                  <AnalyticsProvider>
+                    <ScheduleProvider>
+                      <BodyMetricsProvider>
+                        <LeaderboardProvider>
                           <GestureHandlerRootView style={{ flex: 1 }}>
                             <RootLayoutNav />
                           </GestureHandlerRootView>
-                  {/*       </LeaderboardProvider> */}
-                  {/*     </BodyMetricsProvider> */}
-                  {/*   </ScheduleProvider> */}
-                  {/* </AnalyticsProvider> */}
+                        </LeaderboardProvider>
+                      </BodyMetricsProvider>
+                    </ScheduleProvider>
+                  </AnalyticsProvider>
                 </ProgrammeProvider>
               </ThemeProvider>
             </UserProvider>

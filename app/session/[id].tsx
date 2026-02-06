@@ -35,7 +35,7 @@ export default function SessionScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { programmes, refetch } = useProgrammes();
+  const { programmes, refetch, isWeekUnlocked } = useProgrammes();
   const { data: allExercises = [], isLoading: exercisesLoading } = useExercises();
   const { user } = useUser();
   const { refetch: refetchAnalytics } = useAnalytics();
@@ -106,6 +106,13 @@ export default function SessionScreen() {
 
     logger.debug('[SessionScreen] Parsed session:', { programmeId, day, week });
 
+    if (!isWeekUnlocked(programmeId, week)) {
+      logger.warn('[SessionScreen] Week locked, redirecting back:', { programmeId, week });
+      Alert.alert('Week Locked', `Complete all sessions in Week ${week - 1} first.`);
+      router.back();
+      return;
+    }
+
     const programme = programmes.find(p => p.id === programmeId);
     if (!programme) {
       logger.error('[SessionScreen] Programme not found:', programmeId);
@@ -141,7 +148,7 @@ export default function SessionScreen() {
     });
     setIsLoading(false);
     hasInitialized.current = true; // Mark as initialized
-  }, [id, programmes, allExercises, exercisesLoading]);
+  }, [id, programmes, allExercises, exercisesLoading, isWeekUnlocked, router]);
 
   const currentExercise = exercises[currentExerciseIndex];
   const totalSets = currentExercise?.targetSets || 0;
