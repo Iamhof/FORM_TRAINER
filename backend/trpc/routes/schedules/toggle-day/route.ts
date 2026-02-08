@@ -1,8 +1,9 @@
-import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth.js';
+import { z } from 'zod';
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { protectedProcedure } from '../../../create-context.js';
 
 export const toggleScheduleDayProcedure = protectedProcedure
   .input(
@@ -10,33 +11,120 @@ export const toggleScheduleDayProcedure = protectedProcedure
       weekStart: z.string(),
       dayIndex: z.number().int().min(0).max(6),
       programmeId: z.string(),
-      forceStatus: z.enum(['scheduled', 'rest', 'empty']).optional(),
-      sessionId: z.string().nullable().optional(),
     })
   )
-  .mutation(async ({ input }) => {
-    const { data, error } = await supabaseAdmin.rpc('toggle_schedule_day', {
-      p_week_start: input.weekStart,
-      p_day_index: input.dayIndex,
-      p_programme_id: input.programmeId,
-      p_force_status: input.forceStatus ?? null,
-      p_session_id: input.sessionId ?? null,
-    });
+  .mutation(async ({ ctx, input }) => {
+    // Fetch programme to enforce max training days
+    const { data: programme, error: progError } = await supabaseAdmin
+      .from('programmes')
+      .select('days')
+      .eq('id', input.programmeId)
+      .single();
 
-    if (error) {
-      logger.error('[schedules.toggleDay] RPC error:', error);
+    if (progError || !programme) {
+      logger.error('[schedules.toggleDay] Programme lookup failed:', progError);
       throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to toggle schedule day',
+        code: 'NOT_FOUND',
+        message: 'Programme not found',
       });
     }
 
-    if (!data) {
+    const maxDays: number = programme.days;
+
+    // Fetch existing schedule for this user + week
+    const { data: existing, error: fetchError } = await supabaseAdmin
+      .from('schedules')
+      .select('*')
+      .eq('user_id', ctx.userId)
+      .eq('week_start', input.weekStart)
+      .maybeSingle();
+
+    if (fetchError) {
+      logger.error('[schedules.toggleDay] Fetch error:', fetchError);
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        message: 'Schedule toggle returned no data',
+        message: 'Failed to fetch schedule',
       });
     }
 
-    return data;
+    // Build schedule array from existing row or create default
+    let schedule: any[];
+
+    if (existing) {
+      schedule = Array.isArray(existing.schedule)
+        ? existing.schedule
+        : JSON.parse(existing.schedule as string);
+    } else {
+      schedule = Array.from({ length: 7 }, (_, i) => ({
+        dayOfWeek: i,
+        status: 'empty',
+        sessionId: null,
+        weekStart: input.weekStart,
+      }));
+    }
+
+    // Toggle the day status
+    const currentStatus = schedule[input.dayIndex]?.status;
+
+    if (currentStatus === 'scheduled') {
+      schedule[input.dayIndex] = {
+        ...schedule[input.dayIndex],
+        status: 'rest',
+        sessionId: null,
+      };
+    } else {
+      const scheduledCount = schedule.filter(
+        (d: any) => d.status === 'scheduled'
+      ).length;
+
+      if (scheduledCount >= maxDays) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Maximum scheduled sessions reached',
+        });
+      }
+
+      schedule[input.dayIndex] = {
+        ...schedule[input.dayIndex],
+        status: 'scheduled',
+        sessionId: null,
+      };
+    }
+
+    // Upsert: update existing row or insert new one
+    if (existing) {
+      const { error } = await supabaseAdmin
+        .from('schedules')
+        .update({
+          schedule,
+          programme_id: input.programmeId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id);
+
+      if (error) {
+        logger.error('[schedules.toggleDay] Update error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to update schedule: ${error.message}`,
+        });
+      }
+    } else {
+      const { error } = await supabaseAdmin.from('schedules').insert({
+        user_id: ctx.userId,
+        programme_id: input.programmeId,
+        week_start: input.weekStart,
+        schedule,
+      });
+
+      if (error) {
+        logger.error('[schedules.toggleDay] Insert error:', error);
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to create schedule: ${error.message}`,
+        });
+      }
+    }
+
+    return { success: true, schedule };
   });
