@@ -246,8 +246,18 @@ Expected endpoint: ${baseUrl}/api/trpc/...`);
             let errorMessage = `HTTP ${response.status}: ${text.substring(0, 200)}`;
             try {
               const json = JSON.parse(text);
-              if (json.error || json.message) {
-                errorMessage = `HTTP ${response.status}: ${json.message || json.error || text.substring(0, 200)}`;
+              // Handle tRPC error response shape: {"error": {"message": "...", ...}}
+              // Also handle batched responses: [{"error": {"message": "..."}}]
+              const errObj = Array.isArray(json) ? json[0]?.error : json.error;
+              const msg = typeof json.message === 'string'
+                ? json.message
+                : typeof errObj?.message === 'string'
+                  ? errObj.message
+                  : typeof errObj?.data?.zodError?.fieldErrors === 'object'
+                    ? `Validation error: ${JSON.stringify(errObj.data.zodError.fieldErrors)}`
+                    : null;
+              if (msg) {
+                errorMessage = `HTTP ${response.status}: ${msg}`;
               }
             } catch {
               // Not JSON, use text

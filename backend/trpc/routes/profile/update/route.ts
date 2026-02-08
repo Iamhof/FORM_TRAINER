@@ -11,6 +11,9 @@ export const updateProfileProcedure = protectedProcedure
     name: z.string().min(1, 'Name is required').optional(),
     accentColor: hexColorSchema.optional(), // API accepts camelCase
     gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional(),
+    heightCm: z.number().int().min(50).max(300).nullable().optional(),
+    weightKg: z.number().min(20).max(500).nullable().optional(),
+    age: z.number().int().min(10).max(120).nullable().optional(),
   }))
   .mutation(async ({ ctx, input }) => {
     logger.debug('[UPDATE_PROFILE] Updating profile for user:', ctx.userId, input);
@@ -28,6 +31,18 @@ export const updateProfileProcedure = protectedProcedure
 
     if (input.gender !== undefined) {
       updates.gender = input.gender;
+    }
+
+    if (input.heightCm !== undefined) {
+      updates.height_cm = input.heightCm;
+    }
+
+    if (input.weightKg !== undefined) {
+      updates.weight_kg = input.weightKg;
+    }
+
+    if (input.age !== undefined) {
+      updates.age = input.age;
     }
 
     if (Object.keys(updates).length === 0) {

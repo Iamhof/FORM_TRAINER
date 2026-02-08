@@ -15,6 +15,9 @@ export interface User {
   is_pt: boolean;
   accent_color?: string; // DB field (snake_case) - Maps to accentColor in app layer
   gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  height_cm?: number;
+  weight_kg?: number;
+  age?: number;
   leaderboard_enabled?: boolean;
   leaderboard_display_name?: string;
   created_at: string;

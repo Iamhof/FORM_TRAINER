@@ -22,6 +22,9 @@ export type UserProfile = {
   is_pt: boolean;
   accentColor?: string; // App field (camelCase) - Maps to accent_color in database
   gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  heightCm?: number | null;
+  weightKg?: number | null;
+  age?: number | null;
   last_login?: string;
 };
 
@@ -114,7 +117,7 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
       
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('name, role, is_pt, accent_color')
+        .select('name, role, is_pt, accent_color, gender, height_cm, weight_kg, age')
         .eq('user_id', authUser.id)
         .maybeSingle();
 
@@ -146,6 +149,10 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
         name: profile?.name || '',
         is_pt: profile?.is_pt || false,
         accentColor: profile?.accent_color || undefined, // Map DB snake_case to app camelCase
+        gender: profile?.gender || undefined,
+        heightCm: profile?.height_cm ?? null,
+        weightKg: profile?.weight_kg ?? null,
+        age: profile?.age ?? null,
       });
       setIsLoading(false);
     } catch (error) {
@@ -219,19 +226,22 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
   }, []);
 
   // Stable updateProfile - uses ref to avoid recreating on every user change
-  const updateProfile = useCallback(async (updates: Partial<Pick<UserProfile, 'name' | 'is_pt' | 'accentColor' | 'gender'>>) => {
+  const updateProfile = useCallback(async (updates: Partial<Pick<UserProfile, 'name' | 'is_pt' | 'accentColor' | 'gender' | 'heightCm' | 'weightKg' | 'age'>>) => {
     const currentUser = userRef.current;
     if (!currentUser) return { success: false, error: 'Not authenticated' };
 
     try {
       logger.debug('[UserContext] Updating profile:', updates);
-      
+
       // Map application layer (camelCase) to database layer (snake_case)
       const dbUpdates: Record<string, any> = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.is_pt !== undefined) dbUpdates.is_pt = updates.is_pt;
       if (updates.accentColor !== undefined) dbUpdates.accent_color = updates.accentColor; // Map camelCase to snake_case
       if (updates.gender !== undefined) dbUpdates.gender = updates.gender;
+      if (updates.heightCm !== undefined) dbUpdates.height_cm = updates.heightCm;
+      if (updates.weightKg !== undefined) dbUpdates.weight_kg = updates.weightKg;
+      if (updates.age !== undefined) dbUpdates.age = updates.age;
       
       const { error } = await supabase
         .from('profiles')
