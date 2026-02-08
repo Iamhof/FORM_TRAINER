@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -53,7 +54,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: COLORS.text,
+    color: COLORS.textPrimary,
     marginBottom: SPACING.md,
     textAlign: 'center',
   },

@@ -1,10 +1,13 @@
 import createContextHook from '@nkzw/create-context-hook';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { useUser } from './UserContext';
-import { useProgrammes } from './ProgrammeContext';
-import { trpc } from '@/lib/trpc';
+
 import { getLocalWeekStart } from '@/lib/date-utils';
+import { logger } from '@/lib/logger';
+import { trpc } from '@/lib/trpc';
+
+import { useProgrammes } from './ProgrammeContext';
+import { useUser } from './UserContext';
 
 export type DayStatus = 'scheduled' | 'completed' | 'rest' | 'empty';
 
@@ -63,7 +66,7 @@ const [ScheduleProviderRaw, useSchedule] = createContextHook(() => {
     const checkWeekRollover = () => {
       const actualWeekStart = getWeekStart();
       if (actualWeekStart !== currentWeekStart) {
-        console.log('[ScheduleContext] Week rollover detected:', {
+        logger.info('[ScheduleContext] Week rollover detected:', {
           old: currentWeekStart,
           new: actualWeekStart,
         });
@@ -123,7 +126,8 @@ const [ScheduleProviderRaw, useSchedule] = createContextHook(() => {
   const toggleMutationRef = useRef(toggleMutation);
   toggleMutationRef.current = toggleMutation;
 
-  // refetch is a stable reference, no dependency needed
+  // refetch is a stable reference from react-query, no dependency needed
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const loadSchedule = useCallback(() => scheduleQuery.refetch(), []);
 
   const saveSchedule = useCallback(
@@ -164,7 +168,7 @@ const [ScheduleProviderRaw, useSchedule] = createContextHook(() => {
   );
 
   const scheduledCount = useMemo(
-    () => schedule.filter((d) => d.status === 'scheduled' || d.status === 'completed').length,
+    () => schedule.filter((d) => d.status === 'scheduled').length,
     [schedule]
   );
 

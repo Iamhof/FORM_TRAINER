@@ -1,4 +1,4 @@
-import { httpLink, httpBatchLink } from "@trpc/client";
+import { httpLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import Constants from "expo-constants";
 import superjson from "superjson";
@@ -127,7 +127,7 @@ const getBaseUrl = () => {
       logger.debug('[TRPC] Using local web URL:', origin);
       return origin;
     }
-  } catch (error) {
+  } catch {
     // window not available, continue to fallback
     logger.debug('[TRPC] Window not available (React Native), continuing to fallback');
   }
@@ -139,7 +139,7 @@ const getBaseUrl = () => {
   return fallbackUrl;
 };
 
-let trpcClient;
+let trpcClient: ReturnType<typeof trpc.createClient>;
 try {
   const baseUrl = getBaseUrl();
   
@@ -185,7 +185,7 @@ try {
         
         // Check for operation-specific timeout in headers
         // This allows routes to specify custom timeouts for heavy operations
-        const customTimeout = options?.headers?.['x-trpc-timeout'];
+        const customTimeout = (options?.headers as Record<string, string> | undefined)?.['x-trpc-timeout'];
         const REQUEST_TIMEOUT = customTimeout && !isNaN(Number(customTimeout))
           ? Number(customTimeout)
           : getDefaultTimeout();

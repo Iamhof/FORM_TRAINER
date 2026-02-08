@@ -1,3 +1,5 @@
+import { useRouter } from 'expo-router';
+import { X, Check } from 'lucide-react-native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,17 +12,17 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { X, Check } from 'lucide-react-native';
-import { COLORS, SPACING } from '@/constants/theme';
-import { useUser } from '@/contexts/UserContext';
-import { useTheme } from '@/contexts/ThemeContext';
-import { trpc } from '@/lib/trpc';
+
 import Card from '@/components/Card';
 import ColorPicker from '@/components/ColorPicker';
+import { COLORS, SPACING } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useUser } from '@/contexts/UserContext';
 import { logger } from '@/lib/logger';
+import { trpc } from '@/lib/trpc';
 
 // Color normalization helper function
 const normalizeHexColor = (color: string): string => {

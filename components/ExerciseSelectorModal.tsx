@@ -1,10 +1,11 @@
+import { X, Search, Plus } from 'lucide-react-native';
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, Modal, Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
-import { X, Search, Plus } from 'lucide-react-native';
+
+import { Exercise } from '@/constants/exercises';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useExercises } from '@/hooks/useExercises';
-import { Exercise } from '@/constants/exercises';
 
 type ExerciseSelectorModalProps = {
   visible: boolean;
@@ -126,7 +127,7 @@ export default function ExerciseSelectorModal({
             <View style={styles.centerContainer}>
               <Text style={styles.errorTitle}>Failed to load exercises</Text>
               <Text style={styles.errorText}>
-                {error?.message || 'An error occurred while fetching exercises. Please try again.'}
+                {(error as unknown as Error)?.message || 'An error occurred while fetching exercises. Please try again.'}
               </Text>
             </View>
           ) : filteredExercises.length === 0 ? (

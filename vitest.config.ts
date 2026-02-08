@@ -1,6 +1,8 @@
-import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { defineConfig } from "vitest/config";
+
 import type { Plugin } from "vite";
 
 const projectRoot = path.resolve(fileURLToPath(import.meta.url), "..");
@@ -51,9 +53,6 @@ export default defineConfig({
       compilerOptions: {
         // Use ES2020 to support modern syntax
         target: "ES2020",
-        module: "ESNext",
-        // Ensure types are stripped
-        removeComments: false,
       },
     },
   },

@@ -1,21 +1,22 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { X, Check } from 'lucide-react-native';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import Card from '@/components/Card';
 import RestTimerModal from '@/components/RestTimerModal';
 import WorkoutCompleteModal, { WorkoutSummary } from '@/components/WorkoutCompleteModal';
 import { COLORS, SPACING } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useProgrammes } from '@/contexts/ProgrammeContext';
-import { useExercises } from '@/hooks/useExercises';
-import { supabase } from '@/lib/supabase';
-import { useUser } from '@/contexts/UserContext';
 import { useAnalytics } from '@/contexts/AnalyticsContext';
+import { useProgrammes } from '@/contexts/ProgrammeContext';
 import { useSchedule } from '@/contexts/ScheduleContext';
-import { logger } from '@/lib/logger';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useUser } from '@/contexts/UserContext';
+import { useExercises } from '@/hooks/useExercises';
 import { getLocalDateString, getLocalWeekStart } from '@/lib/date-utils';
+import { logger } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 
 type SetData = {
   weight: string;
@@ -152,16 +153,24 @@ export default function SessionScreen() {
 
   const currentExercise = exercises[currentExerciseIndex];
   const totalSets = currentExercise?.targetSets || 0;
-  const progress = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
+  const globalProgress = useMemo(() => {
+    const totalSetsAll = exercises.reduce((sum, ex) => sum + ex.targetSets, 0);
+    const completedSetsAll = exercises.reduce((sum, ex) =>
+      sum + ex.sets.filter(s => s.completed).length, 0
+    );
+    return totalSetsAll > 0 ? (completedSetsAll / totalSetsAll) * 100 : 0;
+  }, [exercises]);
 
   // Memoize headerLeft to prevent infinite re-renders from Stack.Screen options
   const headerLeft = useMemo(() => {
-    return () => (
-      <Pressable onPress={() => router.back()} style={styles.closeButton} disabled={isSaving}>
-        <X size={24} color={COLORS.textPrimary} strokeWidth={2} />
-        <Text style={styles.closeText}>End Workout</Text>
-      </Pressable>
-    );
+    return function HeaderLeftButton() {
+      return (
+        <Pressable onPress={() => router.back()} style={styles.closeButton} disabled={isSaving}>
+          <X size={24} color={COLORS.textPrimary} strokeWidth={2} />
+          <Text style={styles.closeText}>End Workout</Text>
+        </Pressable>
+      );
+    };
   }, [router, isSaving]);
 
   // Memoize navigation options to prevent infinite loop
@@ -181,29 +190,44 @@ export default function SessionScreen() {
 
   const isLastExercise = currentExerciseIndex === exercises.length - 1;
 
+  const hasCompletedAtLeastOneExercise = useMemo(() => {
+    return exercises.some((ex, idx) =>
+      idx < currentExerciseIndex ||
+      (idx === currentExerciseIndex && ex.sets.every(s => s.completed))
+    );
+  }, [exercises, currentExerciseIndex]);
+
   const handleSetComplete = (exerciseIndex: number, setIndex: number) => {
-    const newExercises = [...exercises];
-    const set = newExercises[exerciseIndex].sets[setIndex];
-    
-    if (!set.completed && set.weight && set.reps) {
-      set.completed = true;
-      setExercises(newExercises);
-      setCompletedSets(completedSets + 1);
-      
-      const isLastSetOfExercise = setIndex === newExercises[exerciseIndex].sets.length - 1;
-      const allSetsCompleted = newExercises[exerciseIndex].sets.every(s => s.completed);
-      
-      logger.debug('[SessionScreen] Set completed:', {
-        setIndex,
-        isLastSetOfExercise,
-        allSetsCompleted,
-        exerciseIndex,
-        currentExerciseIndex
-      });
-      
-      if (!isLastSetOfExercise || !allSetsCompleted) {
-        setShowRestTimer(true);
-      }
+    const currentSet = exercises[exerciseIndex]?.sets[setIndex];
+    if (!currentSet || currentSet.completed || !currentSet.weight || !currentSet.reps) return;
+
+    setExercises(prev => prev.map((ex, i) => {
+      if (i !== exerciseIndex) return ex;
+      return {
+        ...ex,
+        sets: ex.sets.map((s, j) => {
+          if (j !== setIndex) return s;
+          return { ...s, completed: true };
+        }),
+      };
+    }));
+    setCompletedSets(completedSets + 1);
+
+    const isLastSetOfExercise = setIndex === exercises[exerciseIndex].sets.length - 1;
+    const allSetsWillBeCompleted = exercises[exerciseIndex].sets.every(
+      (s, j) => j === setIndex ? true : s.completed
+    );
+
+    logger.debug('[SessionScreen] Set completed:', {
+      setIndex,
+      isLastSetOfExercise,
+      allSetsCompleted: allSetsWillBeCompleted,
+      exerciseIndex,
+      currentExerciseIndex
+    });
+
+    if (!isLastSetOfExercise || !allSetsWillBeCompleted) {
+      setShowRestTimer(true);
     }
   };
 
@@ -216,15 +240,29 @@ export default function SessionScreen() {
   };
 
   const handleWeightChange = (exerciseIndex: number, setIndex: number, value: string) => {
-    const newExercises = [...exercises];
-    newExercises[exerciseIndex].sets[setIndex].weight = value;
-    setExercises(newExercises);
+    setExercises(prev => prev.map((ex, i) => {
+      if (i !== exerciseIndex) return ex;
+      return {
+        ...ex,
+        sets: ex.sets.map((s, j) => {
+          if (j !== setIndex) return s;
+          return { ...s, weight: value };
+        }),
+      };
+    }));
   };
 
   const handleRepsChange = (exerciseIndex: number, setIndex: number, value: string) => {
-    const newExercises = [...exercises];
-    newExercises[exerciseIndex].sets[setIndex].reps = value;
-    setExercises(newExercises);
+    setExercises(prev => prev.map((ex, i) => {
+      if (i !== exerciseIndex) return ex;
+      return {
+        ...ex,
+        sets: ex.sets.map((s, j) => {
+          if (j !== setIndex) return s;
+          return { ...s, reps: value };
+        }),
+      };
+    }));
   };
 
   const handleCompleteWorkout = async () => {
@@ -488,10 +526,10 @@ export default function SessionScreen() {
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>Progress</Text>
-          <Text style={[styles.progressPercentage, { color: accent }]}>{Math.round(progress)}%</Text>
+          <Text style={[styles.progressPercentage, { color: accent }]}>{Math.round(globalProgress)}%</Text>
         </View>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progress}%`, backgroundColor: accent }]} />
+          <View style={[styles.progressFill, { width: `${globalProgress}%`, backgroundColor: accent }]} />
         </View>
 
         <KeyboardAvoidingView
@@ -585,23 +623,42 @@ export default function SessionScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
 
-        {currentExerciseSetsCompleted && (
+        {(currentExerciseSetsCompleted || hasCompletedAtLeastOneExercise) && (
           <View style={styles.stickyFooter}>
-            {!isLastExercise ? (
-              <Pressable
-                style={[styles.completeButton, { backgroundColor: accent }]}
-                onPress={() => {
-                  logger.debug('[SessionScreen] Next Exercise pressed:', {
-                    currentIndex: currentExerciseIndex,
-                    nextIndex: currentExerciseIndex + 1,
-                    totalExercises: exercises.length
-                  });
-                  handleNextExercise();
-                }}
-              >
-                <Text style={styles.completeButtonText}>Next Exercise</Text>
-              </Pressable>
-            ) : (
+            {!isLastExercise && currentExerciseSetsCompleted ? (
+              <View style={styles.footerRow}>
+                <Pressable
+                  style={[styles.nextButton, { borderColor: accent }]}
+                  onPress={() => {
+                    logger.debug('[SessionScreen] Next Exercise pressed:', {
+                      currentIndex: currentExerciseIndex,
+                      nextIndex: currentExerciseIndex + 1,
+                      totalExercises: exercises.length
+                    });
+                    handleNextExercise();
+                  }}
+                >
+                  <Text style={[styles.nextButtonText, { color: accent }]}>Next Exercise</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.completeButton, styles.completeButtonInRow, { backgroundColor: accent }, isSaving && styles.completeButtonDisabled]}
+                  onPress={() => {
+                    logger.debug('[SessionScreen] Finish early pressed');
+                    handleCompleteWorkout();
+                  }}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color={COLORS.background} />
+                  ) : (
+                    <>
+                      <Check size={20} color={COLORS.background} strokeWidth={3} />
+                      <Text style={styles.completeButtonText}>Finish</Text>
+                    </>
+                  )}
+                </Pressable>
+              </View>
+            ) : isLastExercise && currentExerciseSetsCompleted ? (
               <Pressable
                 style={[styles.completeButton, { backgroundColor: accent }, isSaving && styles.completeButtonDisabled]}
                 onPress={() => {
@@ -619,7 +676,7 @@ export default function SessionScreen() {
                   </>
                 )}
               </Pressable>
-            )}
+            ) : null}
           </View>
         )}
       </SafeAreaView>
@@ -786,13 +843,32 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.cardBorder,
   },
+  footerRow: {
+    flexDirection: 'row' as const,
+    gap: SPACING.md,
+  },
+  nextButton: {
+    flex: 1,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingVertical: SPACING.lg,
+    borderRadius: 16,
+    borderWidth: 2,
+  },
+  nextButtonText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+  },
   completeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     gap: SPACING.sm,
     paddingVertical: SPACING.lg,
     borderRadius: 16,
+  },
+  completeButtonInRow: {
+    flex: 1,
   },
   completeButtonText: {
     fontSize: 18,
