@@ -10,7 +10,7 @@ export const listPersonalRecordsProcedure = protectedProcedure
       .from("personal_records")
       .select("*")
       .eq("user_id", ctx.userId)
-      .order("achieved_at", { ascending: false });
+      .order("date", { ascending: false });
 
     if (error) {
       logger.error("[Personal Records List] Error:", error);

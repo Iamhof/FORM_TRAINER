@@ -7,7 +7,7 @@ export const getLatestBodyMetricsProcedure = protectedProcedure.query(async ({ c
     .from("body_metrics")
     .select("*")
     .eq("user_id", ctx.userId)
-    .order("logged_at", { ascending: false })
+    .order("date", { ascending: false })
     .limit(1)
     .single();
 

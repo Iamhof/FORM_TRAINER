@@ -14,7 +14,7 @@ export const listBodyMetricsProcedure = protectedProcedure
       .from("body_metrics")
       .select("*")
       .eq("user_id", ctx.userId)
-      .order("logged_at", { ascending: false })
+      .order("date", { ascending: false })
       .limit(input.limit);
 
     if (error) {
