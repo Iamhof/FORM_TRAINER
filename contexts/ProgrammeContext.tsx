@@ -1,9 +1,32 @@
 import createContextHook from '@nkzw/create-context-hook';
 import React, { useCallback, useMemo, useRef } from 'react';
-import { trpc } from '@/lib/trpc';
-import { useUser } from './UserContext';
+
 import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
+import { trpc } from '@/lib/trpc';
+
+import { useUser } from './UserContext';
+
+/**
+ * Determines whether a tRPC error should trigger the Supabase direct fallback.
+ * In production, errors are transformed by errorService.getUserMessage() into
+ * user-friendly messages (e.g. "Connection error..."). We must match those
+ * transformed messages as well as raw technical messages from development mode.
+ */
+const isFallbackableError = (message: string): boolean => {
+  const patterns = [
+    'HTML instead of JSON',
+    'API route',
+    'Network',
+    'network',
+    'Connection error',
+    'timeout',
+    'timed out',
+    'Failed to fetch',
+    'unexpected error',
+  ];
+  return patterns.some(p => message.includes(p));
+};
 
 export type ProgrammeExercise = {
   day: number;
@@ -19,6 +42,7 @@ export type Programme = {
   name: string;
   days: number;
   weeks: number;
+  category?: string | null;
   exercises: ProgrammeExercise[];
   created_at: string;
 };
@@ -41,7 +65,7 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
     {},
     { 
       enabled: !!isAuthenticated && !!user,
-      staleTime: 1000 * 60 * 1, // 1 minute
+      staleTime: 1000 * 60 * 5, // 5 minutes - aligned with global default
       retry: 1,
     }
   );
@@ -60,7 +84,7 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
       const programmesError = programmesQuery.error?.message || '';
       const historyError = workoutHistoryQuery.error?.message || '';
       
-      if (programmesError.includes('HTML instead of JSON') || historyError.includes('HTML instead of JSON')) {
+      if (isFallbackableError(programmesError) || isFallbackableError(historyError)) {
         logger.warn('[ProgrammeContext] TRPC queries failed, loading from Supabase directly');
         setUsingFallback(true);
         
@@ -95,15 +119,53 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
     loadFallbackData();
   }, [user, isAuthenticated, programmesQuery.error, workoutHistoryQuery.error]);
 
-  // Use fallback data when TRPC fails
-  const programmes = usingFallback ? fallbackProgrammes : (programmesQuery.data || []);
-  const workoutHistory = usingFallback ? fallbackHistory : (workoutHistoryQuery.data || []);
+  // Use fallback data when TRPC fails — wrapped in useMemo for stable references
+  const programmes = useMemo(
+    () => usingFallback ? fallbackProgrammes : (programmesQuery.data || []),
+    [usingFallback, fallbackProgrammes, programmesQuery.data]
+  );
+  const workoutHistory = useMemo(
+    () => usingFallback ? fallbackHistory : (workoutHistoryQuery.data || []),
+    [usingFallback, fallbackHistory, workoutHistoryQuery.data]
+  );
   const isLoadingProgrammes = programmesQuery.isLoading;
   const isLoadingHistory = workoutHistoryQuery.isLoading;
 
   // Mutations
   const createProgrammeMutation = trpc.programmes.create.useMutation({
-    onSuccess: () => {
+    onMutate: async (newProgramme) => {
+      // Cancel outgoing refetches so they don't overwrite optimistic update
+      await utils.programmes.list.cancel();
+
+      // Snapshot for rollback
+      const previousProgrammes = utils.programmes.list.getData();
+
+      // Optimistically add to cache with a temporary ID
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      utils.programmes.list.setData(undefined, (old) => {
+        const optimistic: Programme = {
+          id: tempId,
+          user_id: user?.id ?? '',
+          name: newProgramme.name,
+          days: newProgramme.days,
+          weeks: newProgramme.weeks,
+          category: newProgramme.category ?? null,
+          exercises: newProgramme.exercises,
+          created_at: new Date().toISOString(),
+        };
+        return [optimistic, ...(old ?? [])];
+      });
+
+      return { previousProgrammes };
+    },
+    onError: (_error, _newProgramme, context) => {
+      // Rollback on failure
+      if (context?.previousProgrammes !== undefined) {
+        utils.programmes.list.setData(undefined, context.previousProgrammes);
+      }
+    },
+    onSettled: () => {
+      // Always refetch to replace temp ID with real server data
       utils.programmes.list.invalidate();
     },
   });
@@ -147,21 +209,22 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
   }, [workoutHistory]);
 
   const addProgramme = useCallback(
-    async (programme: { name: string; days: number; weeks: number; exercises: ProgrammeExercise[] }) => {
+    async (programme: { name: string; days: number; weeks: number; category?: string; exercises: ProgrammeExercise[] }) => {
       if (!user) throw new Error('Not authenticated');
       try {
         const result = await createMutationRef.current.mutateAsync({
             name: programme.name,
             days: programme.days,
             weeks: programme.weeks,
+            category: programme.category,
             exercises: programme.exercises,
         });
         return result;
       } catch (error) {
         // Check if this is a tunnel/API route error (HTML response)
         const errorMessage = error instanceof Error ? error.message : '';
-        if (errorMessage.includes('HTML instead of JSON') || errorMessage.includes('API route')) {
-          logger.warn('[ProgrammeContext] TRPC failed (tunnel mode?), falling back to direct Supabase');
+        if (isFallbackableError(errorMessage)) {
+          logger.warn('[ProgrammeContext] TRPC create failed, falling back to direct Supabase. Error:', errorMessage);
           
           // Fallback: Create programme directly via Supabase
           const { data: newProgramme, error: supabaseError } = await supabase
@@ -171,6 +234,7 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
               name: programme.name,
               days: programme.days,
               weeks: programme.weeks,
+              category: programme.category || null,
               exercises: programme.exercises,
             })
             .select()
@@ -207,8 +271,8 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
       } catch (error) {
         // Check if this is a tunnel/API route error
         const errorMessage = error instanceof Error ? error.message : '';
-        if (errorMessage.includes('HTML instead of JSON') || errorMessage.includes('API route')) {
-          logger.warn('[ProgrammeContext] TRPC delete failed (tunnel mode?), falling back to direct Supabase');
+        if (isFallbackableError(errorMessage)) {
+          logger.warn('[ProgrammeContext] TRPC delete failed, falling back to direct Supabase. Error:', errorMessage);
           
           const { error: supabaseError } = await supabase
             .from('programmes')
@@ -249,20 +313,11 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
   // Memoize activeProgramme based on stable values instead of array reference
   // This prevents unnecessary re-renders when programmes array reference changes
   // but actual programme data remains the same
-  const firstProgrammeId = programmes.length > 0 ? programmes[0].id : null;
   const firstProgrammeData = programmes.length > 0 ? programmes[0] : null;
   
   const activeProgramme = useMemo(() => {
     return firstProgrammeData as Programme | null;
-  }, [
-    firstProgrammeId,
-    // Only recalculate if core properties change
-    firstProgrammeData?.name,
-    firstProgrammeData?.days,
-    firstProgrammeData?.weeks,
-    // Use stringified exercises to detect changes without causing reference issues
-    firstProgrammeData ? JSON.stringify(firstProgrammeData.exercises) : null
-  ]);
+  }, [firstProgrammeData]);
 
   const getProgrammeProgress = useCallback((programmeId: string) => {
     const programme = (programmes as Programme[]).find(p => p.id === programmeId);
@@ -303,6 +358,46 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
     return true;
   }, [programmes, isSessionCompleted]);
 
+  const getNextSession = useCallback((programmeId: string) => {
+    const programme = (programmes as Programme[]).find(p => p.id === programmeId);
+    if (!programme) return null;
+
+    for (let week = 1; week <= programme.weeks; week++) {
+      if (!isWeekUnlocked(programmeId, week)) break;
+
+      for (let day = 1; day <= programme.days; day++) {
+        if (!isSessionCompleted(programmeId, day, week)) {
+          return {
+            week,
+            day,
+            sessionId: `${programmeId}:${day}:${week}`,
+          };
+        }
+      }
+    }
+    return null;
+  }, [programmes, isWeekUnlocked, isSessionCompleted]);
+
+  const getCurrentWeekAndDay = useCallback((programmeId: string) => {
+    const programme = (programmes as Programme[]).find(p => p.id === programmeId);
+    if (!programme) return { currentWeek: 1, currentDay: 1, totalWeeks: 0 };
+
+    const nextSession = getNextSession(programmeId);
+    if (!nextSession) {
+      return {
+        currentWeek: programme.weeks,
+        currentDay: programme.days,
+        totalWeeks: programme.weeks,
+      };
+    }
+
+    return {
+      currentWeek: nextSession.week,
+      currentDay: nextSession.day,
+      totalWeeks: programme.weeks,
+    };
+  }, [programmes, getNextSession]);
+
   // Create stable refetch function using ref
   const refetch = useCallback(async () => {
     await Promise.all([
@@ -325,6 +420,8 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
       isSessionCompleted,
       isProgrammeCompleted,
       isWeekUnlocked,
+      getNextSession,
+      getCurrentWeekAndDay,
       refetch,
     }),
     [
@@ -341,6 +438,8 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
       isSessionCompleted,
       isProgrammeCompleted,
       isWeekUnlocked,
+      getNextSession,
+      getCurrentWeekAndDay,
       refetch,
     ]
   );

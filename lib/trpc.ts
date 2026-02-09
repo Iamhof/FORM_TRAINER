@@ -9,12 +9,50 @@ import { errorService } from '@/services/error.service';
 
 import type { AppRouter } from "@/backend/trpc/app-router";
 
+// --- Auth session token cache ---
+// Avoids calling supabase.auth.getSession() on every tRPC request.
+// TTL: 30s. onAuthStateChange invalidates immediately on sign-in/out/refresh.
+let _cachedToken: string | null = null;
+let _cachedTokenTimestamp: number = 0;
+const AUTH_CACHE_TTL = 30_000;
+
+const getCachedAuthToken = async (): Promise<string> => {
+  const now = Date.now();
+  if (_cachedToken !== null && (now - _cachedTokenTimestamp) < AUTH_CACHE_TTL) {
+    return _cachedToken ? `Bearer ${_cachedToken}` : '';
+  }
+
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+      logger.error('[tRPC] Failed to get auth session:', error.message);
+      _cachedToken = null;
+      _cachedTokenTimestamp = now;
+      return '';
+    }
+    _cachedToken = session?.access_token ?? null;
+    _cachedTokenTimestamp = now;
+    return _cachedToken ? `Bearer ${_cachedToken}` : '';
+  } catch (error) {
+    logger.error('[tRPC] Unexpected error getting session:', error);
+    _cachedToken = null;
+    _cachedTokenTimestamp = now;
+    return '';
+  }
+};
+
+// Invalidate immediately on any auth state change
+supabase.auth.onAuthStateChange((_event, session) => {
+  _cachedToken = session?.access_token ?? null;
+  _cachedTokenTimestamp = Date.now();
+});
+
 // Timeout configuration for different network conditions
 const TIMEOUT_CONFIG = {
-  DEFAULT: 60000, // 60 seconds (doubled from 30s for slow networks)
-  QUICK_OPERATION: 30000, // 30 seconds for lightweight operations
-  HEAVY_OPERATION: 90000, // 90 seconds for data-intensive operations (workout uploads, analytics sync)
-  BATCH_OPERATION: 120000, // 2 minutes for batch operations
+  DEFAULT: 15000, // 15s - warm server responds in <2s; cold start prevented by keep-warm ping
+  QUICK_OPERATION: 10000, // 10s for lightweight operations
+  HEAVY_OPERATION: 30000, // 30s for data-intensive operations (workout uploads, analytics sync)
+  BATCH_OPERATION: 60000, // 60s for batch operations
 } as const;
 
 // Allow timeout override via environment variable
@@ -149,36 +187,8 @@ try {
         url: `${baseUrl}/api/trpc`,
       transformer: superjson,
       async headers() {
-        try {
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-          if (sessionError) {
-            logger.error('[tRPC] Failed to get auth session:', sessionError.message);
-            // Still return empty - let backend handle UNAUTHORIZED
-            return {
-              authorization: '',
-            };
-          }
-
-          if (!session) {
-            logger.warn('[tRPC] No active session, request will be unauthenticated');
-            return {
-              authorization: '',
-            };
-          }
-
-          const token = session.access_token;
-          logger.debug('[tRPC] Request headers - Token present:', !!token);
-
-          return {
-            authorization: token ? `Bearer ${token}` : '',
-          };
-        } catch (error) {
-          logger.error('[tRPC] Unexpected error getting session for headers:', error);
-          return {
-            authorization: '',
-          };
-        }
+        const authorization = await getCachedAuthToken();
+        return { authorization };
       },
       async fetch(url, options) {
         const baseUrl = getBaseUrl();

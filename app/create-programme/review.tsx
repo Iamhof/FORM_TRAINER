@@ -1,12 +1,15 @@
+import * as Haptics from 'expo-haptics';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { X, ChevronLeft, Check } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, Pressable, ScrollView, Alert } from 'react-native';
+import { StyleSheet, Text, View, Pressable, ScrollView, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Button from '@/components/Button';
+import Toast from '@/components/Toast';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { logger } from '@/lib/logger';
 
 type DayExercise = {
@@ -26,19 +29,20 @@ export default function ReviewProgrammeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { addProgramme } = useProgrammes();
+  const { accent } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   const programmeName = params.name as string || '';
+  const category = params.category as string || 'General';
   const frequency = parseInt(params.frequency as string) || 3;
   const duration = parseInt(params.duration as string) || 4;
   const days: TrainingDay[] = JSON.parse(params.days as string || '[]');
 
   const handleSave = async () => {
-    // Prevent double-tap
     if (isSaving) return;
 
     const exercises: any[] = [];
-
     days.forEach((day, dayIndex) => {
       day.exercises.forEach(exercise => {
         exercises.push({
@@ -52,44 +56,55 @@ export default function ReviewProgrammeScreen() {
     });
 
     logger.debug('[ReviewScreen] Creating programme:', {
-      name: programmeName,
-      days: frequency,
-      weeks: duration,
-      exerciseCount: exercises.length,
+      name: programmeName, days: frequency, weeks: duration, exerciseCount: exercises.length,
     });
 
     if (!programmeName || programmeName.trim() === '') {
       Alert.alert('Validation Error', 'Please enter a programme name.');
       return;
     }
-
     if (exercises.length === 0) {
       Alert.alert('Validation Error', 'Please add at least one exercise to your programme.');
       return;
     }
 
     setIsSaving(true);
-    try {
-      await addProgramme({
-        name: programmeName,
-        days: frequency,
-        weeks: duration,
-        exercises,
+
+    // Instant feedback — mutation's onMutate has already updated the cache optimistically
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    setShowToast(true);
+
+    // Fire-and-forget: start the mutation but navigate immediately
+    addProgramme({
+      name: programmeName,
+      days: frequency,
+      weeks: duration,
+      category,
+      exercises,
+    })
+      .then(() => {
+        logger.debug('[ReviewScreen] Programme confirmed by server');
+      })
+      .catch((error) => {
+        logger.error('[ReviewScreen] Save failed:', error);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        // onError hook has already rolled back the optimistic cache update
+        Alert.alert(
+          'Save Failed',
+          `Your programme could not be saved. Please try again.\n\nDetails: ${message}`,
+          [{ text: 'OK' }]
+        );
+      })
+      .finally(() => {
+        setIsSaving(false);
       });
 
-      logger.debug('[ReviewScreen] Programme saved successfully, navigating home');
-      router.push('/(tabs)/home');
-    } catch (error) {
-      logger.error('[ReviewScreen] Failed to save programme:', error);
-      const message = error instanceof Error ? error.message : 'Unknown error occurred';
-      Alert.alert(
-        'Failed to Save',
-        `Could not save your programme: ${message}`,
-        [{ text: 'OK' }]
-      );
-    } finally {
-      setIsSaving(false);
-    }
+    // Navigate immediately — don't wait for network round-trip
+    setTimeout(() => {
+      router.replace('/(tabs)/home');
+    }, 400);
   };
 
   return (
@@ -108,6 +123,13 @@ export default function ReviewProgrammeScreen() {
           ),
         }}
       />
+      <Toast
+        message="Programme created!"
+        visible={showToast}
+        onHide={() => setShowToast(false)}
+        accentColor={accent}
+        duration={500}
+      />
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <ScrollView
           style={styles.scroll}
@@ -120,7 +142,7 @@ export default function ReviewProgrammeScreen() {
           <View style={styles.programmeCard}>
             <Text style={styles.programmeName}>{programmeName || 'Untitled Programme'}</Text>
             <Text style={styles.programmeDetails}>
-              {frequency} days per week • {duration} weeks
+              {category} • {frequency} days per week • {duration} weeks
             </Text>
 
             {days.map((day, dayIndex) => (

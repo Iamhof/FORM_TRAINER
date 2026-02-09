@@ -1,19 +1,20 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { ProgrammeProvider } from "@/contexts/ProgrammeContext";
-import { UserProvider } from "@/contexts/UserContext";
+
+import { EnvCheck } from "@/components/EnvCheck";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AnalyticsProvider } from "@/contexts/AnalyticsContext";
-import { ScheduleProvider } from "@/contexts/ScheduleContext";
 import { BodyMetricsProvider } from "@/contexts/BodyMetricsContext";
 import { LeaderboardProvider } from "@/contexts/LeaderboardContext";
-import { trpc, trpcClient } from "@/lib/trpc";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { EnvCheck } from "@/components/EnvCheck";
+import { ProgrammeProvider } from "@/contexts/ProgrammeContext";
+import { ScheduleProvider } from "@/contexts/ScheduleContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { UserProvider } from "@/contexts/UserContext";
 import { initCrashProtection } from "@/lib/crash-protection";
+import { trpc, trpcClient } from "@/lib/trpc";
 
 // Initialize crash protection for production builds
 initCrashProtection();
@@ -56,16 +57,17 @@ export default function RootLayout() {
           return false;
         },
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-        staleTime: 30 * 1000, // 30 seconds
-        gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
-        refetchOnMount: true, // Check for fresh data
-        refetchOnWindowFocus: true, // Refetch when user returns
-        refetchOnReconnect: true, // Refetch when connection restored
+        staleTime: 5 * 60 * 1000, // 5 minutes - programme data rarely changes externally
+        gcTime: 10 * 60 * 1000, // 10 minutes - keep cached data longer to survive tab switches
+        refetchOnMount: 'always', // Still checks, but staleTime gates actual network calls
+        refetchOnWindowFocus: false, // Disabled - was causing thundering herd on every app foreground
+        refetchOnReconnect: true, // Keep - useful after real disconnects
         networkMode: 'online', // Only fetch when online
       },
       mutations: {
-        retry: 1,
-        networkMode: 'online',
+        retry: 2,
+        retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 10000),
+        networkMode: 'always',
       },
     },
   }));
