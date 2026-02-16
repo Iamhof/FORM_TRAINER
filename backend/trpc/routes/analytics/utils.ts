@@ -16,7 +16,7 @@ export const generateEmptyMonthlyData = (): MonthlyDataPoint[] => {
   for (let i = 5; i >= 0; i -= 1) {
     const monthIndex = (currentMonth - i + 12) % 12;
     points.push({
-      month: MONTHS[monthIndex],
+      month: MONTHS[monthIndex] ?? 'Unknown',
       value: 0,
     });
   }
@@ -95,6 +95,7 @@ export const aggregateAnalyticsData = (
     {
       name: string;
       data: { date: string; weight: number }[];
+      byMonth: Map<string, number[]>;
     }
   > = {};
 
@@ -123,9 +124,9 @@ export const aggregateAnalyticsData = (
 
     schedule.schedule.forEach((day) => {
       if (day.status === 'scheduled' || day.status === 'completed') {
-        scheduledSessionsByMonth[monthKey] += 1;
+        scheduledSessionsByMonth[monthKey] = (scheduledSessionsByMonth[monthKey] ?? 0) + 1;
       } else if (day.status === 'rest') {
-        restDaysByMonth[monthKey] += 1;
+        restDaysByMonth[monthKey] = (restDaysByMonth[monthKey] ?? 0) + 1;
       }
     });
   });
@@ -144,13 +145,22 @@ export const aggregateAnalyticsData = (
       exerciseData[record.exercise_id] = {
         name: record.exercise_id,
         data: [],
+        byMonth: new Map(),
       };
     }
 
-    exerciseData[record.exercise_id].data.push({
-      date: record.date,
-      weight: record.max_weight,
-    });
+    // Add to month-indexed map for O(1) lookups
+    const exerciseEntry = exerciseData[record.exercise_id];
+    if (exerciseEntry) {
+      const monthWeights = exerciseEntry.byMonth.get(monthKey) ?? [];
+      monthWeights.push(record.max_weight);
+      exerciseEntry.byMonth.set(monthKey, monthWeights);
+
+      exerciseEntry.data.push({
+        date: record.date,
+        weight: record.max_weight,
+      });
+    }
   });
 
   workouts.forEach((workout) => {
@@ -170,12 +180,13 @@ export const aggregateAnalyticsData = (
   const sortedMonthKeys = Object.keys(monthlyData).sort();
 
   sortedMonthKeys.forEach((key, index) => {
-    const [, month] = key.split('-').map(Number);
-    const monthName = MONTHS[month - 1];
-    const data = monthlyData[key];
+    const parts = key.split('-').map(Number);
+    const month = parts[1] ?? 1;
+    const monthName = MONTHS[month - 1] ?? 'Unknown';
+    const data = monthlyData[key] ?? { sessionsCompleted: 0, volume: 0, exercises: new Set<string>() };
 
     const completedForMonth = data.sessionsCompleted;
-    const scheduledForMonth = scheduledSessionsByMonth[key] || 0;
+    const scheduledForMonth = scheduledSessionsByMonth[key] ?? 0;
     const missed = Math.max(0, scheduledForMonth - completedForMonth);
 
     sessionsCompleted.push({ month: monthName, value: completedForMonth });
@@ -184,16 +195,13 @@ export const aggregateAnalyticsData = (
 
     let progressRate = 0;
     if (index > 0) {
-      const previousMonthKey = sortedMonthKeys[index - 1];
+      const previousMonthKey = sortedMonthKeys[index - 1] ?? key;
       const exerciseProgressions: number[] = [];
 
       Object.values(exerciseData).forEach((exerciseInfo) => {
-        const currentMonthWeights = exerciseInfo.data
-          .filter((d) => d.date.startsWith(key))
-          .map((d) => d.weight);
-        const previousMonthWeights = exerciseInfo.data
-          .filter((d) => d.date.startsWith(previousMonthKey))
-          .map((d) => d.weight);
+        // O(1) Map lookups instead of O(D) filter operations
+        const currentMonthWeights = exerciseInfo.byMonth.get(key) ?? [];
+        const previousMonthWeights = exerciseInfo.byMonth.get(previousMonthKey) ?? [];
 
         if (currentMonthWeights.length > 0 && previousMonthWeights.length > 0) {
           const avgCurrent =
@@ -237,8 +245,8 @@ export const aggregateAnalyticsData = (
       const sorted = data.data.sort(
         (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
       );
-      const startWeight = sorted[0].weight;
-      const currentWeight = sorted[sorted.length - 1].weight;
+      const startWeight = sorted[0]?.weight ?? 0;
+      const currentWeight = sorted[sorted.length - 1]?.weight ?? 0;
       const percentageIncrease =
         startWeight > 0 ? Math.round(((currentWeight - startWeight) / startWeight) * 100) : 0;
 

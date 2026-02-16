@@ -5,6 +5,7 @@ import { serve } from "@hono/node-server";
 import { appRouter } from "./trpc/app-router.js";
 import { createContext } from "./trpc/create-context.js";
 import { logger } from "../lib/logger.js";
+import { isDevelopmentMode } from "./lib/runtime-utils.js";
 
 // Note: Service keys are now validated lazily when Supabase client is first accessed
 // This reduces cold start time significantly
@@ -19,10 +20,14 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
-      // Reject requests without origin (except same-origin)
+      // React Native / mobile clients do NOT send an Origin header.
+      // Returning null here would omit Access-Control-Allow-Origin, which
+      // can cause Hono's CORS middleware to interfere with POST responses
+      // (e.g. tRPC mutations) even though native fetch doesn't enforce CORS.
+      // Return '*' so the response is not stripped by the middleware.
+      // Security is enforced at the auth layer (Bearer JWT), not CORS.
       if (!origin) {
-        // Allow same-origin requests (no origin header)
-        return null;
+        return '*';
       }
 
       const allowedOrigins = [
@@ -33,14 +38,7 @@ app.use(
       ].filter(Boolean);
 
       // In development, allow localhost variants
-      // Safe runtime check for __DEV__
-      let isDev = false;
-      try {
-        const dev = (global as any).__DEV__;
-        isDev = dev === true || process.env.NODE_ENV === 'development';
-      } catch {
-        isDev = process.env.NODE_ENV === 'development';
-      }
+      const isDev = isDevelopmentMode();
       if (process.env.NODE_ENV === 'development' || isDev) {
         if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
           return origin;
@@ -108,7 +106,7 @@ app.use("*", async (c, next) => {
       duration: `${duration}ms`,
       status,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     const duration = Date.now() - startTime;
     logger.error('[Hono] Request error:', {
       requestId,
