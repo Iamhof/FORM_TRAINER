@@ -6,6 +6,8 @@ import { X, ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import Button from '@/components/Button';
+import { ensureInBounds } from '@/lib/array-utils';
+import { logger } from '@/lib/logger';
 
 import ExerciseSelectorModal from '@/components/ExerciseSelectorModal';
 import { Exercise } from '@/constants/exercises';
@@ -26,12 +28,13 @@ export default function ProgrammeDaysScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const programmeName = params.name as string || '';
+  const category = params.category as string || 'General';
   const frequency = parseInt(params.frequency as string) || 3;
   const duration = parseInt(params.duration as string) || 4;
 
   const [currentDay, setCurrentDay] = useState(0);
   const [days, setDays] = useState<TrainingDay[]>(
-    Array.from({ length: frequency }, (_, i) => ({
+    Array.from({ length: frequency }, () => ({
       name: '',
       exercises: [],
     }))
@@ -40,14 +43,22 @@ export default function ProgrammeDaysScreen() {
   const [editingExercise, setEditingExercise] = useState<number | null>(null);
 
   const handleDayNameChange = (value: string) => {
+    if (!ensureInBounds(currentDay, days.length)) {
+      logger.error('[Days] currentDay out of bounds in handleDayNameChange', { currentDay, length: days.length });
+      return;
+    }
     const newDays = [...days];
-    newDays[currentDay].name = value;
+    newDays[currentDay]!.name = value;
     setDays(newDays);
   };
 
   const handleAddExercise = (exercise: Exercise) => {
+    if (!ensureInBounds(currentDay, days.length)) {
+      logger.error('[Days] currentDay out of bounds in handleAddExercise', { currentDay, length: days.length });
+      return;
+    }
     const newDays = [...days];
-    newDays[currentDay].exercises.push({
+    newDays[currentDay]!.exercises.push({
       ...exercise,
       sets: 3,
       reps: 10,
@@ -58,21 +69,38 @@ export default function ProgrammeDaysScreen() {
   };
 
   const handleUpdateExercise = (index: number, field: 'sets' | 'reps' | 'rest', value: number) => {
+    if (!ensureInBounds(currentDay, days.length)) {
+      logger.error('[Days] currentDay out of bounds in handleUpdateExercise', { currentDay, length: days.length });
+      return;
+    }
     const newDays = [...days];
-    newDays[currentDay].exercises[index][field] = value;
+    const currentDayData = newDays[currentDay]!;
+    if (!ensureInBounds(index, currentDayData.exercises.length)) {
+      logger.error('[Days] exercise index out of bounds', { index, length: currentDayData.exercises.length });
+      return;
+    }
+    currentDayData.exercises[index]![field] = value;
     setDays(newDays);
   };
 
   const handleRemoveExercise = (index: number) => {
+    if (!ensureInBounds(currentDay, days.length)) {
+      logger.error('[Days] currentDay out of bounds in handleRemoveExercise', { currentDay, length: days.length });
+      return;
+    }
     const newDays = [...days];
-    newDays[currentDay].exercises.splice(index, 1);
+    newDays[currentDay]!.exercises.splice(index, 1);
     setDays(newDays);
     setEditingExercise(null);
   };
 
   const handleNext = () => {
     // Validate current day has at least one exercise before proceeding
-    if (days[currentDay].exercises.length === 0) {
+    if (!ensureInBounds(currentDay, days.length)) {
+      logger.error('[Days] currentDay out of bounds in handleNext', { currentDay, length: days.length });
+      return;
+    }
+    if (days[currentDay]!.exercises.length === 0) {
       Alert.alert(
         'No Exercises',
         'Please add at least one exercise to this day before continuing.',
@@ -88,6 +116,7 @@ export default function ProgrammeDaysScreen() {
         pathname: '/create-programme/review',
         params: {
           name: programmeName,
+          category,
           frequency: frequency.toString(),
           duration: duration.toString(),
           days: JSON.stringify(days),
@@ -104,7 +133,9 @@ export default function ProgrammeDaysScreen() {
     }
   };
 
-  const selectedExerciseIds = days[currentDay].exercises.map((e) => e.id);
+  const selectedExerciseIds = ensureInBounds(currentDay, days.length)
+    ? days[currentDay]!.exercises.map((e) => e.id)
+    : [];
 
   return (
     <View style={styles.background}>
@@ -144,15 +175,17 @@ export default function ProgrammeDaysScreen() {
               style={[styles.input, { borderColor: accent }]}
               placeholder="Push Day"
               placeholderTextColor={COLORS.textTertiary}
-              value={days[currentDay].name}
+              value={ensureInBounds(currentDay, days.length) ? days[currentDay]!.name : ''}
               onChangeText={handleDayNameChange}
             />
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Exercises ({days[currentDay].exercises.length})</Text>
+            <Text style={styles.sectionTitle}>
+              Exercises ({ensureInBounds(currentDay, days.length) ? days[currentDay]!.exercises.length : 0})
+            </Text>
 
-            {days[currentDay].exercises.map((exercise, index) => (
+            {ensureInBounds(currentDay, days.length) && days[currentDay]!.exercises.map((exercise, index) => (
               <View key={index} style={styles.exerciseContainer}>
                 <Pressable
                   style={styles.exerciseCard}

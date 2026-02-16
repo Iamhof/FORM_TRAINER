@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Dumbbell, Target, TrendingUp } from 'lucide-react-native';
-import { COLORS, SPACING } from '@/constants/theme';
+import { COLORS, SPACING, colorWithOpacity } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { assertGet } from '@/lib/array-utils';
 
 const slides = [
   {
@@ -28,6 +30,7 @@ const slides = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { accent } = useTheme();
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const handleNext = () => {
@@ -42,7 +45,7 @@ export default function OnboardingScreen() {
     router.replace('/auth' as any);
   };
 
-  const currentSlide = slides[currentIndex];
+  const currentSlide = assertGet(slides, currentIndex, 'Onboarding');
   const Icon = currentSlide.icon;
 
   return (
@@ -53,8 +56,8 @@ export default function OnboardingScreen() {
         </Pressable>
 
         <View style={styles.slideContent}>
-          <View style={styles.iconContainer}>
-            <Icon size={80} color={COLORS.accents.orange} strokeWidth={2} />
+          <View style={[styles.iconContainer, { backgroundColor: colorWithOpacity(accent, 0.12) }]}>
+            <Icon size={80} color={accent} strokeWidth={2} />
           </View>
 
           <Text style={styles.title}>{currentSlide.title}</Text>
@@ -68,13 +71,13 @@ export default function OnboardingScreen() {
                 key={index}
                 style={[
                   styles.paginationDot,
-                  index === currentIndex && styles.paginationDotActive,
+                  index === currentIndex && [styles.paginationDotActive, { backgroundColor: accent }],
                 ]}
               />
             ))}
           </View>
 
-          <Pressable onPress={handleNext} style={styles.nextButton}>
+          <Pressable onPress={handleNext} style={[styles.nextButton, { backgroundColor: accent }]}>
             <Text style={styles.nextButtonText}>
               {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
             </Text>
@@ -114,7 +117,6 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: `${COLORS.accents.orange}20`,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.xl * 2,
@@ -150,10 +152,8 @@ const styles = StyleSheet.create({
   },
   paginationDotActive: {
     width: 24,
-    backgroundColor: COLORS.accents.orange,
   },
   nextButton: {
-    backgroundColor: COLORS.accents.orange,
     paddingVertical: SPACING.md + 2,
     borderRadius: 12,
     alignItems: 'center',

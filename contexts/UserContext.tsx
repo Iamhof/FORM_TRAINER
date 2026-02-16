@@ -1,15 +1,16 @@
 import createContextHook from '@nkzw/create-context-hook';
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { testSupabaseConnection } from '@/lib/connection-test';
 import type { Session, User } from '@supabase/supabase-js';
 import { errorService } from '@/services/error.service';
 import { logger } from '@/lib/logger';
+import { narrowError } from '@/lib/error-utils';
+import { getElapsedTime } from '@/lib/runtime-utils';
 
 /**
  * UserProfile - Application layer type
  * Uses camelCase naming convention for TypeScript/JavaScript best practices
- * 
+ *
  * MAPPING CONVENTION:
  * - Database uses snake_case (accent_color)
  * - Application uses camelCase (accentColor)
@@ -25,7 +26,23 @@ export type UserProfile = {
   heightCm?: number | null;
   weightKg?: number | null;
   age?: number | null;
+  currentXp: number;      // Maps from current_xp in database
+  currentLevel: number;   // Maps from current_level in database
   last_login?: string;
+};
+
+/**
+ * Database profile updates type
+ * Uses snake_case for database column names
+ */
+type ProfileDatabaseUpdates = {
+  name?: string;
+  is_pt?: boolean;
+  accent_color?: string;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  age?: number | null;
 };
 
 export type UserStats = {
@@ -53,60 +70,46 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
     userRef.current = user;
   }, [user]);
 
+  // Guard against concurrent loadUserProfile calls from rapid auth events
+  const isLoadingProfileRef = useRef(false);
+
   useEffect(() => {
     logger.debug('[UserContext] Initializing auth state...');
 
-    const initializeAuth = async () => {
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Auth timeout')), 10000)
-      );
-
-      try {
-        const connectionTest = await Promise.race([
-          testSupabaseConnection(),
-          timeoutPromise
-        ]).catch(() => ({ success: false, error: 'Connection timeout' })) as { success: boolean; error?: string };
-
-        if (!connectionTest.success) {
-          errorService.capture(new Error(connectionTest.error || 'Connection test failed'), { context: 'UserContext.initializeAuth.connectionTest' });
-          setIsLoading(false);
-          return;
+    // Safety timeout: if INITIAL_SESSION never fires (e.g., SecureStore hang),
+    // assume no session after 5s so the app doesn't get stuck on splash
+    const safetyTimer = setTimeout(() => {
+      setIsLoading((prev) => {
+        if (prev) {
+          logger.warn('[UserContext] Auth safety timeout - assuming no session');
         }
+        return false;
+      });
+    }, 5000);
 
-        const sessionResult = await Promise.race([
-          supabase.auth.getSession(),
-          timeoutPromise
-        ]).catch(() => ({ data: { session: null }, error: null })) as { data: { session: Session | null }; error: any };
-        
-        const session = sessionResult.data.session;
-
-        logger.debug('[UserContext] Initial session:', session ? 'Found' : 'None');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        const elapsed = getElapsedTime();
+        logger.info(`[Perf] Auth event: ${event} { elapsed: ${elapsed}ms }`);
+        logger.debug('[UserContext] Auth event:', event, session ? 'has session' : 'no session');
+        clearTimeout(safetyTimer);
         setSession(session);
+
         if (session?.user) {
-          loadUserProfile(session.user);
+          if (!isLoadingProfileRef.current) {
+            isLoadingProfileRef.current = true;
+            await loadUserProfile(session.user);
+            isLoadingProfileRef.current = false;
+          }
         } else {
+          setUser(null);
           setIsLoading(false);
         }
-      } catch (error) {
-        errorService.capture(error, { context: 'UserContext.initializeAuth' });
-        setIsLoading(false);
       }
-    };
-
-    initializeAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      logger.debug('[UserContext] Auth state changed:', _event, session ? 'Session exists' : 'No session');
-      setSession(session);
-      if (session?.user) {
-        loadUserProfile(session.user);
-      } else {
-        setUser(null);
-        setIsLoading(false);
-      }
-    });
+    );
 
     return () => {
+      clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
   }, []);
@@ -117,7 +120,7 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
       
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('name, role, is_pt, accent_color, gender, height_cm, weight_kg, age')
+        .select('name, role, is_pt, accent_color, gender, height_cm, weight_kg, age, current_xp, current_level')
         .eq('user_id', authUser.id)
         .maybeSingle();
 
@@ -140,6 +143,9 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
         });
       }
 
+      const elapsed = global.__APP_START_TIME ? Date.now() - global.__APP_START_TIME : 0;
+      logger.info(`[Perf] Profile loaded { elapsed: ${elapsed}ms }`);
+
       // FIX: Only set isFirstVisit to true if NO profile exists
       // This prevents onboarding screens from appearing on every app open
       setIsFirstVisit(!profile);
@@ -153,6 +159,8 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
         heightCm: profile?.height_cm ?? null,
         weightKg: profile?.weight_kg ?? null,
         age: profile?.age ?? null,
+        currentXp: profile?.current_xp ?? 0,
+        currentLevel: profile?.current_level ?? 1,
       });
       setIsLoading(false);
     } catch (error) {
@@ -164,6 +172,8 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
         email: authUser.email || '',
         name: '',
         is_pt: false,
+        currentXp: 0,
+        currentLevel: 1,
       });
       setIsLoading(false);
     }
@@ -184,9 +194,10 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
 
       logger.debug('[UserContext] Sign in successful');
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const typedError = narrowError(error);
       errorService.capture(error, { context: 'UserContext.signin' });
-      return { success: false, error: error.message || 'Sign in failed' };
+      return { success: false, error: typedError.message || 'Sign in failed' };
     }
   }, []);
 
@@ -219,9 +230,10 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
 
       logger.debug('[UserContext] Sign up successful');
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const typedError = narrowError(error);
       errorService.capture(error, { context: 'UserContext.signup' });
-      return { success: false, error: error.message || 'Sign up failed' };
+      return { success: false, error: typedError.message || 'Sign up failed' };
     }
   }, []);
 
@@ -234,7 +246,7 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
       logger.debug('[UserContext] Updating profile:', updates);
 
       // Map application layer (camelCase) to database layer (snake_case)
-      const dbUpdates: Record<string, any> = {};
+      const dbUpdates: ProfileDatabaseUpdates = {};
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.is_pt !== undefined) dbUpdates.is_pt = updates.is_pt;
       if (updates.accentColor !== undefined) dbUpdates.accent_color = updates.accentColor; // Map camelCase to snake_case
@@ -242,7 +254,7 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
       if (updates.heightCm !== undefined) dbUpdates.height_cm = updates.heightCm;
       if (updates.weightKg !== undefined) dbUpdates.weight_kg = updates.weightKg;
       if (updates.age !== undefined) dbUpdates.age = updates.age;
-      
+
       const { error } = await supabase
         .from('profiles')
         .update(dbUpdates)
@@ -256,9 +268,10 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
       setUser((prev) => prev ? { ...prev, ...updates } : null);
       logger.debug('[UserContext] Profile updated successfully:', updates);
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const typedError = narrowError(error);
       errorService.capture(error, { context: 'UserContext.updateProfile' });
-      return { success: false, error: error.message || 'Update failed' };
+      return { success: false, error: typedError.message || 'Update failed' };
     }
   }, []); // Empty deps - uses userRef.current for stable reference
 
