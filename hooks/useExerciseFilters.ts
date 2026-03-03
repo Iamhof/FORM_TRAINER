@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { ExerciseCategory } from '@/types/exercises';
+
 import { EXERCISE_LIBRARY } from '@/constants/exercise-library';
+import { ExerciseCategory } from '@/types/exercises';
 
 export function useExerciseFilters() {
   const [selectedCategories, setSelectedCategories] = useState<ExerciseCategory[]>([]);

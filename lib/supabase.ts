@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { logger } from './logger';
+
 import { env } from './env';
+import { logger } from './logger';
 
 const SecureStoreAdapter = {
   getItem: async (key: string) => {

@@ -1,7 +1,8 @@
-import { protectedProcedure } from "../../../create-context.js";
-import { supabaseAdmin } from "../../../../lib/auth.js";
 import { TRPCError } from "@trpc/server";
+
 import { logger } from "../../../../../lib/logger.js";
+import { supabaseAdmin } from "../../../../lib/auth.js";
+import { protectedProcedure } from "../../../create-context.js";
 
 export const listSharedProgrammesProcedure = protectedProcedure.query(
   async ({ ctx }) => {
@@ -56,7 +57,7 @@ export const listSharedProgrammesProcedure = protectedProcedure.query(
       (ptProfiles ?? []).map((profile) => [profile.id, profile])
     );
 
-    let programmeRows: Array<Record<string, any>> = [];
+    let programmeRows: Record<string, any>[] = [];
 
     if (programmeIds.length > 0) {
       const { data, error: programmeError } = await supabaseAdmin

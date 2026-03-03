@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { protectedProcedure } from "../../../create-context.js";
+
 import { supabaseAdmin } from "../../../../lib/auth.js";
+import { protectedProcedure } from "../../../create-context.js";
 
 export const getScheduleProcedure = protectedProcedure
   .input(

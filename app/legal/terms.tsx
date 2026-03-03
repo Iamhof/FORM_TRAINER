@@ -1,7 +1,8 @@
+import { Stack } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
+
 import { COLORS, SPACING } from '@/constants/theme';
 
 export default function TermsOfServiceScreen() {
@@ -26,7 +27,7 @@ export default function TermsOfServiceScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>1. Introduction</Text>
             <Text style={styles.text}>
-              Welcome to OJ | Form ("we," "our," or "us"). These Terms of Service ("Terms") 
+              Welcome to OJ | Form (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;). These Terms of Service (&quot;Terms&quot;)
               govern your use of our mobile application and services. By accessing or using 
               OJ | Form, you agree to be bound by these Terms.
             </Text>
@@ -85,7 +86,7 @@ export default function TermsOfServiceScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>7. Limitation of Liability</Text>
             <Text style={styles.text}>
-              OJ | Form is provided "as is" without warranties of any kind. We are not liable for 
+              OJ | Form is provided &quot;as is&quot; without warranties of any kind. We are not liable for
               any injuries or health issues that may result from using our app. Always consult with 
               a healthcare professional before beginning any exercise program.
             </Text>
@@ -178,4 +179,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-

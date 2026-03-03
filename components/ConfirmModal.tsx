@@ -1,3 +1,4 @@
+import { BlurView } from 'expo-blur';
 import React from 'react';
 import {
   Modal,
@@ -8,7 +9,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
+
 import { COLORS, SPACING, TYPOGRAPHY } from '@/constants/theme';
 
 type ConfirmModalProps = {

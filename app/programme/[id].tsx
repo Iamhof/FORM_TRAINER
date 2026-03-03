@@ -1,17 +1,17 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator, Dimensions, ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, Stack, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ChevronLeft, BarChart3, Check, ChevronRight, Lock } from 'lucide-react-native';
-import Card from '@/components/Card';
-import Button from '@/components/Button';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable, ActivityIndicator, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import Button from '@/components/Button';
+import Card from '@/components/Card';
 import { COLORS, SPACING } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
-import { supabase } from '@/lib/supabase';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useExercises } from '@/hooks/useExercises';
 import { logger } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 
 export default function ProgrammeOverviewScreen() {
   const { accent } = useTheme();
@@ -81,9 +81,9 @@ export default function ProgrammeOverviewScreen() {
 
     const workoutsList = workouts || [];
 
-    const sessionsByWeek: Array<{
+    const sessionsByWeek: {
       week: number;
-      sessions: Array<{
+      sessions: {
         id: string;
         name: string;
         day: number;
@@ -91,8 +91,8 @@ export default function ProgrammeOverviewScreen() {
         exercises: { name: string; sets: number; reps: string; rest: number }[];
         completed: boolean;
         dayBadge: string;
-      }>;
-    }> = [];
+      }[];
+    }[] = [];
 
     for (let week = 1; week <= programme.weeks; week++) {
       const weekSessions = [];
@@ -161,6 +161,7 @@ export default function ProgrammeOverviewScreen() {
       logger.debug('[ProgrammeOverview] Auto-setting current week to:', calculatedWeek + 1);
       setCurrentWeek(calculatedWeek);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transformedProgramme?.calculatedCurrentWeek, hasScrolledToCurrentWeek]);
 
   useEffect(() => {

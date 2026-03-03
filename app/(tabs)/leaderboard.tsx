@@ -1,5 +1,6 @@
-import React from 'react';
 import { Trophy } from 'lucide-react-native';
+import React from 'react';
+
 import ComingSoonScreen from '@/components/ComingSoonScreen';
 import { useTheme } from '@/contexts/ThemeContext';
 

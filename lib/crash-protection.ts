@@ -1,5 +1,6 @@
-import { logger } from './logger';
 import { errorService } from '@/services/error.service';
+
+import { logger } from './logger';
 
 /**
  * Initialize production crash protection

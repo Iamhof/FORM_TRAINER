@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import { StyleSheet, View, ViewStyle } from 'react-native';
+
 import { COLORS, SPACING } from '@/constants/theme';
 
 type CardProps = {

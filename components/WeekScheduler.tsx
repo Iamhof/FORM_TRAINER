@@ -1,9 +1,12 @@
+import { Check, Plus } from 'lucide-react-native';
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, Pressable, ScrollView, Platform } from 'react-native';
-import { Check, Plus } from 'lucide-react-native';
-import SessionSelectorModal, { Session } from './SessionSelectorModal';
+
+
 import { COLORS, SPACING } from '@/constants/theme';
 import { useSchedule } from '@/contexts/ScheduleContext';
+
+import SessionSelectorModal, { Session } from './SessionSelectorModal';
 
 type WeekSchedulerProps = {
   sessions: Session[];

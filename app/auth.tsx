@@ -1,8 +1,9 @@
+import { useRouter } from 'expo-router';
+import { Dumbbell } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Dumbbell } from 'lucide-react-native';
+
 import { COLORS, SPACING } from '@/constants/theme';
 import { useUser } from '@/contexts/UserContext';
 
@@ -59,7 +60,7 @@ export default function AuthScreen() {
       } else {
         Alert.alert('Error', result.error || 'Authentication failed');
       }
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);

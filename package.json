@@ -17,10 +17,14 @@
     "test:ui": "vitest --ui",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
-    "ci": "bun run lint && bun run typecheck && bun run test",
+    "ci": "bun run typecheck && bun run lint && bun run build:validate && bun run test",
     "prepare": "husky || true",
     "backend:dev": "tsx backend/hono.ts",
-    "backend:start": "node --import tsx backend/hono.ts"
+    "backend:start": "node --import tsx backend/hono.ts",
+    "build": "npx expo export --platform web",
+    "build:validate": "npx expo export --platform all --dev=false",
+    "build:android": "eas build --platform android",
+    "build:ios": "eas build --platform ios"
   },
   "dependencies": {
     "@ai-sdk/react": "^2.0.86",

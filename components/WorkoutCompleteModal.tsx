@@ -1,12 +1,12 @@
-import React, { useRef, useEffect } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import ConfettiCannon from 'react-native-confetti-cannon';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
-import { Animated } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform , Animated } from 'react-native';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ViewShot from 'react-native-view-shot';
+
 import { COLORS, SPACING } from '@/constants/theme';
 import { logger } from '@/lib/logger';
 
@@ -61,6 +61,7 @@ const WorkoutCompleteModal: React.FC<Props> = ({
     } else {
       opacityAnim.setValue(0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const handleClose = () => {

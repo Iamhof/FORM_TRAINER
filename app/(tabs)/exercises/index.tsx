@@ -1,12 +1,13 @@
+import { Stack } from 'expo-router';
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, FlatList } from 'react-native';
-import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useExerciseFilters } from '@/hooks/useExerciseFilters';
-import { ExerciseCard } from '@/components/ExerciseCard';
+
 import { CategoryFilterChip } from '@/components/CategoryFilterChip';
+import { ExerciseCard } from '@/components/ExerciseCard';
 import { CATEGORIES } from '@/constants/exercise-library';
 import { COLORS, SPACING } from '@/constants/theme';
+import { useExerciseFilters } from '@/hooks/useExerciseFilters';
 
 export default function ExercisesScreen() {
   const {

@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, Pressable, ScrollView, ActivityIndicator, Alert, ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack } from 'expo-router';
 import { ArrowLeft, LogOut } from 'lucide-react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TextInput, Pressable, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import Card from '@/components/Card';
 import ConfirmModal from '@/components/ConfirmModal';
 import { COLORS, SPACING } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useLeaderboard } from '@/contexts/LeaderboardContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { logger } from '@/lib/logger';
 
 export default function LeaderboardSettingsScreen() {

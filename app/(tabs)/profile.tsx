@@ -1,8 +1,9 @@
+import { useRouter } from 'expo-router';
+import { Users, UserCheck, Settings, LogOut, ChevronRight, User } from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Users, UserCheck, Settings, LogOut, ChevronRight, User } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+
 import Card from '@/components/Card';
 import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';

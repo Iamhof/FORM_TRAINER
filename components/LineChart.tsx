@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+
 import { COLORS, SPACING } from '@/constants/theme';
 import { MonthlyDataPoint } from '@/types/analytics';
 

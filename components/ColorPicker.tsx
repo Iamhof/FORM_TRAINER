@@ -1,6 +1,7 @@
+import { Check } from 'lucide-react-native';
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Check } from 'lucide-react-native';
+
 import { COLORS, SPACING } from '@/constants/theme';
 
 interface ColorPickerProps {

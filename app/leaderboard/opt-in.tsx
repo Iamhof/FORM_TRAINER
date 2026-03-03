@@ -1,12 +1,13 @@
+import { router, Stack } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, Pressable, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, Stack } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+
 import Card from '@/components/Card';
 import { COLORS, SPACING } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useLeaderboard } from '@/contexts/LeaderboardContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
 import { logger } from '@/lib/logger';
 

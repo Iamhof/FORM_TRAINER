@@ -1,6 +1,7 @@
+import { Stack, useRouter, useSegments } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+
 import BottomNav from '@/components/BottomNav';
 import { COLORS } from '@/constants/theme';
 

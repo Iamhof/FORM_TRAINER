@@ -107,6 +107,7 @@ class LoggerService {
 
     try {
       // Dynamically import Sentry to avoid errors if not installed
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- Keep Sentry optional at runtime for environments where it is unavailable.
       const Sentry = require('@sentry/react-native');
       
       // Check if Sentry is already initialized (by error.service.ts)
@@ -159,6 +160,7 @@ class LoggerService {
     // Send buffered logs to Sentry as breadcrumbs
     if (this.sentryInitialized) {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- Keep Sentry optional at runtime for environments where it is unavailable.
         const Sentry = require('@sentry/react-native');
         
         this.buffer.forEach(entry => {
@@ -169,7 +171,7 @@ class LoggerService {
             timestamp: entry.timestamp / 1000, // Sentry uses seconds
           });
         });
-      } catch (error) {
+      } catch {
         // Silently fail
       }
     }
@@ -201,7 +203,7 @@ class LoggerService {
     if (!this.shouldLog('debug')) return;
     
     const sanitizedArgs = args.map(sanitize);
-    console.log('[DEBUG]', ...sanitizedArgs);
+    console.info('[DEBUG]', ...sanitizedArgs);
     
     // Don't buffer debug logs in production
     if (isDev) return;
@@ -285,4 +287,3 @@ class LoggerService {
 
 // Export singleton instance
 export const logger = new LoggerService();
-

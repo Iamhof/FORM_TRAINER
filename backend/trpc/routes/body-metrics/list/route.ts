@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { protectedProcedure } from "../../../create-context.js";
-import { supabaseAdmin } from '../../../../lib/auth.js';
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { protectedProcedure } from "../../../create-context.js";
 
 export const listBodyMetricsProcedure = protectedProcedure
   .input(

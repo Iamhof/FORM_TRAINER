@@ -71,7 +71,7 @@ class AuditLogService {
       if (error && !error.message.includes('relation "audit_logs" does not exist')) {
         logger.warn('[AuditLog] Failed to write to database:', error);
       }
-    } catch (error) {
+    } catch {
       // Table doesn't exist, that's okay - we still logged to application logs
       logger.debug('[AuditLog] Audit logs table not found, skipping database write');
     }
@@ -101,4 +101,3 @@ class AuditLogService {
 }
 
 export const auditLog = new AuditLogService();
-

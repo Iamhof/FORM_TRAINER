@@ -1,8 +1,9 @@
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowLeft, Play, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Play, CheckCircle2, AlertCircle } from 'lucide-react-native';
+
 import { EXERCISE_LIBRARY } from '@/constants/exercise-library';
 import { COLORS, SPACING } from '@/constants/theme';
 

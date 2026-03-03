@@ -1,8 +1,9 @@
-import { z } from 'zod';
-import { publicProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth.js';
+import { z } from 'zod';
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { publicProcedure } from '../../../create-context.js';
 
 export const getLeaderboardRankingsProcedure = publicProcedure
   .input(

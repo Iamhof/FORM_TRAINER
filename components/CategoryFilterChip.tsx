@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { ExerciseCategory } from '@/types/exercises';
+
 import { COLORS, SPACING } from '@/constants/theme';
+import { ExerciseCategory } from '@/types/exercises';
 
 interface CategoryFilterChipProps {
   category: ExerciseCategory;

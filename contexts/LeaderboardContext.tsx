@@ -1,8 +1,10 @@
 import createContextHook from '@nkzw/create-context-hook';
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { trpc } from '@/lib/trpc';
-import type { LeaderboardType, GenderFilter, LeaderboardEntry, LeaderboardRankingsResponse } from '@/types/leaderboard';
+
 import { logger } from '@/lib/logger';
+import { trpc } from '@/lib/trpc';
+
+import type { GenderFilter, LeaderboardType } from '@/types/leaderboard';
 
 const PAGE_SIZE = 20;
 const DEBOUNCE_MS = 300;
@@ -12,7 +14,7 @@ const [LeaderboardProviderRaw, useLeaderboard] = createContextHook(() => {
   const [selectedType, setSelectedType] = useState<LeaderboardType>('total_volume');
   const [selectedGender, setSelectedGender] = useState<GenderFilter>('all');
   const [offset, setOffset] = useState(0);
-  const [allEntries, setAllEntries] = useState<Array<{ rank: number; user_id: string; display_name: string; value: number; is_current_user: boolean; accentColor?: string }>>([]);
+  const [allEntries, setAllEntries] = useState<{ rank: number; user_id: string; display_name: string; value: number; is_current_user: boolean; accentColor?: string }[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [isFilterChanging, setIsFilterChanging] = useState(false);
@@ -339,17 +341,13 @@ const [LeaderboardProviderRaw, useLeaderboard] = createContextHook(() => {
   }), [
     profileQuery.data,
     profileQuery.isLoading,
-    profileQuery.error,
     allEntries,
     totalCount,
     hasMore,
     rankingsQuery.isLoading,
     rankingsQuery.isFetching,
-    rankingsQuery.error,
     myRankQuery.data,
     myRankQuery.isLoading,
-    myRankQuery.error,
-    updateProfileMutation.error,
     error,
     errorMessage,
     isFilterChanging,

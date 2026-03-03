@@ -1,7 +1,8 @@
+import { Stack } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, View, ScrollView, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack } from 'expo-router';
+
 import { COLORS, SPACING } from '@/constants/theme';
 
 export default function PrivacyPolicyScreen() {
@@ -26,7 +27,7 @@ export default function PrivacyPolicyScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>1. Introduction</Text>
             <Text style={styles.text}>
-              This Privacy Policy explains how OJ | Form ("we," "our," or "us") collects, uses, 
+              This Privacy Policy explains how OJ | Form (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) collects, uses,
               and protects your personal information when you use our mobile application.
             </Text>
           </View>
@@ -99,7 +100,7 @@ export default function PrivacyPolicyScreen() {
             <Text style={styles.bulletPoint}>• Row-level security policies</Text>
             <Text style={styles.bulletPoint}>• Regular security audits</Text>
             <Text style={styles.text}>
-              For more information about Supabase's security practices, visit:{' '}
+              For more information about Supabase&apos;s security practices, visit:{' '}
               <Text 
                 style={styles.link}
                 onPress={() => Linking.openURL('https://supabase.com/security')}
@@ -158,7 +159,7 @@ export default function PrivacyPolicyScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>9. Children's Privacy</Text>
+            <Text style={styles.sectionTitle}>9. Children&apos;s Privacy</Text>
             <Text style={styles.text}>
               OJ | Form is not intended for users under the age of 13. We do not knowingly 
               collect personal information from children under 13. If you believe we have 
@@ -170,7 +171,7 @@ export default function PrivacyPolicyScreen() {
             <Text style={styles.sectionTitle}>10. Changes to This Policy</Text>
             <Text style={styles.text}>
               We may update this Privacy Policy from time to time. We will notify you of 
-              significant changes by updating the "Last Updated" date and, if necessary, 
+              significant changes by updating the &quot;Last Updated&quot; date and, if necessary,
               through in-app notifications.
             </Text>
           </View>
@@ -248,4 +249,3 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-

@@ -1,14 +1,15 @@
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { ArrowLeft, Share2, TrendingUp, Calendar, Dumbbell } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Share2, TrendingUp, Calendar, Dumbbell } from 'lucide-react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+
 import Card from '@/components/Card';
 import LineChart from '@/components/LineChart';
 import { COLORS, SPACING } from '@/constants/theme';
+import { useProgrammes } from '@/contexts/ProgrammeContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { trpc } from '@/lib/trpc';
-import { useProgrammes } from '@/contexts/ProgrammeContext';
 
 export default function PTClientDetailScreen() {
   const { accent } = useTheme();

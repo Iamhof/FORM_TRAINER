@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+
 import { aggregateAnalyticsData } from '@/backend/trpc/routes/analytics/utils';
 import { AnalyticsData as DBAnalyticsData, Schedule } from '@/types/database';
 

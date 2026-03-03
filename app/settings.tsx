@@ -1,8 +1,9 @@
+import { Stack, useRouter } from 'expo-router';
+import { Bell, Lock, HelpCircle, FileText, ChevronRight } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useRouter } from 'expo-router';
-import { Bell, Lock, HelpCircle, FileText, ChevronRight } from 'lucide-react-native';
+
 import Card from '@/components/Card';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';

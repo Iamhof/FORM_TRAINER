@@ -1,7 +1,8 @@
+import { serve } from "@hono/node-server";
+import { trpcServer } from "@hono/trpc-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { trpcServer } from "@hono/trpc-server";
-import { serve } from "@hono/node-server";
+
 import { appRouter } from "./trpc/app-router.js";
 import { createContext } from "./trpc/create-context.js";
 import { logger } from "../lib/logger.js";

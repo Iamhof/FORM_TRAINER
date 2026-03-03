@@ -1,9 +1,11 @@
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+
 import { COLORS, AccentColor } from '@/constants/theme';
-import { useUser } from './UserContext';
 import { logger } from '@/lib/logger';
+
+import { useUser } from './UserContext';
 
 const THEME_STORAGE_KEY = '@form_accent_color';
 
@@ -35,20 +37,6 @@ const accentColorToHex = (color: AccentColor): string => {
     pink: '#EC407A',
   };
   return hexMap[color];
-};
-
-const rgbToHex = (rgb: string): string => {
-  const match = rgb.match(/\d+/g);
-  if (!match || match.length < 3) return '#FF6B55';
-  
-  const r = parseInt(match[0]);
-  const g = parseInt(match[1]);
-  const b = parseInt(match[2]);
-  
-  return '#' + [r, g, b].map(x => {
-    const hex = x.toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  }).join('').toUpperCase();
 };
 
 const findClosestAccentColor = (hex: string): AccentColor => {

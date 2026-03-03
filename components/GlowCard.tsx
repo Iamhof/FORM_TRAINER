@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import { StyleSheet, View, ViewStyle, Platform } from 'react-native';
+
 import { COLORS } from '@/constants/theme';
 
 type GlowCardProps = {

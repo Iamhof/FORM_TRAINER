@@ -1,19 +1,9 @@
+import { logger } from '../../lib/logger';
+
 // Debug: Track cold start timing
 const moduleStartTime = Date.now();
-console.log(`[Serverless] Module loading started at ${new Date().toISOString()}`);
-
-// Simple logger that works without any imports
-const simpleLogger = {
-  info: (...args: any[]) => console.log('[INFO]', ...args),
-  debug: (...args: any[]) => console.log('[DEBUG]', ...args),
-  warn: (...args: any[]) => console.warn('[WARN]', ...args),
-  error: (...args: any[]) => console.error('[ERROR]', ...args),
-};
-
-// Use simple logger to avoid any import issues during cold start
-const logger = simpleLogger;
-
-console.log(`[Serverless] Using simple logger (${Date.now() - moduleStartTime}ms)`);
+logger.debug(`[Serverless] Module loading started at ${new Date().toISOString()}`);
+logger.debug(`[Serverless] Using shared logger (${Date.now() - moduleStartTime}ms)`);
 
 let honoApp: any = null;
 let initializationError: Error | null = null;
@@ -40,7 +30,7 @@ async function getHonoApp() {
   if (!honoApp) {
     try {
       const importStart = Date.now();
-      console.log(`[Serverless] Starting Hono import at ${Date.now() - moduleStartTime}ms`);
+      logger.debug(`[Serverless] Starting Hono import at ${Date.now() - moduleStartTime}ms`);
       logger.info('[Serverless API] Initializing Hono app...');
 
       // Dynamic import of hono backend - try multiple import paths
@@ -49,7 +39,7 @@ async function getHonoApp() {
         // Try with .js extension first (ESM style)
         module = await import('../../backend/hono.js');
       } catch (e1) {
-        console.log('[Serverless] .js import failed, trying without extension');
+        logger.debug('[Serverless] .js import failed, trying without extension');
         try {
           // Try without extension
           module = await import('../../backend/hono');
@@ -59,8 +49,8 @@ async function getHonoApp() {
         }
       }
 
-      console.log(`[Serverless] Hono imported in ${Date.now() - importStart}ms (total: ${Date.now() - moduleStartTime}ms)`);
-      console.log('[Serverless] Module keys:', Object.keys(module));
+      logger.debug(`[Serverless] Hono imported in ${Date.now() - importStart}ms (total: ${Date.now() - moduleStartTime}ms)`);
+      logger.debug('[Serverless] Module keys:', Object.keys(module));
 
       // Handle both default export and named export patterns
       honoApp = module.default || module.app || module;

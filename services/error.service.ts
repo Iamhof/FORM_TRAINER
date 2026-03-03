@@ -39,6 +39,7 @@ class ErrorService {
     // Only initialize Sentry in production with DSN configured
     if (!isDev && sentryDsn) {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- Keep Sentry optional and runtime-safe across environments.
         const Sentry = require('@sentry/react-native');
         
         // Check if Sentry is already initialized (by logger service)
@@ -102,6 +103,7 @@ class ErrorService {
     // Send to Sentry in production if available
     if (this.sentryAvailable) {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- Keep Sentry optional and runtime-safe across environments.
         const Sentry = require('@sentry/react-native');
         
         // Add context as tags and extras
@@ -166,4 +168,3 @@ class ErrorService {
 export const errorService = new ErrorService();
 // Initialize on import
 errorService.init();
-

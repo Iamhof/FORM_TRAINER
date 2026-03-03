@@ -1,7 +1,8 @@
-import { publicProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth.js';
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { publicProcedure } from '../../../create-context.js';
 
 export const listExercisesProcedure = publicProcedure.query(async () => {
   logger.info('[Exercises] Fetching exercises list');

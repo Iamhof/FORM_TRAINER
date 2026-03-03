@@ -2,8 +2,8 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import superjson from 'superjson';
 
-import { supabaseAdmin } from '../lib/auth.js';
 import { logger } from '../../lib/logger.js';
+import { supabaseAdmin } from '../lib/auth.js';
 
 const resolveUserFromToken = async (token?: string | null) => {
   if (!token) {

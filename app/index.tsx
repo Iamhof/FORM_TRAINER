@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Dumbbell } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+
 import { COLORS } from '@/constants/theme';
 import { useUser } from '@/contexts/UserContext';
 import { logger } from '@/lib/logger';

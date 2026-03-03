@@ -1,11 +1,12 @@
+import { useRouter, Stack } from 'expo-router';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { StyleSheet, Text, View, Pressable, ScrollView, TextInput, Dimensions, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Stack } from 'expo-router';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
+
+import Button from '@/components/Button';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
-import Button from '@/components/Button';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ITEM_WIDTH = 140;
@@ -61,6 +62,7 @@ export default function CreateProgrammeScreen() {
         }, 50);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
   const handleFrequencyScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {

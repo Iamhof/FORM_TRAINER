@@ -1,10 +1,11 @@
+import { useRouter } from 'expo-router';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Alert, TextInput, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+
 import { COLORS, SPACING, AccentColor } from '@/constants/theme';
-import { useUser } from '@/contexts/UserContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useUser } from '@/contexts/UserContext';
 
 const COLOR_OPTIONS: { name: string; color: AccentColor; rgb: string }[] = [
   { name: 'Red', color: 'red', rgb: COLORS.accents.red },

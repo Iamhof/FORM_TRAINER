@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { COLORS, SPACING } from '@/constants/theme';
+
 import Card from '@/components/Card';
+import { COLORS, SPACING } from '@/constants/theme';
 
 export default function LeaderboardSkeleton() {
   return (

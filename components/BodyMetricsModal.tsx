@@ -1,3 +1,5 @@
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { X, Scale, Dumbbell, Droplet, Calendar, ChevronDown } from 'lucide-react-native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -9,13 +11,14 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { X, Scale, Dumbbell, Droplet, Calendar, ChevronDown } from 'lucide-react-native';
+
 import { COLORS, SPACING } from '@/constants/theme';
 import { useBodyMetrics } from '@/contexts/BodyMetricsContext';
-import Button from './Button';
-import { logger } from '@/lib/logger';
 import { getLocalDateString } from '@/lib/date-utils';
+import { logger } from '@/lib/logger';
+
+import Button from './Button';
+
 
 interface BodyMetricsModalProps {
   visible: boolean;

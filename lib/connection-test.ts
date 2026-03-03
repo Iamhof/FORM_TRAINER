@@ -1,5 +1,5 @@
-import { supabase } from './supabase';
 import { logger } from './logger';
+import { supabase } from './supabase';
 
 export async function testSupabaseConnection(): Promise<{ success: boolean; error?: string }> {
   try {

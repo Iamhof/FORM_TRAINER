@@ -1,14 +1,15 @@
+import { useRouter } from 'expo-router';
+import { Plus, Trash2, CheckCircle2 } from 'lucide-react-native';
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Plus, Trash2, CheckCircle2 } from 'lucide-react-native';
-import Card from '@/components/Card';
+
 import Button from '@/components/Button';
+import Card from '@/components/Card';
 import ConfirmModal from '@/components/ConfirmModal';
 import { COLORS, SPACING, TYPOGRAPHY, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { logger } from '@/lib/logger';
 
 export default function WorkoutsScreen() {

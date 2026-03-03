@@ -418,7 +418,7 @@ export default function EditProfileScreen() {
             {/* APPEARANCE */}
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>APPEARANCE</Text>
-              <GlowCard glowColor={normalizeHexColor(selectedColor)} intensity="medium">
+              <GlowCard glowColor={normalizeHexColor(selectedColor)}>
                 <View style={styles.colorCardInner}>
                   <ColorPicker
                     selectedColor={selectedColor}

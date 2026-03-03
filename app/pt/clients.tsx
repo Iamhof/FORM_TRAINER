@@ -1,14 +1,16 @@
+import { useRouter } from 'expo-router';
+import { Users, UserPlus, Mail, ChevronRight, Trash2 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Users, UserPlus, Mail, ChevronRight, Trash2 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import Card from '@/components/Card';
+
 import Button from '@/components/Button';
+import Card from '@/components/Card';
+// eslint-disable-next-line import/no-named-as-default -- ScreenState intentionally exports both named and default.
+import ScreenState from '@/components/ScreenState';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { trpc } from '@/lib/trpc';
-import ScreenState from '@/components/ScreenState';
 
 export default function PTClientsScreen() {
   const { accent } = useTheme();

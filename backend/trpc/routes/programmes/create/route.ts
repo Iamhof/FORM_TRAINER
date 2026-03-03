@@ -1,9 +1,9 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { logger } from '../../../../../lib/logger.js';
 import { supabaseAdmin } from '../../../../lib/auth.js';
 import { protectedProcedure } from '../../../create-context.js';
-import { logger } from '../../../../../lib/logger.js';
 
 
 const exerciseSchema = z.object({
@@ -20,11 +20,12 @@ export const createProgrammeProcedure = protectedProcedure
       name: z.string().min(1),
       days: z.number().min(1),
       weeks: z.number().min(1),
+      category: z.string().optional(),
       exercises: z.array(exerciseSchema),
     })
   )
   .mutation(async ({ ctx, input }) => {
-    const { name, days, weeks, exercises } = input;
+    const { name, days, weeks, exercises, category } = input;
 
     // Log incoming request
     logger.info('[Programme] Create request received', {
@@ -74,6 +75,7 @@ export const createProgrammeProcedure = protectedProcedure
         name,
         days,
         weeks,
+        category: category ?? null,
         exercises,
       })
       .select()

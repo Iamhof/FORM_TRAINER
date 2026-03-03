@@ -47,6 +47,19 @@ export type Programme = {
   created_at: string;
 };
 
+export type WorkoutHistory = {
+  id: string;
+  user_id: string;
+  programme_id?: string;
+  programme_name?: string;
+  day?: number;
+  week?: number;
+  completed_at?: string;
+  created_at: string;
+  exercises_count?: number;
+  total_volume?: number;
+};
+
 const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
   const { user, isAuthenticated } = useUser();
   const utils = trpc.useUtils();
@@ -72,7 +85,7 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
 
   // Supabase fallback state for when TRPC fails (tunnel mode)
   const [fallbackProgrammes, setFallbackProgrammes] = React.useState<Programme[]>([]);
-  const [fallbackHistory, setFallbackHistory] = React.useState<any[]>([]);
+  const [fallbackHistory, setFallbackHistory] = React.useState<WorkoutHistory[]>([]);
   const [usingFallback, setUsingFallback] = React.useState(false);
 
   // Load data directly from Supabase when TRPC fails
@@ -108,7 +121,7 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
             .order('completed_at', { ascending: false });
           
           if (history) {
-            setFallbackHistory(history);
+            setFallbackHistory(history as WorkoutHistory[]);
           }
         } catch (err) {
           logger.error('[ProgrammeContext] Supabase fallback query failed:', err);
@@ -409,6 +422,7 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
   return useMemo(
     () => ({
       programmes: programmes as Programme[],
+      workoutHistory: workoutHistory as WorkoutHistory[],
       isLoading: isLoadingProgrammes || isLoadingHistory,
       addProgramme,
       deleteProgramme,
@@ -426,6 +440,7 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
     }),
     [
       programmes,
+      workoutHistory,
       isLoadingProgrammes,
       isLoadingHistory,
       addProgramme,

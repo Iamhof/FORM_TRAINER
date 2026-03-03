@@ -1,7 +1,9 @@
+import { Trophy, Medal } from 'lucide-react-native';
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, Animated } from 'react-native';
-import { Trophy, Medal } from 'lucide-react-native';
+
 import { COLORS, SPACING } from '@/constants/theme';
+
 import type { LeaderboardEntry } from '@/types/leaderboard';
 
 interface LeaderboardPodiumProps {
@@ -45,7 +47,7 @@ export default function LeaderboardPodium({ entries, formatValue, accentColor }:
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim1, slideAnim2, slideAnim3]);
 
   if (entries.length < 3) {
     return null;
@@ -240,4 +242,3 @@ const styles = StyleSheet.create({
     height: 8,
   },
 });
-

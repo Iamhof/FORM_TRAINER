@@ -1,10 +1,11 @@
-import React from 'react';
-import { View, Text, ImageBackground, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ArrowRight } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Exercise } from '@/types/exercises';
+import React from 'react';
+import { View, Text, ImageBackground, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+
 import { COLORS, SPACING } from '@/constants/theme';
+import { Exercise } from '@/types/exercises';
 
 interface ExerciseCardProps {
   exercise: Exercise;

@@ -1,14 +1,16 @@
+import { useRouter } from 'expo-router';
+import { ChevronRight, Dumbbell, BookOpen, Plus } from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronRight, Dumbbell, BookOpen, Plus } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+
 import Card from '@/components/Card';
 import GlowCard from '@/components/GlowCard';
+// eslint-disable-next-line import/no-named-as-default -- ScreenState intentionally exports both named and default.
 import ScreenState from '@/components/ScreenState';
 import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 type ProgrammeCardWithGlowProps = {
   accent: string;

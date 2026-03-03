@@ -1,9 +1,11 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import crypto from "crypto";
-import { appRouter } from "@/backend/trpc/app-router";
-import { supabaseAdmin } from "@/backend/lib/auth";
 
-type TableMap = Record<string, Array<Record<string, any>>>;
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+
+import { supabaseAdmin } from "@/backend/lib/auth";
+import { appRouter } from "@/backend/trpc/app-router";
+
+type TableMap = Record<string, Record<string, any>[]>;
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 
@@ -33,7 +35,7 @@ class MockSupabase {
 }
 
 class MockQuery {
-  private filters: Array<(row: Record<string, any>) => boolean> = [];
+  private filters: ((row: Record<string, any>) => boolean)[] = [];
   private sort?: { column: string; ascending: boolean };
   private limitCount?: number;
 
@@ -80,7 +82,7 @@ class MockQuery {
     return { data: clone(rows[0]), error: null };
   }
 
-  insert(payload: Record<string, any> | Array<Record<string, any>>) {
+  insert(payload: Record<string, any> | Record<string, any>[]) {
     const rows = Array.isArray(payload) ? payload : [payload];
     const inserted = rows.map((row) => {
       const next = { ...row };

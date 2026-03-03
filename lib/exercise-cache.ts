@@ -1,7 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Cache } from './cache';
 import { EXERCISE_LIBRARY } from '@/constants/exercise-library';
 import { Exercise } from '@/types/exercises';
+
+import { Cache } from './cache';
 import { logger } from './logger';
 
 const EXERCISE_CACHE_KEY = 'exercise_library_cache';
@@ -52,4 +52,3 @@ export async function getExerciseById(id: string): Promise<Exercise | undefined>
   const library = await getExerciseLibrary();
   return library.find(ex => ex.id === id);
 }
-
