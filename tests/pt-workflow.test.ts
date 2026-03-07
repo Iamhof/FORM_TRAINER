@@ -1,11 +1,26 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import crypto from "crypto";
-import { appRouter } from "@/backend/trpc/app-router";
-import { supabaseAdmin } from "@/backend/lib/auth";
 
-type TableMap = Record<string, Array<Record<string, any>>>;
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+
+import { supabaseAdmin } from "@/backend/lib/auth";
+import { appRouter } from "@/backend/trpc/app-router";
+
+type TableMap = Record<string, Record<string, any>[]>;
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
+
+/**
+ * Asserts that a test table exists and is properly initialized
+ * @throws Error if table is undefined (indicates test setup issue)
+ */
+function assertTableExists<T>(
+  table: T[] | undefined,
+  tableName: string
+): asserts table is T[] {
+  if (!table) {
+    throw new Error(`Test setup error: ${tableName} table not initialized`);
+  }
+}
 
 class MockSupabase {
   private counters: Record<string, number> = {};
@@ -33,7 +48,7 @@ class MockSupabase {
 }
 
 class MockQuery {
-  private filters: Array<(row: Record<string, any>) => boolean> = [];
+  private filters: ((row: Record<string, any>) => boolean)[] = [];
   private sort?: { column: string; ascending: boolean };
   private limitCount?: number;
 
@@ -80,14 +95,17 @@ class MockQuery {
     return { data: clone(rows[0]), error: null };
   }
 
-  insert(payload: Record<string, any> | Array<Record<string, any>>) {
+  insert(payload: Record<string, any> | Record<string, any>[]) {
     const rows = Array.isArray(payload) ? payload : [payload];
     const inserted = rows.map((row) => {
       const next = { ...row };
       if (!("id" in next)) {
         next.id = this.db.generateId(this.table);
       }
-      this.db.tables[this.table].push(next);
+      const table = this.db.tables[this.table];
+      if (table) {
+        table.push(next);
+      }
       return next;
     });
 
@@ -103,7 +121,9 @@ class MockQuery {
     const db = this.db;
     return {
       eq: async (column: string, value: any) => {
-        const targetRows = db.tables[table].filter((row) => row[column] === value);
+        const tableData = db.tables[table];
+        if (!tableData) return { data: [], error: null };
+        const targetRows = tableData.filter((row) => row[column] === value);
         targetRows.forEach((row) => Object.assign(row, values));
         return { data: targetRows.map((row) => clone(row)), error: null };
       },
@@ -115,7 +135,10 @@ class MockQuery {
     const db = this.db;
     return {
       eq: async (column: string, value: any) => {
-        db.tables[table] = db.tables[table].filter((row) => row[column] !== value);
+        const tableData = db.tables[table];
+        if (tableData) {
+          db.tables[table] = tableData.filter((row) => row[column] !== value);
+        }
         return { error: null };
       },
     };
@@ -138,7 +161,9 @@ class MockQuery {
   }
 
   private apply() {
-    let results = [...this.db.tables[this.table]];
+    const tableData = this.db.tables[this.table];
+    if (!tableData) return [];
+    let results = [...tableData];
     if (this.filters.length > 0) {
       results = results.filter((row) => this.filters.every((fn) => fn(row)));
     }
@@ -217,9 +242,10 @@ describe("PT workflow", () => {
     });
 
     expect(inviteResult.success).toBe(true);
+    assertTableExists(mockDb.tables.pt_invitations, 'pt_invitations');
     expect(mockDb.tables.pt_invitations.length).toBe(1);
 
-    const invitationToken = mockDb.tables.pt_invitations[0].token;
+    const invitationToken = mockDb.tables.pt_invitations[0]!.token;
 
     const clientCaller = appRouter.createCaller({
       req: new Request("http://localhost"),
@@ -233,6 +259,7 @@ describe("PT workflow", () => {
     });
 
     expect(acceptResult.success).toBe(true);
+    assertTableExists(mockDb.tables.pt_client_relationships, 'pt_client_relationships');
     expect(mockDb.tables.pt_client_relationships.length).toBe(1);
 
     const shareResult = await ptCaller.pt.shareProgramme({
@@ -241,6 +268,7 @@ describe("PT workflow", () => {
     });
 
     expect(shareResult.success).toBe(true);
+    assertTableExists(mockDb.tables.shared_programmes, 'shared_programmes');
     expect(mockDb.tables.shared_programmes.length).toBe(1);
 
     const clientViewCaller = appRouter.createCaller({
@@ -251,9 +279,10 @@ describe("PT workflow", () => {
     });
 
     const sharedProgrammes = await clientViewCaller.clients.listSharedProgrammes();
+    assertTableExists(sharedProgrammes, 'sharedProgrammes result');
     expect(sharedProgrammes.length).toBe(1);
-    expect(sharedProgrammes[0].programmeId).toBe("programme-1");
-    expect(sharedProgrammes[0].ptName).toBe("Pat Trainer");
+    expect(sharedProgrammes[0]!.programmeId).toBe("programme-1");
+    expect(sharedProgrammes[0]!.ptName).toBe("Pat Trainer");
   });
 });
 

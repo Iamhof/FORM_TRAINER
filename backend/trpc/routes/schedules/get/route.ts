@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { protectedProcedure } from "../../../create-context.js";
+
 import { supabaseAdmin } from "../../../../lib/auth.js";
+import { protectedProcedure } from "../../../create-context.js";
 
 export const getScheduleProcedure = protectedProcedure
   .input(
@@ -28,13 +29,13 @@ export const getScheduleProcedure = protectedProcedure
 
     if (Array.isArray(data.schedule)) {
       schedulePayload = data.schedule;
-    } else if (data.schedule !== null && data.schedule !== undefined && data.schedule.constructor === String) {
+    } else if (typeof data.schedule === 'string') {
       try {
         schedulePayload = JSON.parse(data.schedule);
       } catch {
         schedulePayload = null;
       }
-    } else if (data.schedule && data.schedule !== null && data.schedule.constructor === Object) {
+    } else if (typeof data.schedule === 'object' && data.schedule !== null) {
       const candidate = data.schedule as { length?: number };
       schedulePayload = candidate.length !== undefined && Number.isFinite(candidate.length) && candidate.length >= 0 
         ? Array.from(candidate as ArrayLike<unknown>) 

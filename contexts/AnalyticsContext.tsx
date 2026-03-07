@@ -1,9 +1,12 @@
 import createContextHook from '@nkzw/create-context-hook';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnalyticsData, MonthlyDataPoint } from '@/types/analytics';
+
 import { useUser } from '@/contexts/UserContext';
-import { useProgrammes } from './ProgrammeContext';
 import { trpc, getRetryConfig } from '@/lib/trpc';
+import { AnalyticsData, MonthlyDataPoint } from '@/types/analytics';
+
+import { useProgrammes } from './ProgrammeContext';
+
 
 type SyncPayload = {
   exerciseId: string;
@@ -99,6 +102,7 @@ const [AnalyticsProviderRaw, useAnalytics] = createContextHook(() => {
   const refresh = useCallback(() => {
     overviewQuery.refetch();
     volumeQuery.refetch();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- tRPC query.refetch methods are stable references
   }, []);
 
   const calculateCompletionPercentage = useMemo(() => {
@@ -141,6 +145,7 @@ const [AnalyticsProviderRaw, useAnalytics] = createContextHook(() => {
       refetchVolume: volumeQuery.refetch,
       isRefreshing,
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- volumeQuery.refetch is a stable tRPC reference
     [
       analyticsData,
       calculateCompletionPercentage,

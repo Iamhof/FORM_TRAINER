@@ -1,15 +1,17 @@
+import { Check, Plus } from 'lucide-react-native';
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, Pressable, ScrollView, Platform } from 'react-native';
-import { Check, Plus } from 'lucide-react-native';
-import SessionSelectorModal, { Session } from './SessionSelectorModal';
+
+
 import { COLORS, SPACING } from '@/constants/theme';
 import { useSchedule } from '@/contexts/ScheduleContext';
+
+import SessionSelectorModal, { Session } from './SessionSelectorModal';
 
 type WeekSchedulerProps = {
   sessions: Session[];
   accentColor: string;
   currentWeek: number;
-  programmeWeeks: number;
 };
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -19,7 +21,6 @@ export default function WeekScheduler({
   sessions,
   accentColor,
   currentWeek,
-  programmeWeeks,
 }: WeekSchedulerProps) {
   const { schedule, assignSession } = useSchedule();
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -200,7 +201,7 @@ export default function WeekScheduler({
           sessions={currentWeekSessions}
           scheduledSessionIds={getScheduledSessionIds}
           selectedSessionId={schedule[selectedDay]?.sessionId || null}
-          dayName={DAYS_FULL[selectedDay]}
+          dayName={DAYS_FULL[selectedDay] ?? ''}
           accentColor={accentColor}
           dayIndex={selectedDay}
           onDayChange={handleDayChange}

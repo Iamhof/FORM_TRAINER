@@ -1,3 +1,4 @@
+import { X, Check } from 'lucide-react-native';
 import React, { useRef, useState } from 'react';
 import {
   StyleSheet,
@@ -11,7 +12,6 @@ import {
   Animated,
   ActivityIndicator,
 } from 'react-native';
-import { X, Check } from 'lucide-react-native';
 
 import { COLORS, SPACING } from '@/constants/theme';
 import { logger } from '@/lib/logger';

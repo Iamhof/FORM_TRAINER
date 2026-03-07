@@ -1,0 +1,111 @@
+app/create-programme/days.tsx(45,5): error TS2532: Object is possibly 'undefined'.
+app/create-programme/days.tsx(51,5): error TS2532: Object is possibly 'undefined'.
+app/create-programme/days.tsx(63,5): error TS2532: Object is possibly 'undefined'.
+app/create-programme/days.tsx(63,5): error TS2532: Object is possibly 'undefined'.
+app/create-programme/days.tsx(69,5): error TS2532: Object is possibly 'undefined'.
+app/create-programme/days.tsx(76,9): error TS2532: Object is possibly 'undefined'.
+app/create-programme/days.tsx(109,31): error TS2532: Object is possibly 'undefined'.
+app/create-programme/days.tsx(149,22): error TS2532: Object is possibly 'undefined'.
+app/create-programme/days.tsx(155,59): error TS2532: Object is possibly 'undefined'.
+app/create-programme/days.tsx(157,14): error TS2532: Object is possibly 'undefined'.
+app/onboarding.tsx(48,16): error TS18048: 'currentSlide' is possibly 'undefined'.
+app/onboarding.tsx(62,39): error TS18048: 'currentSlide' is possibly 'undefined'.
+app/onboarding.tsx(63,45): error TS18048: 'currentSlide' is possibly 'undefined'.
+app/profile-setup.tsx(88,31): error TS2532: Object is possibly 'undefined'.
+app/profile-setup.tsx(119,34): error TS2532: Object is possibly 'undefined'.
+app/profile-setup.tsx(176,87): error TS2532: Object is possibly 'undefined'.
+app/profile-setup.tsx(182,90): error TS2532: Object is possibly 'undefined'.
+app/profile-setup.tsx(193,89): error TS2532: Object is possibly 'undefined'.
+app/profile-setup.tsx(199,92): error TS2532: Object is possibly 'undefined'.
+app/profile-setup.tsx(210,88): error TS2532: Object is possibly 'undefined'.
+app/profile-setup.tsx(216,91): error TS2532: Object is possibly 'undefined'.
+app/profile-setup.tsx(227,100): error TS2532: Object is possibly 'undefined'.
+app/profile-setup.tsx(233,103): error TS2532: Object is possibly 'undefined'.
+app/profile-setup.tsx(282,18): error TS2532: Object is possibly 'undefined'.
+app/profile-setup.tsx(310,27): error TS2322: Type '{ transform: { scale: Animated.Value | undefined; }[]; }' is not assignable to type 'false | "" | RegisteredStyle<ViewStyle> | Value | AnimatedInterpolation<string | number> | WithAnimatedObject<ViewStyle> | WithAnimatedArray<...> | readonly (false | ... 6 more ... | undefined)[] | null | undefined'.
+  Types of property 'transform' are incompatible.
+    Type '{ scale: Value | undefined; }[]' is not assignable to type 'string | Value | AnimatedInterpolation<string | number> | readonly (WithAnimatedObject<{ scaleX: AnimatableNumericValue; } & { scaleY?: never; ... 10 more ...; matrix?: never; }> | ... 11 more ... | WithAnimatedObject<...>)[] | undefined'.
+      Type '{ scale: Value | undefined; }[]' is not assignable to type 'readonly (WithAnimatedObject<{ scaleX: AnimatableNumericValue; } & { scaleY?: never; perspective?: never; rotate?: never; rotateX?: never; rotateY?: never; rotateZ?: never; scale?: never; translateX?: never; translateY?: never; skewX?: never; skewY?: never; matrix?: never; }> | ... 11 more ... | WithAnimatedObject<....'.
+        Type '{ scale: Animated.Value | undefined; }' is not assignable to type 'WithAnimatedObject<{ scaleX: AnimatableNumericValue; } & { scaleY?: never; perspective?: never; rotate?: never; rotateX?: never; rotateY?: never; rotateZ?: never; scale?: never; translateX?: never; translateY?: never; skewX?: never; skewY?: never; matrix?: never; }> | ... 11 more ... | WithAnimatedObject<...>' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+          Property 'matrix' is missing in type '{ scale: Animated.Value | undefined; }' but required in type 'WithAnimatedObject<{ matrix: AnimatableNumericValue[]; } & { scaleX?: never; scaleY?: never; perspective?: never; rotate?: never; rotateX?: never; rotateY?: never; rotateZ?: never; scale?: never; translateX?: never; translateY?: never; skewX?: never; skewY?: never; }>'.
+app/profile-setup.tsx(326,36): error TS2532: Object is possibly 'undefined'.
+app/programme/[id].tsx(130,37): error TS18048: 'weekData' is possibly 'undefined'.
+app/programme/[id].tsx(134,86): error TS18048: 'weekData' is possibly 'undefined'.
+app/session/[id].tsx(98,26): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+app/session/[id].tsx(99,27): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+app/session/[id].tsx(110,25): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+app/session/[id].tsx(145,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+app/session/[id].tsx(216,46): error TS2532: Object is possibly 'undefined'.
+app/session/[id].tsx(217,36): error TS2532: Object is possibly 'undefined'.
+app/session/[id].tsx(567,42): error TS2532: Object is possibly 'undefined'.
+backend/trpc/routes/analytics/utils.ts(19,7): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+backend/trpc/routes/analytics/utils.ts(126,9): error TS2532: Object is possibly 'undefined'.
+backend/trpc/routes/analytics/utils.ts(128,9): error TS2532: Object is possibly 'undefined'.
+backend/trpc/routes/analytics/utils.ts(150,5): error TS2532: Object is possibly 'undefined'.
+backend/trpc/routes/analytics/utils.ts(174,30): error TS18048: 'month' is possibly 'undefined'.
+backend/trpc/routes/analytics/utils.ts(177,31): error TS18048: 'data' is possibly 'undefined'.
+backend/trpc/routes/analytics/utils.ts(181,30): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+backend/trpc/routes/analytics/utils.ts(182,24): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+backend/trpc/routes/analytics/utils.ts(182,60): error TS18048: 'data' is possibly 'undefined'.
+backend/trpc/routes/analytics/utils.ts(183,27): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+backend/trpc/routes/analytics/utils.ts(195,44): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+backend/trpc/routes/analytics/utils.ts(218,36): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+backend/trpc/routes/analytics/utils.ts(240,27): error TS2532: Object is possibly 'undefined'.
+backend/trpc/routes/analytics/utils.ts(241,29): error TS2532: Object is possibly 'undefined'.
+components/BodyMetricsModal.tsx(102,28): error TS2379: Argument of type '{ date: string; weight: number | undefined; muscleMass: number | undefined; bodyFatPercentage: number | undefined; notes: string | undefined; }' is not assignable to parameter of type '{ date: string; weight?: number; muscleMass?: number; bodyFatPercentage?: number; notes?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'weight' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+components/LeaderboardPodium.tsx(75,14): error TS18048: 'second' is possibly 'undefined'.
+components/LeaderboardPodium.tsx(77,51): error TS18048: 'second' is possibly 'undefined'.
+components/LeaderboardPodium.tsx(96,14): error TS18048: 'first' is possibly 'undefined'.
+components/LeaderboardPodium.tsx(98,72): error TS18048: 'first' is possibly 'undefined'.
+components/LeaderboardPodium.tsx(117,14): error TS18048: 'third' is possibly 'undefined'.
+components/LeaderboardPodium.tsx(119,51): error TS18048: 'third' is possibly 'undefined'.
+components/LineChart.tsx(55,21): error TS2532: Object is possibly 'undefined'.
+components/LineChart.tsx(55,46): error TS2532: Object is possibly 'undefined'.
+components/LineChart.tsx(61,25): error TS18048: 'prev' is possibly 'undefined'.
+components/LineChart.tsx(61,35): error TS18048: 'curr' is possibly 'undefined'.
+components/LineChart.tsx(61,44): error TS18048: 'prev' is possibly 'undefined'.
+components/LineChart.tsx(62,25): error TS18048: 'prev' is possibly 'undefined'.
+components/LineChart.tsx(63,25): error TS18048: 'prev' is possibly 'undefined'.
+components/LineChart.tsx(63,40): error TS18048: 'curr' is possibly 'undefined'.
+components/LineChart.tsx(63,49): error TS18048: 'prev' is possibly 'undefined'.
+components/LineChart.tsx(64,25): error TS18048: 'curr' is possibly 'undefined'.
+components/LineChart.tsx(66,75): error TS18048: 'curr' is possibly 'undefined'.
+components/LineChart.tsx(66,85): error TS18048: 'curr' is possibly 'undefined'.
+components/LineChart.tsx(78,19): error TS18048: 'lastPoint' is possibly 'undefined'.
+components/LineChart.tsx(78,51): error TS2532: Object is possibly 'undefined'.
+components/WeekScheduler.tsx(203,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+constants/xp.ts(41,3): error TS2322: Type 'LevelDefinition | undefined' is not assignable to type 'LevelDefinition'.
+  Type 'undefined' is not assignable to type 'LevelDefinition'.
+constants/xp.ts(59,60): error TS18048: 'nextDef' is possibly 'undefined'.
+contexts/ScheduleContext.tsx(243,19): error TS2345: Argument of type '(ScheduleDay | { status: DayStatus; sessionId: string | null | undefined; dayOfWeek: number; weekStart: string; })[]' is not assignable to parameter of type 'SetStateAction<ScheduleDay[]>'.
+  Type '(ScheduleDay | { status: DayStatus; sessionId: string | null | undefined; dayOfWeek: number; weekStart: string; })[]' is not assignable to type 'ScheduleDay[]'.
+    Type 'ScheduleDay | { status: DayStatus; sessionId: string | null | undefined; dayOfWeek: number; weekStart: string; }' is not assignable to type 'ScheduleDay' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+      Type '{ status: DayStatus; sessionId: string | null | undefined; dayOfWeek: number; weekStart: string; }' is not assignable to type 'ScheduleDay' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+        Types of property 'sessionId' are incompatible.
+          Type 'string | null | undefined' is not assignable to type 'string | null'.
+            Type 'undefined' is not assignable to type 'string | null'.
+contexts/ThemeContext.tsx(47,22): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+contexts/ThemeContext.tsx(48,22): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+lib/audit-log.ts(96,5): error TS2375: Type '{ ip_address: string | undefined; user_agent: string | undefined; }' is not assignable to type '{ ip_address?: string; user_agent?: string; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'ip_address' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+playwright.config.ts(5,29): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '{ testDir: string; retries: number; reporter: (["github"] | ["list"])[]; timeout: number; webServer: { command: string; url: string; timeout: number; reuseExistingServer: boolean; } | undefined; use: { ...; }; projects: { ...; }[]; }' is not assignable to parameter of type 'PlaywrightTestConfig<unknown, unknown>' with

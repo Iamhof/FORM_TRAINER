@@ -1,14 +1,17 @@
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { ArrowLeft, Share2, TrendingUp, Calendar, Dumbbell } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Share2, TrendingUp, Calendar, Dumbbell } from 'lucide-react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+
 import Card from '@/components/Card';
 import LineChart from '@/components/LineChart';
 import { COLORS, SPACING } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
-import { trpc } from '@/lib/trpc';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { narrowError } from '@/lib/error-utils';
+import { trpc } from '@/lib/trpc';
+import { PTClient, ClientAnalyticsRecord, ClientWorkoutRecord } from '@/types/pt';
 
 export default function PTClientDetailScreen() {
   const { accent } = useTheme();
@@ -24,9 +27,9 @@ export default function PTClientDetailScreen() {
   const shareProgrammeMutation = trpc.pt.shareProgramme.useMutation();
   const unshareProgrammeMutation = trpc.pt.unshareProgramme.useMutation();
 
-  const client = clientsQuery.data?.find((c) => c.id === clientId);
-  const analytics = analyticsQuery.data || [];
-  const workouts = workoutsQuery.data || [];
+  const client: PTClient | undefined = clientsQuery.data?.find((c: PTClient) => c.id === clientId);
+  const analytics: ClientAnalyticsRecord[] = analyticsQuery.data || [];
+  const workouts: ClientWorkoutRecord[] = workoutsQuery.data || [];
 
   const exerciseIds = [...new Set(analytics.map((a) => a.exerciseId))];
   const selectedAnalytics = selectedExercise
@@ -51,8 +54,9 @@ export default function PTClientDetailScreen() {
               await shareProgrammeMutation.mutateAsync({ programmeId, clientId });
               Alert.alert('Success', 'Programme shared successfully');
               clientsQuery.refetch();
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to share programme');
+            } catch (error: unknown) {
+              const typedError = narrowError(error);
+              Alert.alert('Error', typedError.message || 'Failed to share programme');
             }
           },
         },
@@ -74,8 +78,9 @@ export default function PTClientDetailScreen() {
               await unshareProgrammeMutation.mutateAsync({ sharedProgrammeId });
               Alert.alert('Success', 'Programme unshared successfully');
               clientsQuery.refetch();
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to unshare programme');
+            } catch (error: unknown) {
+              const typedError = narrowError(error);
+              Alert.alert('Error', typedError.message || 'Failed to unshare programme');
             }
           },
         },
@@ -243,7 +248,7 @@ export default function PTClientDetailScreen() {
               </Card>
             ) : (
               programmes.map((programme) => {
-                const sharedProgramme = client.sharedProgrammeIds?.find((sp: any) => sp.programmeId === programme.id);
+                const sharedProgramme = client.sharedProgrammeIds?.find((sp) => sp.programmeId === programme.id);
                 const isShared = !!sharedProgramme;
                 return (
                   <Card key={programme.id} style={styles.programmeCard}>

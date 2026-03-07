@@ -38,3 +38,10 @@ devserver.log
 # typescript
 *.tsbuildinfo
 .vercel
+
+# Windows artifacts
+nul
+
+# Build artifacts
+.eslintcache
+supabase/.temp/

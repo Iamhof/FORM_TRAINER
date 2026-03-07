@@ -1,14 +1,17 @@
+import { useRouter } from 'expo-router';
+import { Users, UserPlus, Mail, ChevronRight, Trash2 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Users, UserPlus, Mail, ChevronRight, Trash2 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
-import Card from '@/components/Card';
+
 import Button from '@/components/Button';
+import Card from '@/components/Card';
+import { ScreenState } from '@/components/ScreenState';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { narrowError } from '@/lib/error-utils';
 import { trpc } from '@/lib/trpc';
-import ScreenState from '@/components/ScreenState';
+import { PTClient } from '@/types/pt';
 
 export default function PTClientsScreen() {
   const { accent } = useTheme();
@@ -35,8 +38,9 @@ export default function PTClientsScreen() {
       setInviteEmail('');
       setShowInviteForm(false);
       invitationsQuery.refetch();
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to send invitation');
+    } catch (error: unknown) {
+      const typedError = narrowError(error);
+      Alert.alert('Error', typedError.message || 'Failed to send invitation');
     }
   };
 
@@ -54,8 +58,9 @@ export default function PTClientsScreen() {
               await removeMutation.mutateAsync({ clientId });
               clientsQuery.refetch();
               Alert.alert('Success', 'Client removed successfully');
-            } catch (error: any) {
-              Alert.alert('Error', error.message || 'Failed to remove client');
+            } catch (error: unknown) {
+              const typedError = narrowError(error);
+              Alert.alert('Error', typedError.message || 'Failed to remove client');
             }
           },
         },
@@ -63,7 +68,7 @@ export default function PTClientsScreen() {
     );
   };
 
-  const clients = clientsQuery.data || [];
+  const clients: PTClient[] = clientsQuery.data || [];
   const invitations = invitationsQuery.data || [];
 
   return (
@@ -158,8 +163,9 @@ export default function PTClientsScreen() {
                           await resendMutation.mutateAsync({ invitationId: invitation.id });
                           Alert.alert('Invitation resent', 'A fresh link has been generated.');
                           invitationsQuery.refetch();
-                        } catch (error: any) {
-                          Alert.alert('Error', error.message || 'Unable to resend invitation');
+                        } catch (error: unknown) {
+                          const typedError = narrowError(error);
+                          Alert.alert('Error', typedError.message || 'Unable to resend invitation');
                         }
                       }}
                       disabled={resendMutation.isPending}
@@ -182,8 +188,9 @@ export default function PTClientsScreen() {
                                   await cancelInvitationMutation.mutateAsync({ invitationId: invitation.id });
                                   Alert.alert('Invitation cancelled');
                                   invitationsQuery.refetch();
-                                } catch (error: any) {
-                                  Alert.alert('Error', error.message || 'Unable to cancel invitation');
+                                } catch (error: unknown) {
+                                  const typedError = narrowError(error);
+                                  Alert.alert('Error', typedError.message || 'Unable to cancel invitation');
                                 }
                               },
                             },
@@ -218,7 +225,7 @@ export default function PTClientsScreen() {
               clients.map((client) => (
                 <Pressable
                   key={client.id}
-                  onPress={() => router.push(`/pt/client/${client.id}` as any)}
+                  onPress={() => router.push(`/pt/client/${client.id}`)}
                 >
                   <Card style={styles.clientCard}>
                     <View style={styles.clientContent}>

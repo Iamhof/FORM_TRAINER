@@ -1,8 +1,10 @@
-import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth.js';
+import { z } from 'zod';
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { awardXP } from '../../../../services/xp.service.js';
+import { protectedProcedure } from '../../../create-context.js';
 
 const workoutSetSchema = z.object({
   weight: z.number(),
@@ -82,7 +84,26 @@ export const logWorkoutProcedure = protectedProcedure
         workoutId: data.workout_id,
       });
 
-      return data;
+      // Award XP for completing a workout (non-blocking on failure)
+      const workoutId = data.workout_id || data.id;
+      const xpResult = await awardXP(
+        ctx.userId,
+        'WORKOUT_LOGGED',
+        workoutId,
+        { programmeId, programmeName, day, week }
+      );
+
+      return {
+        ...data,
+        xp: xpResult.awarded
+          ? {
+              awarded: xpResult.xp_awarded,
+              newXp: xpResult.new_xp,
+              newLevel: xpResult.new_level,
+              leveledUp: xpResult.leveled_up,
+            }
+          : null,
+      };
     } catch (err) {
       if (err instanceof TRPCError) {
         throw err;

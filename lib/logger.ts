@@ -13,21 +13,10 @@
  * - EXPO_PUBLIC_SENTRY_DSN: Sentry DSN for remote logging
  */
 
-// Safe runtime check for __DEV__ to avoid parsing errors during build/transform
-function getIsDev(): boolean {
-  try {
-    // Check if __DEV__ exists and is true
-    const dev = (global as any).__DEV__;
-    if (dev === true) return true;
-    // Fallback to NODE_ENV check
-    return process.env.NODE_ENV === 'development';
-  } catch {
-    // If any error occurs, default to NODE_ENV check
-    return process.env.NODE_ENV === 'development';
-  }
-}
+// Import type-safe runtime utility for development mode detection
+import { isDevelopmentMode } from './runtime-utils';
 
-const isDev = getIsDev();
+const isDev = isDevelopmentMode();
 const logLevel = (process.env.EXPO_PUBLIC_LOG_LEVEL || (isDev ? 'debug' : 'error')) as 'debug' | 'info' | 'warn' | 'error';
 
 // Detect if running in serverless/Node.js environment (not React Native)
@@ -66,8 +55,8 @@ function sanitize(data: any): any {
   return sanitized;
 }
 
-// Log buffer for batch sending
-interface LogEntry {
+// Log buffer for batch sending and on-device inspection
+export interface LogEntry {
   level: 'debug' | 'info' | 'warn' | 'error';
   message: string;
   data?: any;
@@ -80,6 +69,12 @@ class LoggerService {
   private readonly FLUSH_INTERVAL = 30000; // 30 seconds
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private sentryInitialized = false;
+
+  // In-memory ring buffer for on-device log inspection (TestFlight debugging).
+  // Always active regardless of log level so production issues can be diagnosed
+  // by viewing recent entries on the device without a debugger attached.
+  private readonly ringBuffer: LogEntry[] = [];
+  private readonly RING_BUFFER_SIZE = 200;
 
   constructor() {
     // Initialize Sentry integration if available
@@ -107,6 +102,7 @@ class LoggerService {
 
     try {
       // Dynamically import Sentry to avoid errors if not installed
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- Conditional require for optional React Native dependency
       const Sentry = require('@sentry/react-native');
       
       // Check if Sentry is already initialized (by error.service.ts)
@@ -159,21 +155,22 @@ class LoggerService {
     // Send buffered logs to Sentry as breadcrumbs
     if (this.sentryInitialized) {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- Conditional require for optional React Native dependency
         const Sentry = require('@sentry/react-native');
-        
+
         this.buffer.forEach(entry => {
           Sentry.addBreadcrumb({
-            level: entry.level as any,
+            level: entry.level,
             message: entry.message,
             data: entry.data,
             timestamp: entry.timestamp / 1000, // Sentry uses seconds
           });
         });
-      } catch (error) {
+      } catch {
         // Silently fail
       }
     }
-    
+
     // Clear buffer
     this.buffer = [];
   }
@@ -198,71 +195,104 @@ class LoggerService {
   }
 
   debug(...args: any[]) {
+    const { message, data } = this.formatMessage(args);
+    const entry: LogEntry = { level: 'debug', message, data, timestamp: Date.now() };
+
+    // Always capture to ring buffer for TestFlight diagnostics
+    this.addToRingBuffer(entry);
+
     if (!this.shouldLog('debug')) return;
     
     const sanitizedArgs = args.map(sanitize);
-    console.log('[DEBUG]', ...sanitizedArgs);
+    console.info('[DEBUG]', ...sanitizedArgs);
     
     // Don't buffer debug logs in production
     if (isDev) return;
     
-    const { message, data } = this.formatMessage(args);
-    this.addToBuffer({
-      level: 'debug',
-      message,
-      data,
-      timestamp: Date.now(),
-    });
+    this.addToBuffer(entry);
   }
 
   info(...args: any[]) {
+    const { message, data } = this.formatMessage(args);
+    const entry: LogEntry = { level: 'info', message, data, timestamp: Date.now() };
+
+    // Always capture to ring buffer for TestFlight diagnostics
+    this.addToRingBuffer(entry);
+
     if (!this.shouldLog('info')) return;
     
     const sanitizedArgs = args.map(sanitize);
     console.info('[INFO]', ...sanitizedArgs);
     
-    const { message, data } = this.formatMessage(args);
-    this.addToBuffer({
-      level: 'info',
-      message,
-      data,
-      timestamp: Date.now(),
-    });
+    this.addToBuffer(entry);
   }
 
   warn(...args: any[]) {
+    const { message, data } = this.formatMessage(args);
+    const entry: LogEntry = { level: 'warn', message, data, timestamp: Date.now() };
+
+    // Always capture to ring buffer for TestFlight diagnostics
+    this.addToRingBuffer(entry);
+
     if (!this.shouldLog('warn')) return;
     
     const sanitizedArgs = args.map(sanitize);
     console.warn('[WARN]', ...sanitizedArgs);
     
-    const { message, data } = this.formatMessage(args);
-    this.addToBuffer({
-      level: 'warn',
-      message,
-      data,
-      timestamp: Date.now(),
-    });
+    this.addToBuffer(entry);
   }
 
   error(...args: any[]) {
+    const { message, data } = this.formatMessage(args);
+    const entry: LogEntry = { level: 'error', message, data, timestamp: Date.now() };
+
+    // Always capture to ring buffer for TestFlight diagnostics
+    this.addToRingBuffer(entry);
+
     if (!this.shouldLog('error')) return;
     
     const sanitizedArgs = args.map(sanitize);
     console.error('[ERROR]', ...sanitizedArgs);
     
-    const { message, data } = this.formatMessage(args);
-    this.addToBuffer({
-      level: 'error',
-      message,
-      data,
-      timestamp: Date.now(),
-    });
+    this.addToBuffer(entry);
     
     // Immediately flush errors to ensure they're captured
     if (!isDev) {
       this.flush();
     }
+  }
+
+  private addToRingBuffer(entry: LogEntry) {
+    this.ringBuffer.push(entry);
+    if (this.ringBuffer.length > this.RING_BUFFER_SIZE) {
+      this.ringBuffer.shift();
+    }
+  }
+
+  /**
+   * Returns the most recent log entries from the in-memory ring buffer.
+   * Useful for on-device diagnostics in TestFlight builds where no debugger
+   * is attached. Call this from a hidden debug screen or share-sheet action.
+   *
+   * @param count - Maximum number of entries to return (default: 50)
+   * @returns Array of recent log entries, newest last
+   */
+  getRecentLogs(count = 50): LogEntry[] {
+    return this.ringBuffer.slice(-count);
+  }
+
+  /**
+   * Returns the recent logs formatted as a human-readable string,
+   * suitable for copy-to-clipboard or sharing from a debug screen.
+   */
+  getRecentLogsFormatted(count = 50): string {
+    return this.getRecentLogs(count)
+      .map(entry => {
+        const time = new Date(entry.timestamp).toISOString();
+        const dataStr = entry.data ? ` | ${JSON.stringify(entry.data)}` : '';
+        return `[${time}] ${entry.level.toUpperCase()} ${entry.message}${dataStr}`;
+      })
+      .join('\n');
   }
 
   // Public method to manually flush logs

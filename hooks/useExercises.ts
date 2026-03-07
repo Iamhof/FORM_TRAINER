@@ -1,7 +1,9 @@
-import { trpc } from '@/lib/trpc';
+import { useMemo } from 'react';
+
 import { EXERCISE_LIBRARY } from '@/constants/exercise-library';
 import { Exercise } from '@/constants/exercises';
-import { useMemo } from 'react';
+import { trpc } from '@/lib/trpc';
+
 
 // Convert library format to database format for fallback
 const FALLBACK_EXERCISES: Exercise[] = EXERCISE_LIBRARY.map((ex) => ({
@@ -26,7 +28,8 @@ export const useExercises = () => {
     isError: false,
     error: null,
     isLoading: false,
-  }), [query.isError, query.isLoading]); // Only recreate when error/loading state changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentionally only tracking error/loading state; query object is unstable but we override its data properties
+  }), [query.isError, query.isLoading]);
 
   // Return fallback data immediately during loading or on error
   // This ensures exercises are always available from the local library,

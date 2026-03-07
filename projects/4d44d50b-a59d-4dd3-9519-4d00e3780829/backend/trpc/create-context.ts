@@ -1,5 +1,6 @@
 import { initTRPC } from "@trpc/server";
 import { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+
 import { getAuth } from "../lib/auth";
 
 export async function createContext(opts: FetchCreateContextFnOptions) {

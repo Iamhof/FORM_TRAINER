@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+
 import { aggregateAnalyticsData } from '@/backend/trpc/routes/analytics/utils';
 import { AnalyticsData as DBAnalyticsData, Schedule } from '@/types/database';
 
@@ -55,7 +56,7 @@ describe('aggregateAnalyticsData', () => {
     const result = aggregateAnalyticsData(analytics, workouts, schedules, 3);
 
     expect(result.sessionsCompleted).toHaveLength(6);
-    expect(result.totalVolume[result.totalVolume.length - 1].value).toBeGreaterThan(0);
+    expect(result.totalVolume[result.totalVolume.length - 1]!.value).toBeGreaterThan(0);
     expect(result.restDays.average).toBeGreaterThanOrEqual(0);
     expect(result.streak).toBeGreaterThanOrEqual(0);
   });

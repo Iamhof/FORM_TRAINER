@@ -1,9 +1,11 @@
 import createContextHook from '@nkzw/create-context-hook';
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { trpc } from '@/lib/trpc';
-import { useUser } from './UserContext';
-import { BodyMetric, PersonalRecord } from '@/types/database';
+
 import { logger } from '@/lib/logger';
+import { trpc } from '@/lib/trpc';
+import { BodyMetric, PersonalRecord } from '@/types/database';
+
+import { useUser } from './UserContext';
 
 export interface BodyMetricsData {
   weight: { date: string; value: number }[];
@@ -154,11 +156,13 @@ const [BodyMetricsProviderRaw, useBodyMetrics] = createContextHook(() => {
   const refetchMetrics = useCallback(() => {
     bodyMetricsQuery.refetch();
     latestMetricsQuery.refetch();
-  }, []); // Refetch methods are stable
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- tRPC query.refetch methods are stable references
+  }, []);
 
   const refetchPRs = useCallback(() => {
     personalRecordsQuery.refetch();
-  }, []); // Refetch method is stable
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- tRPC query.refetch is a stable reference
+  }, []);
 
   return useMemo(
     () => ({

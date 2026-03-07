@@ -1,6 +1,7 @@
+import { Stack, useRouter, useSegments } from 'expo-router';
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+
 import BottomNav from '@/components/BottomNav';
 import { COLORS } from '@/constants/theme';
 
@@ -26,7 +27,6 @@ export default function TabLayout() {
         <Stack.Screen name="analytics" />
         <Stack.Screen name="exercises" options={{ headerShown: false }} />
         <Stack.Screen name="leaderboard" />
-        <Stack.Screen name="profile" />
       </Stack>
       <BottomNav currentRoute={currentRoute} onNavigate={handleNavigate} />
     </View>

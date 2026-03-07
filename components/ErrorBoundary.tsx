@@ -1,7 +1,8 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { errorService } from '@/services/error.service';
+
 import { logger } from '@/lib/logger';
+import { errorService } from '@/services/error.service';
 
 interface Props {
   children: ReactNode;
@@ -60,15 +61,6 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       const { error, errorInfo, retryCount } = this.state;
       const canRetry = retryCount < 3;
-      // @ts-ignore
-      // Safe runtime check for __DEV__
-      let isDev = false;
-      try {
-        const dev = (global as any).__DEV__;
-        isDev = dev === true || process.env.NODE_ENV === 'development';
-      } catch {
-        isDev = process.env.NODE_ENV === 'development';
-      }
       const userMessage = errorService.getUserMessage(error);
 
       return (

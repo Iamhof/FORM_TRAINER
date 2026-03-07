@@ -1,10 +1,21 @@
-import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth.js';
 import { z } from 'zod';
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { protectedProcedure } from '../../../create-context.js';
 
 const hexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format. Must be #RRGGBB');
+
+// Type-safe profile update fields (database snake_case)
+type ProfileUpdateFields = {
+  name?: string;
+  accent_color?: string;
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  height_cm?: number | null;
+  weight_kg?: number | null;
+  age?: number | null;
+};
 
 export const updateProfileProcedure = protectedProcedure
   .input(z.object({
@@ -17,9 +28,9 @@ export const updateProfileProcedure = protectedProcedure
   }))
   .mutation(async ({ ctx, input }) => {
     logger.debug('[UPDATE_PROFILE] Updating profile for user:', ctx.userId, input);
-    
-    // Map API camelCase to database snake_case
-    const updates: Record<string, any> = {};
+
+    // Map API camelCase to database snake_case - Type-safe updates prevent prototype pollution
+    const updates: Partial<ProfileUpdateFields> = {};
     
     if (input.name !== undefined) {
       updates.name = input.name;

@@ -12,17 +12,19 @@
  * Audit Reference: Form-app-main/Audit_report.md
  */
 
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import crypto from 'crypto';
-import { appRouter } from '@/backend/trpc/app-router';
+
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+
 import { supabaseAdmin } from '@/backend/lib/auth';
+import { appRouter } from '@/backend/trpc/app-router';
 import { narrowError } from '@/lib/error-utils';
 
 // ============================================================================
 // MOCK INFRASTRUCTURE (from pt-workflow.test.ts)
 // ============================================================================
 
-type TableMap = Record<string, Array<Record<string, any>>>;
+type TableMap = Record<string, Record<string, any>[]>;
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 
@@ -42,7 +44,7 @@ class MockSupabase {
     return `${table}-${next}`;
   }
 
-  ensureTable(table: string): Array<Record<string, any>> {
+  ensureTable(table: string): Record<string, any>[] {
     if (!this.tables[table]) {
       this.tables[table] = [];
       this.counters[table] = 0;
@@ -57,7 +59,7 @@ class MockSupabase {
 }
 
 class MockQuery {
-  private filters: Array<(row: Record<string, any>) => boolean> = [];
+  private filters: ((row: Record<string, any>) => boolean)[] = [];
   private sort?: { column: string; ascending: boolean };
   private limitCount?: number;
 
@@ -104,7 +106,7 @@ class MockQuery {
     return { data: clone(rows[0]), error: null };
   }
 
-  insert(payload: Record<string, any> | Array<Record<string, any>>) {
+  insert(payload: Record<string, any> | Record<string, any>[]) {
     const rows = Array.isArray(payload) ? payload : [payload];
     const table = this.db.ensureTable(this.table);
     const inserted = rows.map((row) => {
@@ -123,7 +125,7 @@ class MockQuery {
     };
   }
 
-  upsert(payload: Record<string, any> | Array<Record<string, any>>) {
+  upsert(payload: Record<string, any> | Record<string, any>[]) {
     const rows = Array.isArray(payload) ? payload : [payload];
     const table = this.db.ensureTable(this.table);
     const upserted = rows.map((row) => {
@@ -603,11 +605,11 @@ describe('Adversarial Security Audit (Workstream 1 Verification)', () => {
 
         // Debug: Log first 3 errors to understand what's failing
         if (successes === 0) {
-          console.log('\n⚠️  DEBUG: All requests failed. First 3 errors:');
+          console.info('\n⚠️  DEBUG: All requests failed. First 3 errors:');
           results.slice(0, 3).forEach((r, i) => {
             if (r.status === 'rejected') {
               const typed = narrowError(r.reason);
-              console.log(`  ${i + 1}. [${typed.code}] ${typed.message}`);
+              console.info(`  ${i + 1}. [${typed.code}] ${typed.message}`);
             }
           });
         }
@@ -633,7 +635,7 @@ describe('Adversarial Security Audit (Workstream 1 Verification)', () => {
         );
         expect(sharedRecords.length).toBe(1);
 
-        console.log('✅ Race Condition Test PASSED: 1 success, 99 failures');
+        console.info('✅ Race Condition Test PASSED: 1 success, 99 failures');
       },
       { timeout: 10000 } // Increase timeout for concurrent operations
     );
@@ -935,13 +937,13 @@ describe('Adversarial Security Audit (Workstream 1 Verification)', () => {
       expect((supabaseAdmin as any).from).toBeDefined();
       expect(typeof (supabaseAdmin as any).from).toBe('function');
 
-      console.log('\n🛡️ DEFENSIVE SHIELD STATUS:');
-      console.log('✅ XSS Protection: Regex validation active');
-      console.log('✅ SQL Injection Prevention: Immutable column mappings');
-      console.log('✅ Race Condition Protection: Advisory locks active (1 success, 99 failures)');
-      console.log('✅ Error Handling: narrowError() utility in use');
-      console.log('✅ MockSupabase: Test infrastructure operational');
-      console.log('\n📊 SECURITY AUDIT RESULT: 38/39 tests PASSED (97.4%)');
+      console.info('\n🛡️ DEFENSIVE SHIELD STATUS:');
+      console.info('✅ XSS Protection: Regex validation active');
+      console.info('✅ SQL Injection Prevention: Immutable column mappings');
+      console.info('✅ Race Condition Protection: Advisory locks active (1 success, 99 failures)');
+      console.info('✅ Error Handling: narrowError() utility in use');
+      console.info('✅ MockSupabase: Test infrastructure operational');
+      console.info('\n📊 SECURITY AUDIT RESULT: 38/39 tests PASSED (97.4%)');
     });
   });
 });

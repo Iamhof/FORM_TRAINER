@@ -1,6 +1,5 @@
 const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
-const importPlugin = require('eslint-plugin-import');
 const reactHooksPlugin = require('eslint-plugin-react-hooks');
 
 module.exports = defineConfig([

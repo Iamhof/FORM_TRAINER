@@ -1,7 +1,8 @@
-import { protectedProcedure } from '../../../create-context';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth';
 import { z } from 'zod';
+
+import { supabaseAdmin } from '../../../../lib/auth';
+import { protectedProcedure } from '../../../create-context';
 
 const hexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format. Must be #RRGGBB');
 
@@ -11,6 +12,7 @@ export const updateProfileProcedure = protectedProcedure
     accentColor: hexColorSchema.optional(),
   }))
   .mutation(async ({ ctx, input }) => {
+    // eslint-disable-next-line no-console
     console.log('[UPDATE_PROFILE] Updating profile for user:', ctx.user.id, input);
     
     const updates: Record<string, any> = {};
@@ -43,6 +45,7 @@ export const updateProfileProcedure = protectedProcedure
       });
     }
 
+    // eslint-disable-next-line no-console
     console.log('[UPDATE_PROFILE] Profile updated successfully');
     
     return {

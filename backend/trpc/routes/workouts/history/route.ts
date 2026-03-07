@@ -1,8 +1,10 @@
-import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth.js';
+import { z } from 'zod';
+
+import { narrowError } from '../../../../../lib/error-utils.js';
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { protectedProcedure } from '../../../create-context.js';
 
 export const getWorkoutHistoryProcedure = protectedProcedure
   .input(
@@ -54,21 +56,22 @@ export const getWorkoutHistoryProcedure = protectedProcedure
       });
 
       return workouts || [];
-    } catch (err) {
+    } catch (err: unknown) {
       if (err instanceof TRPCError) {
         throw err;
       }
 
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const typedError = narrowError(err);
       logger.error('[Workout] Unexpected error fetching history', {
         userId: ctx.userId,
-        message: errorMessage,
-        stack: err instanceof Error ? err.stack : undefined,
+        message: typedError.message,
+        code: typedError.code,
+        details: typedError.details,
       });
 
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        message: `Unexpected error: ${errorMessage}`,
+        message: `Unexpected error: ${typedError.message}`,
       });
     }
   });

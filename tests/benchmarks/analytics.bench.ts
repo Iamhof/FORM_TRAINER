@@ -1,4 +1,5 @@
 import { bench, describe } from 'vitest';
+
 import { aggregateAnalyticsData } from '../../backend/trpc/routes/analytics/utils.js';
 
 // Manual type definitions matching database schema (types/database.ts)

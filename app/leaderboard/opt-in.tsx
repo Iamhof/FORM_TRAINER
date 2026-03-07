@@ -1,13 +1,15 @@
+import { router, Stack } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, Pressable, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, Stack } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+
 import Card from '@/components/Card';
 import { COLORS, SPACING } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useLeaderboard } from '@/contexts/LeaderboardContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
+import { narrowError } from '@/lib/error-utils';
 import { logger } from '@/lib/logger';
 
 const SUBMISSION_TIMEOUT = 30000; // 30 seconds
@@ -79,22 +81,30 @@ export default function OptInScreen() {
             setTimeout(() => reject(new Error('Refetch timeout')), 10000)
           ),
         ]);
-      } catch (refetchError) {
-        logger.warn('[OptIn] Refetch warning:', refetchError);
+      } catch (refetchError: unknown) {
+        const typedRefetchError = narrowError(refetchError);
+        logger.warn('[OptIn] Refetch warning', {
+          message: typedRefetchError.message,
+          code: typedRefetchError.code,
+        });
         // Continue with navigation even if refetch fails
       }
 
       // Navigate to leaderboard tab instead of going back
       router.replace('/(tabs)/leaderboard');
-    } catch (error) {
+    } catch (error: unknown) {
       // Clear timeout on error
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
 
-      logger.error('[OptIn] Error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      const typedError = narrowError(error);
+      logger.error('[OptIn] Error', {
+        message: typedError.message,
+        code: typedError.code,
+      });
+      const errorMessage = typedError.message;
       
       // Show user-friendly error with option to navigate to profile settings
       Alert.alert(

@@ -1,15 +1,53 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
-import { Bell, Lock, HelpCircle, FileText, ChevronRight } from 'lucide-react-native';
+import { Bell, Lock, HelpCircle, FileText, ChevronRight, Bug } from 'lucide-react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, Pressable, Alert, Share } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import Card from '@/components/Card';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
+import { logger } from '@/lib/logger';
 
 export default function SettingsScreen() {
   const { accent } = useTheme();
   const router = useRouter();
+
+  // Hidden debug menu: tap version text 5 times to reveal
+  const [debugEnabled, setDebugEnabled] = useState(false);
+  const tapCountRef = useRef(0);
+  const lastTapRef = useRef(0);
+
+  const handleVersionTap = useCallback(() => {
+    const now = Date.now();
+    // Reset counter if more than 2 seconds between taps
+    if (now - lastTapRef.current > 2000) {
+      tapCountRef.current = 0;
+    }
+    lastTapRef.current = now;
+    tapCountRef.current += 1;
+
+    if (tapCountRef.current >= 5) {
+      tapCountRef.current = 0;
+      setDebugEnabled(prev => !prev);
+    }
+  }, []);
+
+  const handleShareLogs = useCallback(async () => {
+    const logs = logger.getRecentLogsFormatted(100);
+    if (!logs) {
+      Alert.alert('No Logs', 'No recent log entries to share.');
+      return;
+    }
+    try {
+      await Share.share({
+        message: `--- FORM Debug Logs ---\n${logs}`,
+        title: 'FORM Debug Logs',
+      });
+    } catch {
+      // User cancelled or share failed
+    }
+  }, []);
 
   return (
     <View style={styles.background}>
@@ -120,9 +158,29 @@ export default function SettingsScreen() {
             </Card>
           </View>
 
-          <View style={styles.versionSection}>
+          {/* Hidden debug section — revealed by tapping version text 5 times */}
+          {debugEnabled && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Developer</Text>
+
+              <Card style={styles.menuCard}>
+                <Pressable style={styles.menuItem} onPress={handleShareLogs}>
+                  <View style={[styles.menuIcon, { backgroundColor: `${accent}20` }]}>
+                    <Bug size={20} color={accent} strokeWidth={2} />
+                  </View>
+                  <View style={styles.menuContent}>
+                    <Text style={styles.menuTitle}>Share Debug Logs</Text>
+                    <Text style={styles.menuSubtitle}>Export recent logs for troubleshooting</Text>
+                  </View>
+                  <ChevronRight size={20} color={COLORS.textTertiary} strokeWidth={2} />
+                </Pressable>
+              </Card>
+            </View>
+          )}
+
+          <Pressable style={styles.versionSection} onPress={handleVersionTap}>
             <Text style={styles.versionText}>Version 1.0.0</Text>
-          </View>
+          </Pressable>
         </ScrollView>
       </SafeAreaView>
     </View>

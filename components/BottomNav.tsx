@@ -1,23 +1,23 @@
+import { BlurView } from 'expo-blur';
+import { LayoutGrid, Dumbbell, BarChart3, Trophy } from 'lucide-react-native';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { Home, Dumbbell, BarChart3, Trophy, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
+
+import { COLORS, SPACING, BOTTOM_NAV_HEIGHT, colorWithOpacity } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 
 type TabItem = {
   name: string;
   label: string;
-  icon: typeof Home;
+  icon: typeof LayoutGrid;
 };
 
 const TABS: TabItem[] = [
-  { name: 'home', label: 'Home', icon: Home },
-  { name: 'workouts', label: 'Workouts', icon: Dumbbell },
-  { name: 'analytics', label: 'Progress', icon: BarChart3 },
-  { name: 'leaderboard', label: 'Ranks', icon: Trophy },
-  { name: 'profile', label: 'Profile', icon: User },
+  { name: 'home', label: 'DASHBOARD', icon: LayoutGrid },
+  { name: 'workouts', label: 'WORKOUTS', icon: Dumbbell },
+  { name: 'analytics', label: 'STATS', icon: BarChart3 },
+  { name: 'leaderboard', label: 'RANKS', icon: Trophy },
 ];
 
 type BottomNavProps = {
@@ -25,76 +25,76 @@ type BottomNavProps = {
   onNavigate: (route: string) => void;
 };
 
+function TabButton({
+  tab,
+  isActive,
+  accent,
+  onPress,
+}: {
+  tab: TabItem;
+  isActive: boolean;
+  accent: string;
+  onPress: () => void;
+}) {
+  const Icon = tab.icon;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={styles.tab}
+      testID={`tab-${tab.name}`}
+    >
+      {isActive ? (
+        <View
+          style={[
+            styles.activeIconContainer,
+            { backgroundColor: colorWithOpacity(accent, 0.2) },
+          ]}
+        >
+          <Icon size={22} color={accent} strokeWidth={2.5} />
+        </View>
+      ) : (
+        <Icon size={24} color={COLORS.textTertiary} strokeWidth={2} />
+      )}
+      <Text
+        style={[
+          styles.label,
+          { color: isActive ? accent : COLORS.textTertiary },
+        ]}
+      >
+        {tab.label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export default function BottomNav({ currentRoute, onNavigate }: BottomNavProps) {
   const { accent } = useTheme();
   const insets = useSafeAreaInsets();
 
-
+  const renderTabs = () =>
+    TABS.map((tab) => (
+      <TabButton
+        key={tab.name}
+        tab={tab}
+        isActive={tab.name === currentRoute}
+        accent={accent}
+        onPress={() => onNavigate(tab.name)}
+      />
+    ));
 
   return (
     <View style={styles.container}>
       {Platform.OS === 'ios' ? (
-        <BlurView intensity={80} tint="dark" style={styles.blur}>
+        <BlurView intensity={60} tint="dark" style={styles.blur}>
           <View style={[styles.content, { paddingBottom: insets.bottom }]}>
-            {TABS.map((tab, index) => {
-              const Icon = tab.icon;
-              const isActive = tab.name === currentRoute;
-              
-              return (
-                <Pressable
-                  key={tab.name}
-                  onPress={() => onNavigate(tab.name)}
-                  style={styles.tab}
-                  testID={`tab-${tab.name}`}
-                >
-                  <Icon
-                    size={24}
-                    color={isActive ? accent : COLORS.textSecondary}
-                    strokeWidth={isActive ? 2.5 : 2}
-                  />
-                  <Text
-                    style={[
-                      styles.label,
-                      { color: isActive ? accent : COLORS.textSecondary },
-                    ]}
-                  >
-                    {tab.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+            {renderTabs()}
           </View>
         </BlurView>
       ) : (
         <View style={[styles.blur, styles.webBlur]}>
           <View style={[styles.content, { paddingBottom: insets.bottom }]}>
-            {TABS.map((tab, index) => {
-              const Icon = tab.icon;
-              const isActive = tab.name === currentRoute;
-              
-              return (
-                <Pressable
-                  key={tab.name}
-                  onPress={() => onNavigate(tab.name)}
-                  style={styles.tab}
-                  testID={`tab-${tab.name}`}
-                >
-                  <Icon
-                    size={24}
-                    color={isActive ? accent : COLORS.textSecondary}
-                    strokeWidth={isActive ? 2.5 : 2}
-                  />
-                  <Text
-                    style={[
-                      styles.label,
-                      { color: isActive ? accent : COLORS.textSecondary },
-                    ]}
-                  >
-                    {tab.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+            {renderTabs()}
           </View>
         </View>
       )}
@@ -123,22 +123,22 @@ const styles = StyleSheet.create({
   },
   blur: {
     overflow: 'hidden',
-    borderTopWidth: 2,
-    borderTopColor: 'rgba(255, 255, 255, 0.12)',
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   webBlur: Platform.select({
     web: {
-      backgroundColor: 'rgba(0, 0, 0, 0.92)',
-      backdropFilter: 'blur(40px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-      borderTopWidth: 2,
-      borderTopColor: 'rgba(255, 255, 255, 0.18)',
+      backgroundColor: 'rgba(8, 8, 10, 0.92)',
+      backdropFilter: 'blur(20px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      borderTopWidth: 0.5,
+      borderTopColor: 'rgba(255, 255, 255, 0.06)',
     } as any,
     default: {
-      backgroundColor: 'rgba(0, 0, 0, 0.92)',
-      borderTopWidth: 2,
-      borderTopColor: 'rgba(255, 255, 255, 0.18)',
+      backgroundColor: 'rgba(8, 8, 10, 0.92)',
+      borderTopWidth: 0.5,
+      borderTopColor: 'rgba(255, 255, 255, 0.06)',
     },
   }),
   content: {
@@ -152,10 +152,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: SPACING.sm,
-    gap: 2,
+    gap: 4,
+  },
+  activeIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   label: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600' as const,
+    letterSpacing: 0.5,
   },
 });

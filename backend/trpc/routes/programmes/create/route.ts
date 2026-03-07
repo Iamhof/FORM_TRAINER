@@ -1,9 +1,10 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { supabaseAdmin } from '../../../../lib/auth.js';
-import { protectedProcedure } from '../../../create-context.js';
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { awardXP } from '../../../../services/xp.service.js';
+import { protectedProcedure } from '../../../create-context.js';
 
 
 const exerciseSchema = z.object({
@@ -20,11 +21,12 @@ export const createProgrammeProcedure = protectedProcedure
       name: z.string().min(1),
       days: z.number().min(1),
       weeks: z.number().min(1),
+      category: z.string().optional(),
       exercises: z.array(exerciseSchema),
     })
   )
   .mutation(async ({ ctx, input }) => {
-    const { name, days, weeks, exercises } = input;
+    const { name, days, weeks, category, exercises } = input;
 
     // Log incoming request
     logger.info('[Programme] Create request received', {
@@ -74,6 +76,7 @@ export const createProgrammeProcedure = protectedProcedure
         name,
         days,
         weeks,
+        category: category || null,
         exercises,
       })
       .select()
@@ -119,5 +122,23 @@ export const createProgrammeProcedure = protectedProcedure
       programmeName: name,
     });
 
-    return programme;
+    // Award XP for creating a programme (non-blocking on failure)
+    const xpResult = await awardXP(
+      ctx.userId,
+      'PROGRAMME_CREATED',
+      programme.id,
+      { programmeName: name }
+    );
+
+    return {
+      ...programme,
+      xp: xpResult.awarded
+        ? {
+            awarded: xpResult.xp_awarded,
+            newXp: xpResult.new_xp,
+            newLevel: xpResult.new_level,
+            leveledUp: xpResult.leveled_up,
+          }
+        : null,
+    };
   });

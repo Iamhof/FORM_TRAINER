@@ -1,8 +1,9 @@
-import { z } from "zod";
-import { protectedProcedure } from "../../../create-context.js";
-import { supabaseAdmin } from "../../../../lib/auth.js";
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from "../../../../lib/auth.js";
+import { protectedProcedure } from "../../../create-context.js";
 
 export const shareProgrammeProcedure = protectedProcedure
   .input(
@@ -56,32 +57,25 @@ export const shareProgrammeProcedure = protectedProcedure
       });
     }
 
-    const { data: existingShare } = await supabaseAdmin
-      .from("shared_programmes")
-      .select("*")
-      .eq("programme_id", input.programmeId)
-      .eq("client_id", input.clientId)
-      .single();
-
-    if (existingShare) {
-      throw new TRPCError({
-        code: "BAD_REQUEST",
-        message: "Programme already shared with this client",
-      });
-    }
-
-    const { data: sharedProgramme, error: shareError } = await supabaseAdmin
-      .from("shared_programmes")
-      .insert({
-        programme_id: input.programmeId,
-        pt_id: ctx.userId,
-        client_id: input.clientId,
-        shared_at: new Date().toISOString(),
-      })
-      .select()
-      .single();
+    // Race Condition Prevention: Use atomic RPC with advisory lock
+    const { data: sharedProgramme, error: shareError } = await supabaseAdmin.rpc(
+      'share_programme_atomic',
+      {
+        p_pt_id: ctx.userId,
+        p_programme_id: input.programmeId,
+        p_client_id: input.clientId,
+      }
+    );
 
     if (shareError) {
+      // Handle duplicate share attempts gracefully
+      if (shareError.code === '23505' || shareError.message?.includes('already shared')) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Programme already shared with this client",
+        });
+      }
+
       logger.error("[PT] Error sharing programme:", shareError);
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",

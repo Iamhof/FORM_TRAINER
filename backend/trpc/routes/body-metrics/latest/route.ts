@@ -1,6 +1,6 @@
-import { protectedProcedure } from "../../../create-context.js";
-import { supabaseAdmin } from '../../../../lib/auth.js';
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { protectedProcedure } from "../../../create-context.js";
 
 export const getLatestBodyMetricsProcedure = protectedProcedure.query(async ({ ctx }) => {
   const { data, error } = await supabaseAdmin

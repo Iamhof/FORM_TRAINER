@@ -1,8 +1,10 @@
-import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth.js';
 import { z } from 'zod';
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { awardXP } from '../../../../services/xp.service.js';
+import { protectedProcedure } from '../../../create-context.js';
 
 const hexColorSchema = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid hex color format. Must be #RRGGBB');
 
@@ -27,9 +29,20 @@ export const updateColorProcedure = protectedProcedure
     }
 
     logger.debug('[UPDATE_COLOR] Color updated successfully');
-    
+
+    // Award XP for first color change (one-time action, non-blocking on failure)
+    const xpResult = await awardXP(ctx.userId, 'CHANGE_COLOR');
+
     return {
       success: true,
       color: input.color,
+      xp: xpResult.awarded
+        ? {
+            awarded: xpResult.xp_awarded,
+            newXp: xpResult.new_xp,
+            newLevel: xpResult.new_level,
+            leveledUp: xpResult.leveled_up,
+          }
+        : null,
     };
   });

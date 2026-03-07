@@ -1,23 +1,35 @@
+import { useRouter } from 'expo-router';
+import { Plus, Trash2, CheckCircle2 } from 'lucide-react-native';
 import React, { useState, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Plus, Trash2, CheckCircle2 } from 'lucide-react-native';
-import Card from '@/components/Card';
+
 import Button from '@/components/Button';
+import Card from '@/components/Card';
 import ConfirmModal from '@/components/ConfirmModal';
 import { COLORS, SPACING, TYPOGRAPHY, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { narrowError } from '@/lib/error-utils';
 import { logger } from '@/lib/logger';
 
 export default function WorkoutsScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const { programmes, deleteProgramme, getProgrammeProgress } = useProgrammes();
+  const { isPremium } = useSubscription();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const insets = useSafeAreaInsets();
+
+  const handleCreateProgramme = () => {
+    if (programmes.length >= 1 && !isPremium) {
+      router.push('/paywall' as any);
+      return;
+    }
+    router.push('/create-programme');
+  };
 
   const scrollPaddingBottom = useMemo(() => {
     return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
@@ -32,9 +44,13 @@ export default function WorkoutsScreen() {
       await deleteProgramme(confirmDelete.id);
       logger.debug('[Workouts] Programme deleted successfully');
       setConfirmDelete(null);
-    } catch (error) {
-      logger.error('[Workouts] Error deleting programme:', error);
-      alert(`Failed to delete programme: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch (error: unknown) {
+      const typedError = narrowError(error);
+      logger.error('[Workouts] Error deleting programme', {
+        message: typedError.message,
+        code: typedError.code,
+      });
+      alert(`Failed to delete programme: ${typedError.message}`);
     } finally {
       setDeletingId(null);
     }
@@ -52,7 +68,7 @@ export default function WorkoutsScreen() {
             <Text style={styles.title}>Programme</Text>
             <Pressable 
               style={[styles.addButton, { backgroundColor: accent }]}
-              onPress={() => router.push('/create-programme')}
+              onPress={handleCreateProgramme}
             >
               <Plus size={20} color={COLORS.background} strokeWidth={2.5} />
             </Pressable>
@@ -67,7 +83,7 @@ export default function WorkoutsScreen() {
               </Text>
               <Button
                 title="Create Programme"
-                onPress={() => router.push('/create-programme')}
+                onPress={handleCreateProgramme}
                 variant="primary"
                 style={styles.createButton}
               />

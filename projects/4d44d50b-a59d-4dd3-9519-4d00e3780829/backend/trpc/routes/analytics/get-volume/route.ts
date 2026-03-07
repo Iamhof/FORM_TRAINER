@@ -1,8 +1,11 @@
-import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth';
+import { z } from 'zod';
+
 import { getLocalDateString } from '@/lib/date-utils';
+
+import { supabaseAdmin } from '../../../../lib/auth';
+import { protectedProcedure } from '../../../create-context';
+
 
 const getDateRange = (
   period: 'week' | 'month' | 'total',
@@ -87,6 +90,7 @@ export const getVolumeProcedure = protectedProcedure
     const { period } = input;
     const now = new Date();
 
+    // eslint-disable-next-line no-console
     console.log('[getVolume] Fetching volume for period:', period, 'user:', ctx.user.id);
 
     const currentRange = getDateRange(period, now);
@@ -120,6 +124,7 @@ export const getVolumeProcedure = protectedProcedure
     const uniqueDates = new Set(currentAnalytics?.map((record: any) => record.date) || []);
     const workoutCount = uniqueDates.size;
 
+    // eslint-disable-next-line no-console
     console.log('[getVolume] Current period:', {
       totalVolume,
       workoutCount,
@@ -144,6 +149,7 @@ export const getVolumeProcedure = protectedProcedure
         );
       }
 
+      // eslint-disable-next-line no-console
       console.log('[getVolume] Previous period:', {
         previousPeriodVolume,
         range: previousRange,
@@ -157,6 +163,7 @@ export const getVolumeProcedure = protectedProcedure
       ? ((totalKg - previousKg) / previousKg) * 100
       : totalKg > 0 ? 100 : 0;
 
+    // eslint-disable-next-line no-console
     console.log('[getVolume] Result:', {
       totalVolumeKg: totalKg,
       workoutCount,

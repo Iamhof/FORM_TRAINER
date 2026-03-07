@@ -1,7 +1,8 @@
-import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth.js';
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { protectedProcedure } from '../../../create-context.js';
 
 export const getLeaderboardProfileProcedure = protectedProcedure.query(async ({ ctx }) => {
   logger.debug('[getLeaderboardProfile] Fetching profile for user:', ctx.userId);

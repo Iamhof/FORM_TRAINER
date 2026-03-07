@@ -1,6 +1,7 @@
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View, Pressable, ActivityIndicator } from 'react-native';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
+
 import Card from '@/components/Card';
 import { COLORS, SPACING } from '@/constants/theme';
 

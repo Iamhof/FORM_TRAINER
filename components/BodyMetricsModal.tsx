@@ -1,3 +1,5 @@
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { X, Scale, Dumbbell, Droplet, Calendar, ChevronDown } from 'lucide-react-native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -9,13 +11,15 @@ import {
   ScrollView,
   Platform,
 } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { X, Scale, Dumbbell, Droplet, Calendar, ChevronDown } from 'lucide-react-native';
+
 import { COLORS, SPACING } from '@/constants/theme';
 import { useBodyMetrics } from '@/contexts/BodyMetricsContext';
-import Button from './Button';
-import { logger } from '@/lib/logger';
+import { useTheme } from '@/contexts/ThemeContext';
 import { getLocalDateString } from '@/lib/date-utils';
+import { logger } from '@/lib/logger';
+
+import Button from './Button';
+
 
 interface BodyMetricsModalProps {
   visible: boolean;
@@ -23,6 +27,7 @@ interface BodyMetricsModalProps {
 }
 
 export default function BodyMetricsModal({ visible, onClose }: BodyMetricsModalProps) {
+  const { accent } = useTheme();
   const { logBodyMetrics, isLoggingMetrics, latestMetrics } = useBodyMetrics();
   const [date, setDate] = useState<string>('');
   const [weight, setWeight] = useState<string>('');
@@ -99,10 +104,10 @@ export default function BodyMetricsModal({ visible, onClose }: BodyMetricsModalP
     try {
       await logBodyMetrics({
         date,
-        weight: weightNum,
-        muscleMass: muscleMassNum,
-        bodyFatPercentage: bodyFatNum,
-        notes: notes || undefined,
+        ...(weightNum !== undefined && { weight: weightNum }),
+        ...(muscleMassNum !== undefined && { muscleMass: muscleMassNum }),
+        ...(bodyFatNum !== undefined && { bodyFatPercentage: bodyFatNum }),
+        ...(notes && { notes }),
       });
       onClose();
     } catch (err) {
@@ -156,7 +161,7 @@ export default function BodyMetricsModal({ visible, onClose }: BodyMetricsModalP
                     style={styles.datePickerButton}
                     onPress={() => setShowDatePicker(false)}
                   >
-                    <Text style={styles.datePickerButtonText}>Done</Text>
+                    <Text style={[styles.datePickerButtonText, { color: accent }]}>Done</Text>
                   </Pressable>
                 </View>
               )}
@@ -330,7 +335,6 @@ const styles = StyleSheet.create({
   datePickerButtonText: {
     fontSize: 16,
     fontWeight: '600' as const,
-    color: COLORS.accents.orange,
   },
   textArea: {
     height: 80,

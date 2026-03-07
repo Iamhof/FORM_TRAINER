@@ -1,58 +1,78 @@
 import React, { ReactNode } from 'react';
 import { StyleSheet, View, ViewStyle, Platform } from 'react-native';
-import { COLORS } from '@/constants/theme';
+
+import { COLORS, colorWithOpacity } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+
+// Re-export for backwards compatibility — prefer importing from '@/constants/theme'
+export { colorWithOpacity };
+
+const INTENSITY_CONFIG = {
+  low: {
+    borderOpacity: 0.3,
+    ios: { shadowOpacity: 0.2, shadowRadius: 8 },
+    android: { elevation: 3 },
+    webShadowSize: 10,
+    webShadowOpacity: 0.15,
+  },
+  medium: {
+    borderOpacity: 0.5,
+    ios: { shadowOpacity: 0.35, shadowRadius: 12 },
+    android: { elevation: 6 },
+    webShadowSize: 16,
+    webShadowOpacity: 0.25,
+  },
+  high: {
+    borderOpacity: 0.8,
+    ios: { shadowOpacity: 0.6, shadowRadius: 30 },
+    android: { elevation: 15 },
+    webShadowSize: 30,
+    webShadowOpacity: 0.45,
+  },
+} as const;
 
 type GlowCardProps = {
   children: ReactNode;
   glowColor?: string;
   isActive?: boolean;
+  intensity?: 'low' | 'medium' | 'high';
   style?: ViewStyle;
 };
 
-export default function GlowCard({ 
-  children, 
-  glowColor = COLORS.accents.orange,
+export default function GlowCard({
+  children,
+  glowColor,
   isActive = true,
+  intensity = 'medium',
   style
 }: GlowCardProps) {
+  const { accent } = useTheme();
+  const resolvedGlowColor = glowColor || accent;
   if (!isActive) {
     return <View style={style}>{children}</View>;
   }
 
-  const colorWithOpacity = (color: string, alpha: number) => {
-    if (color.startsWith('rgb(')) {
-      const rgb = color.match(/\d+/g);
-      if (!rgb || rgb.length < 3) return `rgba(255, 107, 85, ${alpha})`;
-      return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
-    }
-    if (color.startsWith('#')) {
-      const r = parseInt(color.slice(1, 3), 16);
-      const g = parseInt(color.slice(3, 5), 16);
-      const b = parseInt(color.slice(5, 7), 16);
-      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-    return `rgba(255, 107, 85, ${alpha})`;
-  };
+  const config = INTENSITY_CONFIG[intensity];
 
   return (
     <View style={[styles.container, style]}>
-      <View 
+      <View
         style={[
-          styles.glowBorder, 
-          { 
-            borderColor: colorWithOpacity(glowColor, 0.8),
-            shadowColor: glowColor,
+          styles.glowBorder,
+          {
+            borderColor: colorWithOpacity(resolvedGlowColor, config.borderOpacity),
+            shadowColor: resolvedGlowColor,
             ...Platform.select({
               ios: {
                 shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.6,
-                shadowRadius: 8,
+                shadowOpacity: config.ios.shadowOpacity,
+                shadowRadius: config.ios.shadowRadius,
               },
               android: {
-                elevation: 8,
+                elevation: config.android.elevation,
               },
               web: {
-                boxShadow: `0 0 20px ${colorWithOpacity(glowColor, 0.4)}`,
+                boxShadow: `0 0 ${config.webShadowSize}px ${colorWithOpacity(resolvedGlowColor, config.webShadowOpacity)}, 0 10px 15px rgba(0,0,0,0.5)`,
               } as any,
             }),
           }
@@ -69,7 +89,8 @@ const styles = StyleSheet.create({
     position: 'relative' as const,
   },
   glowBorder: {
-    borderWidth: 1.5,
-    borderRadius: 16,
+    borderWidth: 1,
+    borderRadius: 20,
+    backgroundColor: COLORS.cardBackground,
   },
 });

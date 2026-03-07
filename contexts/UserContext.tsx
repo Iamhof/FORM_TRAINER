@@ -1,11 +1,13 @@
 import createContextHook from '@nkzw/create-context-hook';
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
-import type { Session, User } from '@supabase/supabase-js';
-import { errorService } from '@/services/error.service';
-import { logger } from '@/lib/logger';
+
 import { narrowError } from '@/lib/error-utils';
+import { logger } from '@/lib/logger';
 import { getElapsedTime } from '@/lib/runtime-utils';
+import { supabase } from '@/lib/supabase';
+import { errorService } from '@/services/error.service';
+
+import type { Session, User } from '@supabase/supabase-js';
 
 /**
  * UserProfile - Application layer type

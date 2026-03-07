@@ -49,3 +49,29 @@ export const getLocalWeekStart = (date: Date = new Date()): string => {
   return getLocalDateString(monday);
 };
 
+export type WeekDateEntry = {
+  dayAbbr: string;
+  dateNumber: number;
+};
+
+/**
+ * Returns an array of 7 entries for a week starting from the given Monday.
+ * Each entry contains the 3-letter day abbreviation and the calendar date number.
+ *
+ * @param weekStart - A Monday date string in 'YYYY-MM-DD' format (from getLocalWeekStart)
+ * @returns Array of 7 { dayAbbr, dateNumber } entries (Mon through Sun)
+ */
+export const getWeekDates = (weekStart: string): WeekDateEntry[] => {
+  const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+  const start = new Date(weekStart + 'T00:00:00');
+
+  return DAYS.map((dayAbbr, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return {
+      dayAbbr,
+      dateNumber: date.getDate(),
+    };
+  });
+};
+

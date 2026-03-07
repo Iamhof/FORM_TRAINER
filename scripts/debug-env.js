@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+/* eslint-disable no-console */
 // Debug script to check environment variables
 // Run with: node debug-env.js
 

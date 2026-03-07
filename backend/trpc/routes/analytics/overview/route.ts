@@ -1,10 +1,11 @@
-import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth.js';
-import { aggregateAnalyticsData, generateEmptyMonthlyData } from '../utils.js';
-import { AnalyticsData as DBAnalyticsData, Schedule, ScheduleDay } from '../../../../../types/database.js';
+import { z } from 'zod';
+
 import { logger } from '../../../../../lib/logger.js';
+import { AnalyticsData as DBAnalyticsData, Schedule, ScheduleDay } from '../../../../../types/database.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { protectedProcedure } from '../../../create-context.js';
+import { aggregateAnalyticsData, generateEmptyMonthlyData } from '../utils.js';
 
 const normaliseSchedule = (payload: unknown): Schedule['schedule'] => {
   if (Array.isArray(payload)) {
@@ -74,16 +75,16 @@ export const getAnalyticsOverviewProcedure = protectedProcedure
     }
 
     const rawAnalytics = (data.analytics ?? []) as DBAnalyticsData[];
-    const rawWorkouts = (data.workouts ?? []) as Array<{
+    const rawWorkouts = (data.workouts ?? []) as {
       completed_at: string;
       programme_id: string | null;
-    }>;
-    const rawSchedules = (data.schedules ?? []) as Array<{
+    }[];
+    const rawSchedules = (data.schedules ?? []) as {
       id: string;
       programmeId: string | null;
       weekStart: string;
       schedule: unknown;
-    }>;
+    }[];
 
     const schedules: Schedule[] = rawSchedules.map((item) => ({
       id: item.id,

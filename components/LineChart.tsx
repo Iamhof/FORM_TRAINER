@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
+
 import { COLORS, SPACING } from '@/constants/theme';
 import { MonthlyDataPoint } from '@/types/analytics';
 
@@ -52,11 +53,14 @@ export default function LineChart({
   const pathD = useMemo(() => {
     if (chartData.points.length === 0) return '';
 
-    let path = `M ${chartData.points[0].x} ${chartData.points[0].y}`;
+    // Safe: Already checked length > 0
+    const firstPoint = chartData.points[0]!;
+    let path = `M ${firstPoint.x} ${firstPoint.y}`;
 
     for (let i = 1; i < chartData.points.length; i++) {
-      const prev = chartData.points[i - 1];
-      const curr = chartData.points[i];
+      // Safe: Loop bounded by array length
+      const prev = chartData.points[i - 1]!;
+      const curr = chartData.points[i]!;
 
       const controlX1 = prev.x + (curr.x - prev.x) / 3;
       const controlY1 = prev.y;
@@ -74,8 +78,10 @@ export default function LineChart({
 
     const chartHeight = height - 40;
     let path = pathD;
-    const lastPoint = chartData.points[chartData.points.length - 1];
-    path += ` L ${lastPoint.x} ${chartHeight} L ${chartData.points[0].x} ${chartHeight} Z`;
+    // Safe: Already checked length > 0
+    const lastPoint = chartData.points[chartData.points.length - 1]!;
+    const firstPoint = chartData.points[0]!;
+    path += ` L ${lastPoint.x} ${chartHeight} L ${firstPoint.x} ${chartHeight} Z`;
 
     return path;
   }, [pathD, chartData.points, height]);

@@ -1,6 +1,7 @@
+import { Clock } from 'lucide-react-native';
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, Modal, Pressable } from 'react-native';
-import { Clock } from 'lucide-react-native';
+
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 

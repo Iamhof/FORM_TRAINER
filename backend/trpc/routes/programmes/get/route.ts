@@ -1,7 +1,8 @@
-import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+
 import { supabaseAdmin } from '../../../../lib/auth.js';
+import { protectedProcedure } from '../../../create-context.js';
 
 export const getProgrammeProcedure = protectedProcedure
   .input(z.object({ id: z.string() }))

@@ -1,16 +1,17 @@
+import { Trophy, Medal } from 'lucide-react-native';
 import React, { useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, Animated } from 'react-native';
-import { Trophy, Medal } from 'lucide-react-native';
+
 import { COLORS, SPACING } from '@/constants/theme';
+
 import type { LeaderboardEntry } from '@/types/leaderboard';
 
 interface LeaderboardPodiumProps {
   entries: LeaderboardEntry[];
   formatValue: (value: number) => string;
-  accentColor: string;
 }
 
-export default function LeaderboardPodium({ entries, formatValue, accentColor }: LeaderboardPodiumProps) {
+export default function LeaderboardPodium({ entries, formatValue }: LeaderboardPodiumProps) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim1 = useRef(new Animated.Value(50)).current;
   const slideAnim2 = useRef(new Animated.Value(50)).current;
@@ -45,13 +46,17 @@ export default function LeaderboardPodium({ entries, formatValue, accentColor }:
         useNativeDriver: true,
       }),
     ]).start();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Animated.Value refs from useRef are stable and never change
   }, []);
 
   if (entries.length < 3) {
     return null;
   }
 
-  const [first, second, third] = entries.slice(0, 3);
+  // Safe: Already checked length >= 3
+  const first = entries[0]!;
+  const second = entries[1]!;
+  const third = entries[2]!
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>

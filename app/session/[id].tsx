@@ -16,6 +16,7 @@ import { useUser } from '@/contexts/UserContext';
 import { useExercises } from '@/hooks/useExercises';
 import { getLocalDateString, getLocalWeekStart } from '@/lib/date-utils';
 import { logger } from '@/lib/logger';
+import { requireParam } from '@/lib/router-utils';
 import { supabase } from '@/lib/supabase';
 
 type SetData = {
@@ -35,7 +36,8 @@ type ExerciseData = {
 export default function SessionScreen() {
   const { accent } = useTheme();
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams();
+  const sessionId = requireParam(params.id, 'session ID');
   const { programmes, refetch, isWeekUnlocked } = useProgrammes();
   const { data: allExercises = [], isLoading: exercisesLoading } = useExercises();
   const { user } = useUser();
@@ -65,17 +67,11 @@ export default function SessionScreen() {
   // Reset initialization flag when session ID changes to allow re-initialization for new sessions
   useEffect(() => {
     hasInitialized.current = false;
-  }, [id]);
+  }, [sessionId]);
   
   useEffect(() => {
     // Skip if already initialized for this session ID
     if (hasInitialized.current) {
-      return;
-    }
-    
-    if (!id) {
-      logger.error('[SessionScreen] No session ID provided');
-      setIsLoading(false);
       return;
     }
 
@@ -87,20 +83,21 @@ export default function SessionScreen() {
 
     // Session ID format: {programmeId}:{day}:{week}
     // Using colon delimiter to avoid conflicts with UUID programme IDs that contain dashes
-    const parts = id.split(':');
+    const parts = sessionId.split(':');
     if (parts.length !== 3) {
-      logger.error('[SessionScreen] Invalid session ID format (expected format: programmeId:day:week):', id);
+      logger.error('[SessionScreen] Invalid session ID format (expected format: programmeId:day:week):', sessionId);
       setIsLoading(false);
       return;
     }
 
-    const programmeId = parts[0];
-    const day = parseInt(parts[1], 10);
-    const week = parseInt(parts[2], 10);
+    // Safe: Already validated parts.length === 3
+    const programmeId = parts[0]!;
+    const day = parseInt(parts[1]!, 10);
+    const week = parseInt(parts[2]!, 10);
 
     // Validate that day and week are valid numbers
     if (isNaN(day) || isNaN(week) || day < 1 || week < 1) {
-      logger.error('[SessionScreen] Invalid day or week in session ID:', { id, day, week });
+      logger.error('[SessionScreen] Invalid day or week in session ID:', { sessionId, day, week });
       setIsLoading(false);
       return;
     }
@@ -149,7 +146,7 @@ export default function SessionScreen() {
     });
     setIsLoading(false);
     hasInitialized.current = true; // Mark as initialized
-  }, [id, programmes, allExercises, exercisesLoading, isWeekUnlocked, router]);
+  }, [sessionId, programmes, allExercises, exercisesLoading, isWeekUnlocked, router]);
 
   const currentExercise = exercises[currentExerciseIndex];
   const totalSets = currentExercise?.targetSets || 0;
@@ -213,8 +210,10 @@ export default function SessionScreen() {
     }));
     setCompletedSets(completedSets + 1);
 
-    const isLastSetOfExercise = setIndex === exercises[exerciseIndex].sets.length - 1;
-    const allSetsWillBeCompleted = exercises[exerciseIndex].sets.every(
+    const exercise = exercises[exerciseIndex];
+    if (!exercise) return;
+    const isLastSetOfExercise = setIndex === exercise.sets.length - 1;
+    const allSetsWillBeCompleted = exercise.sets.every(
       (s, j) => j === setIndex ? true : s.completed
     );
 
@@ -564,7 +563,7 @@ export default function SessionScreen() {
                     </View>
                   ) : (
                     <Text style={styles.waitingText}>
-                      {setIndex === 0 || currentExercise.sets[setIndex - 1].completed
+                      {setIndex === 0 || currentExercise.sets[setIndex - 1]?.completed
                         ? ''
                         : 'Waiting...'}
                     </Text>

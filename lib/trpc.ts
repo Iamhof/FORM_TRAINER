@@ -4,6 +4,7 @@ import Constants from "expo-constants";
 import superjson from "superjson";
 
 import { logger } from '@/lib/logger';
+import { isDevelopmentMode } from '@/lib/runtime-utils';
 import { supabase } from '@/lib/supabase';
 import { errorService } from '@/services/error.service';
 
@@ -33,7 +34,7 @@ const getCachedAuthToken = async (): Promise<string> => {
     _cachedToken = session?.access_token ?? null;
     _cachedTokenTimestamp = now;
     return _cachedToken ? `Bearer ${_cachedToken}` : '';
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('[tRPC] Unexpected error getting session:', error);
     _cachedToken = null;
     _cachedTokenTimestamp = now;
@@ -66,28 +67,17 @@ const getDefaultTimeout = (): number => {
 
 export const trpc = createTRPCReact<AppRouter>();
 
-/**
- * Helper to check if we're in development mode
- * Returns true in dev, false in production
- */
-const isDevelopmentMode = (): boolean => {
-  try {
-    const dev = (global as any).__DEV__;
-    return dev === true || process.env.NODE_ENV === 'development';
-  } catch {
-    return process.env.NODE_ENV === 'development';
-  }
-};
+// Note: isDevelopmentMode is now imported from runtime-utils
 
 /**
  * Transform technical errors into user-friendly messages for production
  * while maintaining detailed logs for debugging
- * 
+ *
  * @param technicalError - The detailed error with full technical information
  * @param context - Additional context for error tracking
  * @returns User-friendly error for production, technical error for development
  */
-const transformTRPCError = (technicalError: Error, context?: Record<string, any>): Error => {
+const transformTRPCError = (technicalError: Error, context?: Record<string, unknown>): Error => {
   // Always log the full technical details for debugging
   logger.error('[TRPC] Error occurred:', {
     message: technicalError.message,
@@ -192,10 +182,13 @@ try {
       },
       async fetch(url, options) {
         const baseUrl = getBaseUrl();
-        
+
         // Check for operation-specific timeout in headers
         // This allows routes to specify custom timeouts for heavy operations
-        const customTimeout = (options?.headers as Record<string, string> | undefined)?.['x-trpc-timeout'];
+        const headers = options?.headers;
+        const customTimeout = headers && typeof headers === 'object' && 'x-trpc-timeout' in headers
+          ? String((headers as Record<string, unknown>)['x-trpc-timeout'])
+          : undefined;
         const REQUEST_TIMEOUT = customTimeout && !isNaN(Number(customTimeout))
           ? Number(customTimeout)
           : getDefaultTimeout();
@@ -320,10 +313,10 @@ Request URL: ${url}${tunnelWarning}`);
           
           logger.debug('[TRPC] Request successful');
           return response;
-        } catch (error: any) {
+        } catch (error: unknown) {
           clearTimeout(timeoutId);
-          
-          if (error.name === 'AbortError') {
+
+          if (error instanceof Error && error.name === 'AbortError') {
             const timeoutSeconds = REQUEST_TIMEOUT / 1000;
             // Create detailed technical error for logging
             const technicalError = new Error(
@@ -377,6 +370,7 @@ Request URL: ${url}${tunnelWarning}`);
       }),
     ],
   });
+  // Mark fallback client as invalid (cast needed: tRPC v11 concrete type doesn't pick up module augmentation)
   (trpcClient as any).__isInvalid = true;
 }
 

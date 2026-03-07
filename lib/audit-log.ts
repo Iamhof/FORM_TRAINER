@@ -1,7 +1,16 @@
 import { logger } from './logger';
 import { supabaseAdmin } from '../backend/lib/auth';
 
-type AuditAction = 
+// JSON-safe value type for metadata
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+type AuditAction =
   | 'user_login'
   | 'user_logout'
   | 'profile_update'
@@ -26,7 +35,7 @@ interface AuditLogEntry {
   action: AuditAction;
   resource_type?: string;
   resource_id?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, JsonValue>;
   ip_address?: string;
   user_agent?: string;
 }
@@ -71,7 +80,7 @@ class AuditLogService {
       if (error && !error.message.includes('relation "audit_logs" does not exist')) {
         logger.warn('[AuditLog] Failed to write to database:', error);
       }
-    } catch (error) {
+    } catch {
       // Table doesn't exist, that's okay - we still logged to application logs
       logger.debug('[AuditLog] Audit logs table not found, skipping database write');
     }
@@ -79,10 +88,13 @@ class AuditLogService {
 
   /**
    * Helper to extract request metadata from tRPC context
+   *
+   * Note: With exactOptionalPropertyTypes: true, return type must
+   * explicitly allow undefined for fields that can be undefined.
    */
   extractRequestMetadata(ctx: { req?: Request; requestId?: string }): {
-    ip_address?: string;
-    user_agent?: string;
+    ip_address?: string | undefined;
+    user_agent?: string | undefined;
   } {
     if (!ctx.req) return {};
 

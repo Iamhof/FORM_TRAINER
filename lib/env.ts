@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { logger } from './logger';
 
 const envSchema = z.object({
@@ -9,7 +10,8 @@ const envSchema = z.object({
   EXPO_PUBLIC_LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).optional(),
   EXPO_PUBLIC_WEB_URL: z.string().url().optional(),
   EXPO_PUBLIC_TRPC_TIMEOUT: z.string().regex(/^\d+$/, 'TRPC timeout must be a number in milliseconds').optional(),
-  
+  EXPO_PUBLIC_REVENUECAT_API_KEY: z.string().min(1, 'RevenueCat API key required').optional(),
+
   // Server-side only
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'Service role key required').optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -30,6 +32,7 @@ export function validateEnv(): Env {
       EXPO_PUBLIC_LOG_LEVEL: process.env.EXPO_PUBLIC_LOG_LEVEL,
       EXPO_PUBLIC_WEB_URL: process.env.EXPO_PUBLIC_WEB_URL,
       EXPO_PUBLIC_TRPC_TIMEOUT: process.env.EXPO_PUBLIC_TRPC_TIMEOUT,
+      EXPO_PUBLIC_REVENUECAT_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY,
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
       NODE_ENV: process.env.NODE_ENV || 'development',
     });
@@ -77,6 +80,7 @@ try {
     EXPO_PUBLIC_LOG_LEVEL: process.env.EXPO_PUBLIC_LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error' | undefined,
     EXPO_PUBLIC_WEB_URL: process.env.EXPO_PUBLIC_WEB_URL,
     EXPO_PUBLIC_TRPC_TIMEOUT: process.env.EXPO_PUBLIC_TRPC_TIMEOUT,
+    EXPO_PUBLIC_REVENUECAT_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     NODE_ENV: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
   } as Env;

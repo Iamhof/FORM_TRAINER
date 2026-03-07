@@ -1,13 +1,14 @@
-import React, { useRef, useEffect } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
-import ConfettiCannon from 'react-native-confetti-cannon';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
-import { Animated } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform , Animated } from 'react-native';
+import ConfettiCannon from 'react-native-confetti-cannon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ViewShot from 'react-native-view-shot';
+
 import { COLORS, SPACING } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { logger } from '@/lib/logger';
 
 export interface WorkoutSummary {
@@ -27,12 +28,14 @@ interface Props {
   accentColor?: string;
 }
 
-const WorkoutCompleteModal: React.FC<Props> = ({ 
-  visible, 
-  onClose, 
-  summary, 
-  accentColor = COLORS.accents.orange 
+const WorkoutCompleteModal: React.FC<Props> = ({
+  visible,
+  onClose,
+  summary,
+  accentColor,
 }) => {
+  const { accent } = useTheme();
+  const resolvedAccent = accentColor || accent;
   const cannonRef = useRef<ConfettiCannon>(null);
   const cardShotRef = useRef<ViewShot>(null);
   const opacityAnim = useRef(new Animated.Value(0)).current;
@@ -61,6 +64,7 @@ const WorkoutCompleteModal: React.FC<Props> = ({
     } else {
       opacityAnim.setValue(0);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- opacityAnim is a stable ref; handleClose is defined below and uses onClose which should not re-trigger the timer
   }, [visible]);
 
   const handleClose = () => {
@@ -139,8 +143,8 @@ const WorkoutCompleteModal: React.FC<Props> = ({
             </View>
             
             <View style={styles.buttonContainer}>
-              <TouchableOpacity 
-                style={[styles.detailsButton, { backgroundColor: accentColor }]} 
+              <TouchableOpacity
+                style={[styles.detailsButton, { backgroundColor: resolvedAccent }]}
                 onPress={handleShare}
               >
                 <Text style={styles.detailsButtonText}>Share</Text>
@@ -158,7 +162,7 @@ const WorkoutCompleteModal: React.FC<Props> = ({
             fadeOut={true}
             explosionSpeed={500}
             fallSpeed={3500}
-            colors={getTintedColors(accentColor)}
+            colors={getTintedColors(resolvedAccent)}
           />
         )}
       </BlurView>

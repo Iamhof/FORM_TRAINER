@@ -1,3 +1,4 @@
+import { narrowError } from '@/lib/error-utils';
 import { logger } from '@/lib/logger';
 
 let honoApp: any = null;
@@ -19,9 +20,13 @@ async function getHonoApp() {
       }
       
       logger.info('[API Handler] Hono app initialized successfully');
-    } catch (error) {
-      logger.error('[API Handler] Failed to initialize Hono app:', error);
-      initializationError = error instanceof Error ? error : new Error(String(error));
+    } catch (error: unknown) {
+      const typedError = narrowError(error);
+      logger.error('[API Handler] Failed to initialize Hono app', {
+        message: typedError.message,
+        code: typedError.code,
+      });
+      initializationError = new Error(typedError.message);
       throw initializationError;
     }
   }
@@ -29,20 +34,21 @@ async function getHonoApp() {
 }
 
 function createErrorResponse(error: unknown, status: number = 500): Response {
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  const errorStack = error instanceof Error ? error.stack : undefined;
-  
-  logger.error('[API Handler] Creating error response:', {
+  const typedError = narrowError(error);
+
+  logger.error('[API Handler] Creating error response', {
     status,
-    message: errorMessage,
-    stack: errorStack,
+    message: typedError.message,
+    code: typedError.code,
+    details: typedError.details,
   });
   
   return Response.json(
     {
       error: 'Internal Server Error',
-      message: errorMessage,
-      ...(process.env.NODE_ENV === 'development' && { stack: errorStack }),
+      message: typedError.message,
+      code: typedError.code,
+      ...(process.env.NODE_ENV === 'development' && { details: typedError.details }),
     },
     { status, headers: { 'Content-Type': 'application/json' } }
   );
@@ -85,7 +91,7 @@ export async function GET(request: Request) {
     }
     
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('[API Handler] GET error:', error);
     return createErrorResponse(error);
   }
@@ -129,7 +135,7 @@ export async function POST(request: Request) {
     }
     
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('[API Handler] POST error:', error);
     return createErrorResponse(error);
   }
@@ -151,7 +157,7 @@ export async function PUT(request: Request) {
     const response = await app.fetch(honoRequest);
     logger.debug('[API Handler] PUT response status:', response.status);
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('[API Handler] PUT error:', error);
     return createErrorResponse(error);
   }
@@ -173,7 +179,7 @@ export async function DELETE(request: Request) {
     const response = await app.fetch(honoRequest);
     logger.debug('[API Handler] DELETE response status:', response.status);
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('[API Handler] DELETE error:', error);
     return createErrorResponse(error);
   }
@@ -195,7 +201,7 @@ export async function PATCH(request: Request) {
     const response = await app.fetch(honoRequest);
     logger.debug('[API Handler] PATCH response status:', response.status);
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('[API Handler] PATCH error:', error);
     return createErrorResponse(error);
   }
@@ -220,7 +226,7 @@ export async function OPTIONS(request: Request) {
     logger.debug('[API Handler] OPTIONS response status:', response.status);
     logger.debug('[API Handler] OPTIONS response headers:', Object.fromEntries(response.headers.entries()));
     return response;
-  } catch (error) {
+  } catch (error: unknown) {
     logger.error('[API Handler] OPTIONS error:', error);
     return createErrorResponse(error);
   }

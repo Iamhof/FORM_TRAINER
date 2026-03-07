@@ -8,6 +8,12 @@
     "scheme": "formworkout",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/01342726-aaf1-4f46-a8ad-2974d0069b20"
+    },
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
@@ -15,7 +21,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.rork.form",
+      "bundleIdentifier": "com.formworkout.app",
       "buildNumber": "1",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Use Face ID for secure authentication",
@@ -30,7 +36,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1A1A1A"
       },
-      "package": "com.rork.form",
+      "package": "com.formworkout.app",
       "versionCode": 1,
       "permissions": [
         "android.permission.VIBRATE",
@@ -50,7 +56,9 @@
           "configureAndroidBackup": true,
           "faceIDPermission": "Use Face ID for secure authentication"
         }
-      ]
+      ],
+      "expo-updates",
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true

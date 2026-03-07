@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { EnvCheck } from "@/components/EnvCheck";
@@ -11,13 +11,19 @@ import { BodyMetricsProvider } from "@/contexts/BodyMetricsContext";
 import { LeaderboardProvider } from "@/contexts/LeaderboardContext";
 import { ProgrammeProvider } from "@/contexts/ProgrammeContext";
 import { ScheduleProvider } from "@/contexts/ScheduleContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { initCrashProtection } from "@/lib/crash-protection";
+import { logger } from "@/lib/logger";
 import { trpc, trpcClient } from "@/lib/trpc";
 
 // Initialize crash protection for production builds
 initCrashProtection();
+
+// Performance: record app start time for startup profiling
+(global as typeof globalThis & { __APP_START_TIME?: number }).__APP_START_TIME = Date.now();
+logger.info('[Perf] _layout.tsx module loaded');
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -30,12 +36,19 @@ function RootLayoutNav() {
       <Stack.Screen name="auth" options={{ headerShown: false }} />
       <Stack.Screen name="profile-setup" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen 
-        name="programme-create" 
-        options={{ 
+      <Stack.Screen
+        name="programme-create"
+        options={{
           presentation: 'modal',
           headerShown: false,
-        }} 
+        }}
+      />
+      <Stack.Screen
+        name="paywall"
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
       />
     </Stack>
   );
@@ -72,31 +85,29 @@ export default function RootLayout() {
     },
   }));
 
-  useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
-
   return (
     <ErrorBoundary>
       <EnvCheck>
         <QueryClientProvider client={queryClient}>
           <trpc.Provider client={trpcClient} queryClient={queryClient}>
             <UserProvider>
-              <ThemeProvider>
-                <ProgrammeProvider>
-                  <AnalyticsProvider>
-                    <ScheduleProvider>
-                      <BodyMetricsProvider>
-                        <LeaderboardProvider>
-                          <GestureHandlerRootView style={{ flex: 1 }}>
-                            <RootLayoutNav />
-                          </GestureHandlerRootView>
-                        </LeaderboardProvider>
-                      </BodyMetricsProvider>
-                    </ScheduleProvider>
-                  </AnalyticsProvider>
-                </ProgrammeProvider>
-              </ThemeProvider>
+              <SubscriptionProvider>
+                <ThemeProvider>
+                  <ProgrammeProvider>
+                    <AnalyticsProvider>
+                      <ScheduleProvider>
+                        <BodyMetricsProvider>
+                          <LeaderboardProvider>
+                            <GestureHandlerRootView style={{ flex: 1 }}>
+                              <RootLayoutNav />
+                            </GestureHandlerRootView>
+                          </LeaderboardProvider>
+                        </BodyMetricsProvider>
+                      </ScheduleProvider>
+                    </AnalyticsProvider>
+                  </ProgrammeProvider>
+                </ThemeProvider>
+              </SubscriptionProvider>
             </UserProvider>
           </trpc.Provider>
         </QueryClientProvider>

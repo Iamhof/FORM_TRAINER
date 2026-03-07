@@ -1,4 +1,5 @@
 import { logger } from '@/lib/logger';
+import { isDevelopmentMode } from '@/lib/runtime-utils';
 
 type ErrorContext = Record<string, any>;
 
@@ -26,21 +27,16 @@ class ErrorService {
     this.initialized = true;
     logger.info('[ErrorService] Initialized');
 
-    // Safe runtime check for __DEV__
-    let isDev = false;
-    try {
-      const dev = (global as any).__DEV__;
-      isDev = dev === true || process.env.NODE_ENV === 'development';
-    } catch {
-      isDev = process.env.NODE_ENV === 'development';
-    }
+    // Use type-safe runtime utility for development mode detection
+    const isDev = isDevelopmentMode();
     const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
     
     // Only initialize Sentry in production with DSN configured
     if (!isDev && sentryDsn) {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- Conditional require for optional React Native dependency
         const Sentry = require('@sentry/react-native');
-        
+
         // Check if Sentry is already initialized (by logger service)
         const existingClient = (Sentry as any).getCurrentHub?.()?.getClient();
         if (existingClient) {
@@ -102,8 +98,9 @@ class ErrorService {
     // Send to Sentry in production if available
     if (this.sentryAvailable) {
       try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- Conditional require for optional React Native dependency
         const Sentry = require('@sentry/react-native');
-        
+
         // Add context as tags and extras
         if (sanitizedContext) {
           Sentry.withScope((scope: any) => {
@@ -139,14 +136,7 @@ class ErrorService {
   getUserMessage(error: unknown): string {
     if (error instanceof Error) {
       // Don't expose technical error messages in production
-      // Safe runtime check for __DEV__
-      let isDev = false;
-      try {
-        const dev = (global as any).__DEV__;
-        isDev = dev === true || process.env.NODE_ENV === 'development';
-      } catch {
-        isDev = process.env.NODE_ENV === 'development';
-      }
+      const isDev = isDevelopmentMode();
       if (isDev) {
         return error.message;
       }

@@ -1,11 +1,14 @@
+import { useRouter, Stack } from 'expo-router';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { StyleSheet, Text, View, Pressable, ScrollView, TextInput, Dimensions, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, Stack } from 'expo-router';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { COLORS, SPACING } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
+
 import Button from '@/components/Button';
+import { COLORS, SPACING, colorWithOpacity } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+
+const CATEGORY_OPTIONS = ['Strength', 'Hypertrophy', 'Tone', 'Fat Loss', 'General'] as const;
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ITEM_WIDTH = 140;
@@ -23,8 +26,9 @@ const HORIZONTAL_PADDING = (SCREEN_WIDTH - ITEM_WIDTH) / 2;
 export default function CreateProgrammeScreen() {
   const { accent } = useTheme();
   const router = useRouter();
-  const [step, setStep] = useState<'name' | 'frequency' | 'duration'>('name');
+  const [step, setStep] = useState<'name' | 'category' | 'frequency' | 'duration'>('name');
   const [programmeName, setProgrammeName] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedFrequency, setSelectedFrequency] = useState(3);
   const [selectedDuration, setSelectedDuration] = useState(4);
   const [centerFrequency, setCenterFrequency] = useState(3);
@@ -61,6 +65,7 @@ export default function CreateProgrammeScreen() {
         }, 50);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Initial scroll only: selectedFrequency/selectedDuration are read once on step enter, not reactive triggers
   }, [step]);
 
   const handleFrequencyScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -116,11 +121,14 @@ export default function CreateProgrammeScreen() {
 
   const handleContinue = () => {
     if (step === 'name') {
+      setStep('category');
+    } else if (step === 'category') {
       setStep('frequency');
     } else if (step === 'frequency') {
       setStep('duration');
     } else {
-      router.push(`/create-programme/days?name=${encodeURIComponent(programmeName)}&frequency=${selectedFrequency}&duration=${selectedDuration}` as any);
+      const category = selectedCategory || 'General';
+      router.push(`/create-programme/days?name=${encodeURIComponent(programmeName)}&category=${encodeURIComponent(category)}&frequency=${selectedFrequency}&duration=${selectedDuration}` as any);
     }
   };
 
@@ -128,6 +136,8 @@ export default function CreateProgrammeScreen() {
     if (step === 'duration') {
       setStep('frequency');
     } else if (step === 'frequency') {
+      setStep('category');
+    } else if (step === 'category') {
       setStep('name');
     } else {
       router.back();
@@ -155,7 +165,7 @@ export default function CreateProgrammeScreen() {
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          scrollEnabled={step === 'name'}
+          scrollEnabled={step === 'name' || step === 'category'}
         >
           {step === 'name' ? (
             <>
@@ -170,6 +180,41 @@ export default function CreateProgrammeScreen() {
                 onChangeText={setProgrammeName}
                 autoFocus
               />
+            </>
+          ) : step === 'category' ? (
+            <>
+              <Text style={styles.title}>Programme type</Text>
+              <Text style={styles.subtitle}>What&apos;s your training focus?</Text>
+
+              <View style={styles.categoryGrid}>
+                {CATEGORY_OPTIONS.map((category) => {
+                  const isSelected = selectedCategory === category;
+                  return (
+                    <Pressable
+                      key={category}
+                      style={[
+                        styles.categoryPill,
+                        {
+                          borderColor: isSelected ? accent : COLORS.cardBorder,
+                          backgroundColor: isSelected
+                            ? colorWithOpacity(accent, 0.15)
+                            : 'transparent',
+                        },
+                      ]}
+                      onPress={() => setSelectedCategory(category)}
+                    >
+                      <Text
+                        style={[
+                          styles.categoryPillText,
+                          { color: isSelected ? accent : COLORS.textSecondary },
+                        ]}
+                      >
+                        {category}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </>
           ) : step === 'frequency' ? (
             <>
@@ -438,6 +483,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textTertiary,
     textAlign: 'center' as const,
+  },
+  categoryGrid: {
+    marginTop: SPACING.xl,
+    gap: SPACING.md,
+  },
+  categoryPill: {
+    borderWidth: 2,
+    borderRadius: 14,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    alignItems: 'center' as const,
+  },
+  categoryPillText: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    letterSpacing: 0.5,
   },
   footer: {
     flexDirection: 'row',

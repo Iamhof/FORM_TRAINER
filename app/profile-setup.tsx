@@ -1,10 +1,12 @@
+import { useRouter } from 'expo-router';
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, Alert, TextInput, KeyboardAvoidingView, Platform, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+
 import { COLORS, SPACING, AccentColor } from '@/constants/theme';
-import { useUser } from '@/contexts/UserContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useUser } from '@/contexts/UserContext';
+import { assertGet } from '@/lib/array-utils';
 
 const COLOR_OPTIONS: { name: string; color: AccentColor; rgb: string }[] = [
   { name: 'Red', color: 'red', rgb: COLORS.accents.red },
@@ -85,7 +87,7 @@ export default function ProfileSetupScreen() {
       });
       
       if (result.success) {
-        const selectedColor = COLOR_OPTIONS[selectedColorIndex].color;
+        const selectedColor = assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').color;
         await setAccentColor(selectedColor);
         router.replace('/(tabs)/home' as any);
       } else {
@@ -116,7 +118,7 @@ export default function ProfileSetupScreen() {
           <View style={styles.header}>
             <View style={[
               styles.colorPreview,
-              { backgroundColor: COLOR_OPTIONS[selectedColorIndex].rgb }
+              { backgroundColor: assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').rgb }
             ]} />
             <Text style={styles.title}>Complete Your Profile</Text>
             <Text style={styles.subtitle}>
@@ -173,13 +175,13 @@ export default function ProfileSetupScreen() {
                 <Pressable
                   style={[
                     styles.genderButton,
-                    gender === 'male' && [styles.genderButtonSelected, { borderColor: COLOR_OPTIONS[selectedColorIndex].rgb }]
+                    gender === 'male' && [styles.genderButtonSelected, { borderColor: assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').rgb }]
                   ]}
                   onPress={() => setGender('male')}
                 >
                   <View style={[
                     styles.genderRadio,
-                    gender === 'male' && [styles.genderRadioSelected, { backgroundColor: COLOR_OPTIONS[selectedColorIndex].rgb }]
+                    gender === 'male' && [styles.genderRadioSelected, { backgroundColor: assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').rgb }]
                   ]} />
                   <Text style={[
                     styles.genderButtonText,
@@ -190,13 +192,13 @@ export default function ProfileSetupScreen() {
                 <Pressable
                   style={[
                     styles.genderButton,
-                    gender === 'female' && [styles.genderButtonSelected, { borderColor: COLOR_OPTIONS[selectedColorIndex].rgb }]
+                    gender === 'female' && [styles.genderButtonSelected, { borderColor: assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').rgb }]
                   ]}
                   onPress={() => setGender('female')}
                 >
                   <View style={[
                     styles.genderRadio,
-                    gender === 'female' && [styles.genderRadioSelected, { backgroundColor: COLOR_OPTIONS[selectedColorIndex].rgb }]
+                    gender === 'female' && [styles.genderRadioSelected, { backgroundColor: assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').rgb }]
                   ]} />
                   <Text style={[
                     styles.genderButtonText,
@@ -207,13 +209,13 @@ export default function ProfileSetupScreen() {
                 <Pressable
                   style={[
                     styles.genderButton,
-                    gender === 'other' && [styles.genderButtonSelected, { borderColor: COLOR_OPTIONS[selectedColorIndex].rgb }]
+                    gender === 'other' && [styles.genderButtonSelected, { borderColor: assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').rgb }]
                   ]}
                   onPress={() => setGender('other')}
                 >
                   <View style={[
                     styles.genderRadio,
-                    gender === 'other' && [styles.genderRadioSelected, { backgroundColor: COLOR_OPTIONS[selectedColorIndex].rgb }]
+                    gender === 'other' && [styles.genderRadioSelected, { backgroundColor: assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').rgb }]
                   ]} />
                   <Text style={[
                     styles.genderButtonText,
@@ -224,13 +226,13 @@ export default function ProfileSetupScreen() {
                 <Pressable
                   style={[
                     styles.genderButton,
-                    gender === 'prefer_not_to_say' && [styles.genderButtonSelected, { borderColor: COLOR_OPTIONS[selectedColorIndex].rgb }]
+                    gender === 'prefer_not_to_say' && [styles.genderButtonSelected, { borderColor: assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').rgb }]
                   ]}
                   onPress={() => setGender('prefer_not_to_say')}
                 >
                   <View style={[
                     styles.genderRadio,
-                    gender === 'prefer_not_to_say' && [styles.genderRadioSelected, { backgroundColor: COLOR_OPTIONS[selectedColorIndex].rgb }]
+                    gender === 'prefer_not_to_say' && [styles.genderRadioSelected, { backgroundColor: assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').rgb }]
                   ]} />
                   <Text style={[
                     styles.genderButtonText,
@@ -279,7 +281,7 @@ export default function ProfileSetupScreen() {
             <View style={styles.colorSection}>
               <Text style={styles.label}>Select Theme Color</Text>
               <Text style={styles.colorSubtitle}>
-                {COLOR_OPTIONS[selectedColorIndex].name}
+                {assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').name}
               </Text>
               
               <ScrollView
@@ -291,7 +293,7 @@ export default function ProfileSetupScreen() {
                 {COLOR_OPTIONS.map((option, index) => {
                   const isSelected = index === selectedColorIndex;
                   // Use pre-created animated value instead of creating new ones on each render
-                  const scaleAnim = colorAnimations[index];
+                  const scaleAnim = colorAnimations[index]!;
 
                   return (
                     <Pressable
@@ -323,7 +325,7 @@ export default function ProfileSetupScreen() {
               onPress={handleContinue}
               style={[
                 styles.continueButton,
-                { backgroundColor: COLOR_OPTIONS[selectedColorIndex].rgb },
+                { backgroundColor: assertGet(COLOR_OPTIONS, selectedColorIndex, 'ProfileSetup').rgb },
                 loading && styles.continueButtonDisabled
               ]}
               disabled={loading}

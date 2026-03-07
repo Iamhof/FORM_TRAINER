@@ -1,6 +1,6 @@
 import createContextHook from '@nkzw/create-context-hook';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
+import { Alert, AppState, AppStateStatus } from 'react-native';
 
 import { getLocalWeekStart } from '@/lib/date-utils';
 import { logger } from '@/lib/logger';
@@ -32,9 +32,9 @@ const getWeekStart = getLocalWeekStart;
 const getInitialSchedule = (weekStart: string): ScheduleDay[] =>
   Array.from({ length: 7 }, (_, i) => ({
     dayOfWeek: i,
-    status: 'empty',
-    sessionId: null,
+    status: 'empty' as const,
     weekStart,
+    // sessionId omitted entirely - not needed for empty days
   }));
 
 const [ScheduleProviderRaw, useSchedule] = createContextHook(() => {
@@ -95,9 +95,20 @@ const [ScheduleProviderRaw, useSchedule] = createContextHook(() => {
 
   const updateMutation = trpc.schedules.update.useMutation({
     onSuccess: (response) => {
+      logger.info('[ScheduleContext] updateSchedule succeeded');
       if (response?.success) {
         scheduleQuery.refetch();
       }
+    },
+    onError: (error) => {
+      logger.error('[ScheduleContext] updateSchedule FAILED:', {
+        message: error.message,
+        code: (error as any).data?.code,
+      });
+      Alert.alert(
+        'Schedule Update Failed',
+        'Could not save your schedule. Please check your connection and try again.'
+      );
     },
   });
   // Store mutation in ref to avoid unstable dependency
@@ -106,9 +117,20 @@ const [ScheduleProviderRaw, useSchedule] = createContextHook(() => {
 
   const assignMutation = trpc.schedules.assignSession.useMutation({
     onSuccess: (response) => {
+      logger.info('[ScheduleContext] assignSession succeeded');
       if (response?.schedule) {
         setSchedule(response.schedule);
       }
+    },
+    onError: (error) => {
+      logger.error('[ScheduleContext] assignSession FAILED:', {
+        message: error.message,
+        code: (error as any).data?.code,
+      });
+      Alert.alert(
+        'Session Assignment Failed',
+        'Could not assign the session. Please check your connection and try again.'
+      );
     },
   });
   // Store mutation in ref to avoid unstable dependency
@@ -117,9 +139,22 @@ const [ScheduleProviderRaw, useSchedule] = createContextHook(() => {
 
   const toggleMutation = trpc.schedules.toggleDay.useMutation({
     onSuccess: (response) => {
+      logger.info('[ScheduleContext] toggleDay succeeded');
       if (response?.schedule) {
         setSchedule(response.schedule);
       }
+    },
+    onError: (error) => {
+      logger.error('[ScheduleContext] toggleDay FAILED:', {
+        message: error.message,
+        code: (error as any).data?.code,
+      });
+      // Revert optimistic update by refetching the server state
+      scheduleQuery.refetch();
+      Alert.alert(
+        'Schedule Update Failed',
+        'Could not update the day. Please check your connection and try again.'
+      );
     },
   });
   // Store mutation in ref to avoid unstable dependency
@@ -132,39 +167,102 @@ const [ScheduleProviderRaw, useSchedule] = createContextHook(() => {
 
   const saveSchedule = useCallback(
     async (newSchedule: ScheduleDay[]) => {
-      await updateMutationRef.current.mutateAsync({
+      logger.info('[ScheduleContext] saveSchedule called', {
         weekStart: currentWeekStart,
         programmeId: activeProgramme?.id ?? null,
-        schedule: newSchedule,
+        scheduledDays: newSchedule.filter(d => d.status === 'scheduled').length,
       });
-      setSchedule(newSchedule);
+      try {
+        await updateMutationRef.current.mutateAsync({
+          weekStart: currentWeekStart,
+          programmeId: activeProgramme?.id ?? null,
+          schedule: newSchedule,
+        });
+        setSchedule(newSchedule);
+      } catch (error) {
+        logger.error('[ScheduleContext] saveSchedule threw:', error);
+        // Error alert is handled by the mutation's onError callback
+        throw error;
+      }
     },
     [activeProgramme?.id, currentWeekStart] // Only primitive values
   );
 
   const assignSession = useCallback(
     async (dayIndex: number, sessionId: string | null) => {
-      if (!activeProgramme) return;
-      await assignMutationRef.current.mutateAsync({
+      if (!activeProgramme) {
+        logger.warn('[ScheduleContext] assignSession called with no activeProgramme');
+        return;
+      }
+      logger.info('[ScheduleContext] assignSession called', {
+        dayIndex,
+        sessionId,
         weekStart: currentWeekStart,
         programmeId: activeProgramme.id,
-        dayOfWeek: dayIndex,
-        sessionId,
       });
+      try {
+        await assignMutationRef.current.mutateAsync({
+          weekStart: currentWeekStart,
+          programmeId: activeProgramme.id,
+          dayOfWeek: dayIndex,
+          sessionId,
+        });
+      } catch (error) {
+        logger.error('[ScheduleContext] assignSession threw:', error);
+        // Error alert is handled by the mutation's onError callback
+        throw error;
+      }
     },
     [activeProgramme, currentWeekStart] // activeProgramme is memoized in ProgrammeContext
   );
 
   const toggleDay = useCallback(
     async (dayIndex: number) => {
-      if (!activeProgramme) return;
-      await toggleMutationRef.current.mutateAsync({
-        weekStart: currentWeekStart,
+      if (!activeProgramme) {
+        logger.warn('[ScheduleContext] toggleDay called with no activeProgramme');
+        return;
+      }
+      logger.info('[ScheduleContext] toggleDay called', {
         dayIndex,
+        weekStart: currentWeekStart,
         programmeId: activeProgramme.id,
+        currentStatus: schedule[dayIndex]?.status,
       });
+
+      // Optimistic update: immediately toggle the day in local state
+      const previousSchedule = [...schedule];
+      const currentStatus = schedule[dayIndex]?.status;
+      const optimisticSchedule = schedule.map((day, i) => {
+        if (i !== dayIndex) return day;
+        const newStatus = (currentStatus === 'scheduled' ? 'rest' : 'scheduled') as DayStatus;
+        const result: ScheduleDay = {
+          dayOfWeek: day.dayOfWeek,
+          status: newStatus,
+          weekStart: day.weekStart,
+        };
+        // Only include sessionId if toggling to 'scheduled' and it exists
+        if (newStatus === 'scheduled' && day.sessionId) {
+          result.sessionId = day.sessionId;
+        }
+        return result;
+      });
+      setSchedule(optimisticSchedule);
+
+      try {
+        await toggleMutationRef.current.mutateAsync({
+          weekStart: currentWeekStart,
+          dayIndex,
+          programmeId: activeProgramme.id,
+        });
+        // onSuccess callback will set the authoritative schedule from the server
+      } catch (error) {
+        logger.error('[ScheduleContext] toggleDay threw, reverting optimistic update:', error);
+        // Revert optimistic update on failure
+        setSchedule(previousSchedule);
+        // Error alert is handled by the mutation's onError callback
+      }
     },
-    [activeProgramme, currentWeekStart]
+    [activeProgramme, currentWeekStart, schedule]
   );
 
   const scheduledCount = useMemo(

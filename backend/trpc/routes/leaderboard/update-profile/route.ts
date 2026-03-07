@@ -1,14 +1,37 @@
-import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin, getProfileByUserId } from '../../../../lib/auth.js';
+import { z } from 'zod';
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin, getProfileByUserId } from '../../../../lib/auth.js';
+import { protectedProcedure } from '../../../create-context.js';
+
+// XSS Protection: Character whitelist validation for display names
+const displayNameSchema = z.string()
+  .min(1, 'Display name cannot be empty')
+  .max(50, 'Display name too long')
+  .regex(
+    /^[a-zA-Z0-9\s\-_.']+$/,
+    'Display name can only contain letters, numbers, spaces, hyphens, underscores, apostrophes, and periods'
+  );
+
+// Type-safe leaderboard profile update fields
+type LeaderboardProfileUpdateFields = {
+  is_opted_in?: boolean;
+  display_name?: string;
+  show_real_name?: boolean;
+  gender?: 'male' | 'female';
+  show_in_total_volume?: boolean;
+  show_in_monthly_volume?: boolean;
+  show_in_total_sessions?: boolean;
+  show_in_monthly_sessions?: boolean;
+  updated_at?: string;
+};
 
 export const updateLeaderboardProfileProcedure = protectedProcedure
   .input(
     z.object({
       is_opted_in: z.boolean().optional(),
-      display_name: z.string().min(1).max(50).optional(),
+      display_name: displayNameSchema.optional(),
       show_real_name: z.boolean().optional(),
       gender: z.enum(['male', 'female']).optional(),
       show_in_total_volume: z.boolean().optional(),
@@ -54,7 +77,8 @@ export const updateLeaderboardProfileProcedure = protectedProcedure
       });
     }
 
-    const updates: Record<string, any> = {};
+    // Type-safe updates prevent prototype pollution and XSS
+    const updates: Partial<LeaderboardProfileUpdateFields> = {};
     if (input.is_opted_in !== undefined) updates.is_opted_in = input.is_opted_in;
     if (input.display_name !== undefined) updates.display_name = input.display_name;
     if (input.show_real_name !== undefined) updates.show_real_name = input.show_real_name;

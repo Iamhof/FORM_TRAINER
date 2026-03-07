@@ -1,9 +1,12 @@
-import { z } from "zod";
-import { protectedProcedure } from "../../../create-context.js";
-import { supabaseAdmin } from "../../../../lib/auth.js";
-import { TRPCError } from "@trpc/server";
 import crypto from "crypto";
+
+import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from "../../../../lib/auth.js";
+import { protectedProcedure } from "../../../create-context.js";
+
 
 export const inviteClientProcedure = protectedProcedure
   .input(

@@ -21,6 +21,7 @@ import GlowCard from '@/components/GlowCard';
 import { COLORS, SPACING, AccentColor } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
+import { narrowError } from '@/lib/error-utils';
 import { logger } from '@/lib/logger';
 import { trpc } from '@/lib/trpc';
 
@@ -202,20 +203,18 @@ export default function EditProfileScreen() {
           },
         ]);
       }
-    } catch (error: any) {
-      logger.error('[EditProfile] Error updating profile:', error);
+    } catch (error: unknown) {
+      const typedError = narrowError(error);
+      logger.error('[EditProfile] Error updating profile:', typedError);
 
       let errorMessage = 'Failed to update profile';
 
-      // Extract message from tRPC error shape
-      const tRPCMessage = error?.shape?.message || error?.data?.message;
-      if (typeof tRPCMessage === 'string' && tRPCMessage.length > 0) {
-        errorMessage = tRPCMessage;
-      } else if (typeof error?.message === 'string' && error.message.length > 0) {
-        if (error.message.includes('<!DOCTYPE') || error.message.includes('HTML')) {
+      // Extract message from error
+      if (typedError.message) {
+        if (typedError.message.includes('<!DOCTYPE') || typedError.message.includes('HTML')) {
           errorMessage = 'Server error. Please check if the backend is running correctly.';
         } else {
-          errorMessage = error.message;
+          errorMessage = typedError.message;
         }
       }
 

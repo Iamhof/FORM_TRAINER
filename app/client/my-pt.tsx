@@ -1,14 +1,15 @@
+import { useRouter } from 'expo-router';
+import { UserCheck, Mail, Calendar, Dumbbell, ChevronRight, Clock4 } from 'lucide-react-native';
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ScreenState from '@/components/ScreenState';
-import { UserCheck, Mail, Calendar, Dumbbell, ChevronRight, Clock4 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+
 import Card from '@/components/Card';
+import { ScreenState } from '@/components/ScreenState';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
-import { trpc } from '@/lib/trpc';
 import { logger } from '@/lib/logger';
+import { trpc } from '@/lib/trpc';
 
 export default function MyPTScreen() {
   const { accent } = useTheme();

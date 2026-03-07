@@ -1,14 +1,17 @@
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { ArrowLeft, Play, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Play, CheckCircle2, AlertCircle } from 'lucide-react-native';
+
 import { EXERCISE_LIBRARY } from '@/constants/exercise-library';
-import { COLORS, SPACING } from '@/constants/theme';
+import { COLORS, SPACING, colorWithOpacity } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function ExerciseDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { accent } = useTheme();
   const exercise = EXERCISE_LIBRARY.find(ex => ex.id === id);
 
   const handlePlayVideo = () => {
@@ -24,7 +27,7 @@ export default function ExerciseDetailScreen() {
         <View style={styles.errorContainer}>
           <AlertCircle size={48} color={COLORS.error} />
           <Text style={styles.errorTitle}>Exercise not found</Text>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => router.back()} style={[styles.backButton, { backgroundColor: accent }]}>
             <Text style={styles.backButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
@@ -41,7 +44,7 @@ export default function ExerciseDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Stack.Screen options={{ headerShown: false }} />
-      
+
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -58,11 +61,11 @@ export default function ExerciseDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <TouchableOpacity
-          style={styles.videoPlaceholder}
+          style={[styles.videoPlaceholder, { backgroundColor: colorWithOpacity(accent, 0.1) }]}
           onPress={handlePlayVideo}
           activeOpacity={0.8}
         >
-          <View style={styles.playIconContainer}>
+          <View style={[styles.playIconContainer, { backgroundColor: accent }]}>
             <Play size={48} color={COLORS.textPrimary} fill={COLORS.textPrimary} />
           </View>
           <Text style={styles.videoHint}>Tap to watch demonstration</Text>
@@ -73,8 +76,17 @@ export default function ExerciseDetailScreen() {
 
           <View style={styles.tagsContainer}>
             {exercise.categories.map((category, index) => (
-              <View key={index} style={styles.categoryTag}>
-                <Text style={styles.categoryTagText}>{category}</Text>
+              <View
+                key={index}
+                style={[
+                  styles.categoryTag,
+                  {
+                    backgroundColor: colorWithOpacity(accent, 0.15),
+                    borderColor: colorWithOpacity(accent, 0.3),
+                  },
+                ]}
+              >
+                <Text style={[styles.categoryTagText, { color: accent }]}>{category}</Text>
               </View>
             ))}
             {exercise.difficulty && (
@@ -118,7 +130,7 @@ export default function ExerciseDetailScreen() {
             <Text style={styles.sectionTitle}>Instructions</Text>
             {exercise.instructions.map((instruction, index) => (
               <View key={index} style={styles.instructionItem}>
-                <View style={styles.instructionNumber}>
+                <View style={[styles.instructionNumber, { backgroundColor: accent }]}>
                   <Text style={styles.instructionNumberText}>{index + 1}</Text>
                 </View>
                 <Text style={styles.instructionText}>{instruction}</Text>
@@ -133,7 +145,7 @@ export default function ExerciseDetailScreen() {
                 <View key={index} style={styles.tipItem}>
                   <CheckCircle2
                     size={16}
-                    color={COLORS.accents.orange}
+                    color={accent}
                     style={styles.tipIcon}
                   />
                   <Text style={styles.tipText}>{tip}</Text>
@@ -175,7 +187,6 @@ const styles = StyleSheet.create({
   videoPlaceholder: {
     width: '100%',
     height: 250,
-    backgroundColor: 'rgba(255, 107, 85, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     borderBottomWidth: 1,
@@ -185,7 +196,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: COLORS.accents.orange,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.sm,
@@ -212,17 +222,14 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   categoryTag: {
-    backgroundColor: 'rgba(255, 107, 85, 0.15)',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 85, 0.3)',
   },
   categoryTagText: {
     fontSize: 12,
     fontWeight: '600' as const,
-    color: COLORS.accents.orange,
   },
   difficultyTag: {
     borderRadius: 12,
@@ -275,7 +282,6 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: COLORS.accents.orange,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: SPACING.md,
@@ -321,7 +327,6 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   backButton: {
-    backgroundColor: COLORS.accents.orange,
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
     borderRadius: 12,

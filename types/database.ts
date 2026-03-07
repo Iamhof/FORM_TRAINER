@@ -18,6 +18,8 @@ export interface User {
   height_cm?: number;
   weight_kg?: number;
   age?: number;
+  current_xp: number;
+  current_level: number;
   leaderboard_enabled?: boolean;
   leaderboard_display_name?: string;
   created_at: string;

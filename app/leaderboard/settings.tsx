@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, Pressable, ScrollView, ActivityIndicator, Alert, ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack } from 'expo-router';
 import { ArrowLeft, LogOut } from 'lucide-react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, TextInput, Pressable, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import Card from '@/components/Card';
 import ConfirmModal from '@/components/ConfirmModal';
 import { COLORS, SPACING } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useLeaderboard } from '@/contexts/LeaderboardContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { narrowError } from '@/lib/error-utils';
 import { logger } from '@/lib/logger';
 
 export default function LeaderboardSettingsScreen() {
@@ -42,8 +44,12 @@ export default function LeaderboardSettingsScreen() {
     try {
       await updateDisplayName(displayName.trim());
       Alert.alert('Success', 'Display name updated successfully!');
-    } catch (error) {
-      logger.error('[UpdateDisplayName] Error:', error);
+    } catch (error: unknown) {
+      const typedError = narrowError(error);
+      logger.error('[UpdateDisplayName] Error', {
+        message: typedError.message,
+        code: typedError.code,
+      });
       Alert.alert('Error', 'Failed to update display name. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -56,8 +62,12 @@ export default function LeaderboardSettingsScreen() {
       await optOut();
       setShowOptOutModal(false);
       router.back();
-    } catch (error) {
-      logger.error('[OptOut] Error:', error);
+    } catch (error: unknown) {
+      const typedError = narrowError(error);
+      logger.error('[OptOut] Error', {
+        message: typedError.message,
+        code: typedError.code,
+      });
       Alert.alert('Error', 'Failed to opt out. Please try again.');
     } finally {
       setIsSubmitting(false);

@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { logger } from './logger';
+
 import { env } from './env';
+import { logger } from './logger';
 
 const SecureStoreAdapter = {
   getItem: async (key: string) => {
@@ -112,13 +113,15 @@ if (!isUrlValid || !isKeyValid) {
       }
     );
     // Mark the client as invalid so components can check
-    (supabaseClient as any).__isInvalid = true;
+    // Type-safe property access via global.d.ts module augmentation
+    supabaseClient.__isInvalid = true;
   } catch (error) {
     // Even creating dummy client failed - this should never happen, but handle it
     logger.error('[Supabase] Failed to create even dummy client:', error);
     // Create a minimal client that definitely won't throw
     supabaseClient = createClient('https://placeholder.supabase.co', 'dummy-key');
-    (supabaseClient as any).__isInvalid = true;
+    // Type-safe property access via global.d.ts module augmentation
+    supabaseClient.__isInvalid = true;
   }
 } else {
   logger.info('[Supabase] Initializing client');
@@ -162,12 +165,14 @@ if (!isUrlValid || !isKeyValid) {
           },
         }
       );
-      (supabaseClient as any).__isInvalid = true;
+      // Type-safe property access via global.d.ts module augmentation
+    supabaseClient.__isInvalid = true;
     } catch (fallbackError) {
       // Last resort - minimal client
       logger.error('[Supabase] Even fallback client creation failed:', fallbackError);
       supabaseClient = createClient('https://placeholder.supabase.co', 'dummy-key');
-      (supabaseClient as any).__isInvalid = true;
+      // Type-safe property access via global.d.ts module augmentation
+    supabaseClient.__isInvalid = true;
     }
   }
 }

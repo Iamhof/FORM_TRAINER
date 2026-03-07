@@ -1,13 +1,15 @@
-import { z } from 'zod';
-import { publicProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth.js';
+import { z } from 'zod';
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { publicProcedure } from '../../../create-context.js';
+import { LEADERBOARD_COLUMN_MAPPINGS, leaderboardTypeSchema } from '../validation.js';
 
 export const getLeaderboardRankingsProcedure = publicProcedure
   .input(
     z.object({
-      type: z.enum(['total_volume', 'monthly_volume', 'total_sessions', 'monthly_sessions']),
+      type: leaderboardTypeSchema,
       gender: z.enum(['all', 'male', 'female']).default('all'),
       limit: z.number().min(10).max(100).default(50),
       offset: z.number().min(0).default(0),
@@ -16,27 +18,8 @@ export const getLeaderboardRankingsProcedure = publicProcedure
   .query(async ({ ctx, input }) => {
     logger.debug('[getLeaderboardRankings] Fetching rankings:', input);
 
-    let orderColumn: string;
-    let privacyColumn: string;
-
-    switch (input.type) {
-      case 'total_volume':
-        orderColumn = 'total_volume_kg';
-        privacyColumn = 'show_in_total_volume';
-        break;
-      case 'monthly_volume':
-        orderColumn = 'monthly_volume_kg';
-        privacyColumn = 'show_in_monthly_volume';
-        break;
-      case 'total_sessions':
-        orderColumn = 'total_sessions';
-        privacyColumn = 'show_in_total_sessions';
-        break;
-      case 'monthly_sessions':
-        orderColumn = 'monthly_sessions';
-        privacyColumn = 'show_in_monthly_sessions';
-        break;
-    }
+    // SQL Injection Protection: Use immutable const mapping instead of switch
+    const { orderColumn, privacyColumn } = LEADERBOARD_COLUMN_MAPPINGS[input.type];
 
     // Get total count for pagination (separate query for efficiency)
     // Use the same join structure as the main query to get accurate count

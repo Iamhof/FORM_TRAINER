@@ -1,16 +1,16 @@
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
+import { X, ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, Pressable, ScrollView, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
-import { X, ChevronLeft, ChevronRight, Plus } from 'lucide-react-native';
-import { COLORS, SPACING } from '@/constants/theme';
-import { useTheme } from '@/contexts/ThemeContext';
-import Button from '@/components/Button';
-import { ensureInBounds } from '@/lib/array-utils';
-import { logger } from '@/lib/logger';
 
+import Button from '@/components/Button';
 import ExerciseSelectorModal from '@/components/ExerciseSelectorModal';
 import { Exercise } from '@/constants/exercises';
+import { COLORS, SPACING } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { ensureInBounds } from '@/lib/array-utils';
+import { logger } from '@/lib/logger';
 
 type DayExercise = Exercise & {
   sets: number;

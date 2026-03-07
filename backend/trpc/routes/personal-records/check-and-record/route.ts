@@ -1,8 +1,10 @@
-import { z } from 'zod';
-import { protectedProcedure } from '../../../create-context.js';
 import { TRPCError } from '@trpc/server';
-import { supabaseAdmin } from '../../../../lib/auth.js';
+import { z } from 'zod';
+
 import { logger } from '../../../../../lib/logger.js';
+import { supabaseAdmin } from '../../../../lib/auth.js';
+import { awardXP } from '../../../../services/xp.service.js';
+import { protectedProcedure } from '../../../create-context.js';
 
 export const checkAndRecordPRProcedure = protectedProcedure
   .input(
@@ -70,10 +72,27 @@ export const checkAndRecordPRProcedure = protectedProcedure
       }
 
       logger.debug('[checkAndRecordPR] New PR recorded for exercise:', input.exerciseId);
+
+      // Award XP for setting a new personal record (non-blocking on failure)
+      const xpResult = await awardXP(
+        ctx.userId,
+        'PERSONAL_RECORD',
+        `${input.exerciseId}_${input.date}`,
+        { exerciseId: input.exerciseId, weight: input.weight, reps: input.reps }
+      );
+
       return {
         isNewPR: true,
         personalRecord: newPR,
         previousRecord: existingPR,
+        xp: xpResult.awarded
+          ? {
+              awarded: xpResult.xp_awarded,
+              newXp: xpResult.new_xp,
+              newLevel: xpResult.new_level,
+              leveledUp: xpResult.leveled_up,
+            }
+          : null,
       };
     }
 
@@ -82,5 +101,6 @@ export const checkAndRecordPRProcedure = protectedProcedure
       isNewPR: false,
       personalRecord: existingPR,
       previousRecord: null,
+      xp: null,
     };
   });

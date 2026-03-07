@@ -1,24 +1,28 @@
 import createContextHook from '@nkzw/create-context-hook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+
 import { COLORS, AccentColor } from '@/constants/theme';
-import { useUser } from './UserContext';
 import { logger } from '@/lib/logger';
+
+import { useUser } from './UserContext';
 
 const THEME_STORAGE_KEY = '@form_accent_color';
 
 const hexToAccentColor = (hex: string): AccentColor => {
   const colorMap: Record<string, AccentColor> = {
     '#FF6B55': 'orange',
-    '#B266FF': 'purple',
+    '#A855F7': 'purple',
+    '#B266FF': 'purple', // Legacy DB value
     '#6699FF': 'blue',
     '#F44336': 'red',
     '#FFC107': 'yellow',
-    '#4CAF50': 'green',
+    '#22C55E': 'green',
+    '#4CAF50': 'green', // Legacy DB value
     '#009688': 'teal',
     '#EC407A': 'pink',
   };
-  
+
   const upperHex = hex.toUpperCase();
   return colorMap[upperHex] || 'orange';
 };
@@ -26,29 +30,15 @@ const hexToAccentColor = (hex: string): AccentColor => {
 const accentColorToHex = (color: AccentColor): string => {
   const hexMap: Record<AccentColor, string> = {
     orange: '#FF6B55',
-    purple: '#B266FF',
+    purple: '#A855F7',
     blue: '#6699FF',
     red: '#F44336',
     yellow: '#FFC107',
-    green: '#4CAF50',
+    green: '#22C55E',
     teal: '#009688',
     pink: '#EC407A',
   };
   return hexMap[color];
-};
-
-const rgbToHex = (rgb: string): string => {
-  const match = rgb.match(/\d+/g);
-  if (!match || match.length < 3) return '#FF6B55';
-  
-  const r = parseInt(match[0]);
-  const g = parseInt(match[1]);
-  const b = parseInt(match[2]);
-  
-  return '#' + [r, g, b].map(x => {
-    const hex = x.toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  }).join('').toUpperCase();
 };
 
 const findClosestAccentColor = (hex: string): AccentColor => {

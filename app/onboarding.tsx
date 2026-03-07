@@ -1,8 +1,9 @@
+import { useRouter } from 'expo-router';
+import { Dumbbell, Target, TrendingUp } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { Dumbbell, Target, TrendingUp } from 'lucide-react-native';
+
 import { COLORS, SPACING, colorWithOpacity } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { assertGet } from '@/lib/array-utils';

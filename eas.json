@@ -14,11 +14,13 @@
     "development": {
       "extends": "base",
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "development"
     },
     "preview": {
       "extends": "base",
       "distribution": "internal",
+      "channel": "preview",
       "android": {
         "buildType": "apk"
       },
@@ -28,6 +30,7 @@
     },
     "production": {
       "extends": "base",
+      "channel": "production",
       "android": {
         "buildType": "app-bundle"
       },
@@ -39,7 +42,10 @@
       "autoIncrement": true,
       "env": {
         "CI": "true",
-        "EAS_BUILD": "true"
+        "EAS_BUILD": "true",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://yshbcfifmkflhahjengk.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzaGJjZmlmbWtmbGhhaGplbmdrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2NjI3NjcsImV4cCI6MjA3NTIzODc2N30.ide524ouRN9wDvl3gdcqL0QVEShOJpM720FNisSj-CQ",
+        "EXPO_PUBLIC_RORK_API_BASE_URL": "https://intuitive-forgiveness-production-051e.up.railway.app"
       }
     }
   },

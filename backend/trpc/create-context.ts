@@ -1,9 +1,20 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import superjson from 'superjson';
+import { ZodError } from 'zod';
 
-import { supabaseAdmin } from '../lib/auth.js';
 import { logger } from '../../lib/logger.js';
+import { supabaseAdmin } from '../lib/auth.js';
+
+// Type guard for Zod errors
+function isZodError(cause: unknown): cause is ZodError {
+  return cause instanceof ZodError || (
+    typeof cause === 'object' &&
+    cause !== null &&
+    'issues' in cause &&
+    Array.isArray((cause as Record<string, unknown>).issues)
+  );
+}
 
 const resolveUserFromToken = async (token?: string | null) => {
   if (!token) {
@@ -59,6 +70,8 @@ const t = initTRPC.context<Context>().create({
   transformer: superjson,
   errorFormatter({ shape, error, path }) {
     // Log detailed error info for debugging
+    const zodError = error.code === 'BAD_REQUEST' && isZodError(error.cause) ? error.cause : null;
+
     logger.error('[tRPC] Error occurred', {
       code: shape.code,
       message: shape.message,
@@ -68,9 +81,7 @@ const t = initTRPC.context<Context>().create({
         message: error.cause.message,
       } : error.cause,
       // Include Zod validation details if present
-      zodErrors: error.code === 'BAD_REQUEST' && error.cause instanceof Error && 'issues' in error.cause
-        ? (error.cause as any).issues
-        : undefined,
+      zodErrors: zodError?.issues,
     });
 
     return {
@@ -78,44 +89,57 @@ const t = initTRPC.context<Context>().create({
       data: {
         ...shape.data,
         // Include validation errors in response for debugging
-        zodError: error.code === 'BAD_REQUEST' && error.cause instanceof Error && 'issues' in error.cause
-          ? (error.cause as any).flatten()
-          : null,
+        zodError: zodError?.flatten() ?? null,
       },
     };
   },
 });
 
+// Sanitized value type - represents what sanitizeInput can return
+type SanitizedValue =
+  | null
+  | undefined
+  | string
+  | number
+  | boolean
+  | SanitizedValue[]
+  | { [key: string]: SanitizedValue };
+
 // Input sanitization function
-function sanitizeInput(input: any): any {
+// IMPORTANT: Uses `typeof` checks instead of `constructor` checks to ensure
+// consistent behavior across dev and production (minified) builds. The previous
+// `input.constructor === Object` pattern fails when superjson or other
+// deserializers produce objects whose constructor chain differs in minified code.
+function sanitizeInput(input: unknown): SanitizedValue {
   if (input === null || input === undefined) return input;
-  
-  // Type checking without typeof - check for string by trying string methods
-  if (input !== null && input !== undefined && input.constructor === String) {
+
+  if (typeof input === 'string') {
     // Limit string length and trim
-    const str = String(input);
-    return str.trim().slice(0, 10000);
+    return input.trim().slice(0, 10000);
   }
-  
-  // Type checking without typeof - check for number using Number.isFinite
-  if (input !== null && input !== undefined && Number.isFinite(input) && !Array.isArray(input)) {
+
+  if (typeof input === 'number') {
     // Validate number ranges
-    const num = Number(input);
-    if (!isFinite(num)) return 0;
-    if (num > Number.MAX_SAFE_INTEGER) return Number.MAX_SAFE_INTEGER;
-    if (num < Number.MIN_SAFE_INTEGER) return Number.MIN_SAFE_INTEGER;
-    return num;
+    if (!isFinite(input)) return 0;
+    if (input > Number.MAX_SAFE_INTEGER) return Number.MAX_SAFE_INTEGER;
+    if (input < Number.MIN_SAFE_INTEGER) return Number.MIN_SAFE_INTEGER;
+    return input;
   }
-  
+
+  if (typeof input === 'boolean') {
+    return input;
+  }
+
   if (Array.isArray(input)) {
     // Limit array size and sanitize each element
     return input.slice(0, 1000).map(sanitizeInput);
   }
-  
-  // Type checking without typeof - check for object by checking it's not a primitive
-  if (input !== null && input !== undefined && input.constructor === Object) {
+
+  // Plain object check using typeof — works reliably across all JS runtimes
+  // regardless of minification, bundling, or serializer behaviour
+  if (typeof input === 'object') {
     // Limit object keys and sanitize values
-    const sanitized: any = {};
+    const sanitized: Record<string, SanitizedValue> = {};
     let keyCount = 0;
     for (const [key, value] of Object.entries(input)) {
       if (keyCount++ >= 100) break; // Limit object keys
@@ -125,8 +149,8 @@ function sanitizeInput(input: any): any {
     }
     return sanitized;
   }
-  
-  return input;
+
+  return input as SanitizedValue;
 }
 
 // Validated procedure with input sanitization and logging

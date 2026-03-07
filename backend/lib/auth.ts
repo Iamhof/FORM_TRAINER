@@ -53,6 +53,8 @@ export type SupabaseProfile = {
   role: string | null;
   accent_color: string | null; // DB field (snake_case) - Maps to accentColor in API responses
   gender: 'male' | 'female' | 'other' | 'prefer_not_to_say' | null;
+  current_xp: number;
+  current_level: number;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -67,7 +69,7 @@ export const getProfileByUserId = async (
     supabaseAdmin
       .from('profiles')
       .select(
-        'user_id, name, is_pt, role, accent_color, gender, created_at, updated_at'
+        'user_id, name, is_pt, role, accent_color, gender, current_xp, current_level, created_at, updated_at'
       )
       .eq('user_id', userId)
       .maybeSingle(),
@@ -100,6 +102,8 @@ export const getProfileByUserId = async (
     role: profile?.role ?? null,
     accent_color: profile?.accent_color ?? null,
     gender: profile?.gender ?? null,
+    current_xp: profile?.current_xp ?? 0,
+    current_level: profile?.current_level ?? 1,
     created_at: profile?.created_at ?? null,
     updated_at: profile?.updated_at ?? null,
   };

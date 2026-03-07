@@ -1,10 +1,13 @@
+import { useRouter } from 'expo-router';
+import { Users, UserCheck, Settings, LogOut, ChevronRight, User, Crown, RefreshCw } from 'lucide-react-native';
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Users, UserCheck, Settings, LogOut, ChevronRight, User } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+
 import Card from '@/components/Card';
+import ProfileLevelCard from '@/components/profile/ProfileLevelCard';
 import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
 
@@ -13,6 +16,7 @@ export default function ProfileScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const { user, signout } = useUser();
+  const { isPremium, restore, isRestoring, openManageSubscriptions } = useSubscription();
   const insets = useSafeAreaInsets();
 
   const scrollPaddingBottom = useMemo(() => {
@@ -52,6 +56,12 @@ export default function ProfileScreen() {
               </View>
             )}
           </Card>
+
+          <ProfileLevelCard
+            currentXp={user?.currentXp ?? 0}
+            currentLevel={user?.currentLevel ?? 1}
+            accent={accent}
+          />
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
@@ -117,6 +127,60 @@ export default function ProfileScreen() {
                 </View>
               </Card>
             </Pressable>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Subscription</Text>
+
+            {isPremium ? (
+              <Pressable onPress={openManageSubscriptions}>
+                <Card style={styles.menuCard}>
+                  <View style={styles.menuItem}>
+                    <View style={[styles.menuIcon, { backgroundColor: `${accent}20` }]}>
+                      <Crown size={20} color={accent} strokeWidth={2} />
+                    </View>
+                    <View style={styles.menuContent}>
+                      <Text style={styles.menuTitle}>Premium</Text>
+                      <Text style={styles.menuSubtitle}>Manage your subscription</Text>
+                    </View>
+                    <ChevronRight size={20} color={COLORS.textTertiary} strokeWidth={2} />
+                  </View>
+                </Card>
+              </Pressable>
+            ) : (
+              <>
+                <Pressable onPress={() => router.push('/paywall' as any)}>
+                  <Card style={styles.menuCard}>
+                    <View style={styles.menuItem}>
+                      <View style={[styles.menuIcon, { backgroundColor: `${accent}20` }]}>
+                        <Crown size={20} color={accent} strokeWidth={2} />
+                      </View>
+                      <View style={styles.menuContent}>
+                        <Text style={styles.menuTitle}>Upgrade to Premium</Text>
+                        <Text style={styles.menuSubtitle}>Unlock unlimited programmes</Text>
+                      </View>
+                      <ChevronRight size={20} color={COLORS.textTertiary} strokeWidth={2} />
+                    </View>
+                  </Card>
+                </Pressable>
+
+                <Pressable onPress={restore} disabled={isRestoring}>
+                  <Card style={styles.menuCard}>
+                    <View style={styles.menuItem}>
+                      <View style={[styles.menuIcon, { backgroundColor: `${accent}20` }]}>
+                        <RefreshCw size={20} color={accent} strokeWidth={2} />
+                      </View>
+                      <View style={styles.menuContent}>
+                        <Text style={styles.menuTitle}>Restore Purchases</Text>
+                        <Text style={styles.menuSubtitle}>
+                          {isRestoring ? 'Restoring...' : 'Already subscribed on another device?'}
+                        </Text>
+                      </View>
+                    </View>
+                  </Card>
+                </Pressable>
+              </>
+            )}
           </View>
 
           <View style={styles.section}>

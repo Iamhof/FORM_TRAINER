@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { ExerciseCategory } from '@/types/exercises';
+
 import { COLORS, SPACING } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
+import { ExerciseCategory } from '@/types/exercises';
 
 interface CategoryFilterChipProps {
   category: ExerciseCategory;
@@ -10,6 +12,7 @@ interface CategoryFilterChipProps {
 }
 
 export function CategoryFilterChip({ category, isSelected, onPress }: CategoryFilterChipProps) {
+  const { accent } = useTheme();
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -37,7 +40,7 @@ export function CategoryFilterChip({ category, isSelected, onPress }: CategoryFi
         onPressOut={handlePressOut}
         testID={`category-chip-${category}`}
       >
-        <View style={[styles.chip, isSelected && styles.chipSelected]}>
+        <View style={[styles.chip, isSelected && { backgroundColor: accent, borderColor: accent }]}>
           <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
             {category}
           </Text>
@@ -57,10 +60,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
     marginRight: SPACING.sm,
   },
-  chipSelected: {
-    backgroundColor: COLORS.accents.orange,
-    borderColor: COLORS.accents.orange,
-  },
+  chipSelected: {},
   chipText: {
     fontSize: 14,
     fontWeight: '600' as const,

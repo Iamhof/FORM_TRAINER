@@ -1,10 +1,12 @@
-import React from 'react';
-import { View, Text, ImageBackground, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ArrowRight } from 'lucide-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
+import { View, Text, ImageBackground, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+
+import { SPACING, colorWithOpacity } from '@/constants/theme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Exercise } from '@/types/exercises';
-import { COLORS, SPACING } from '@/constants/theme';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -12,6 +14,7 @@ interface ExerciseCardProps {
 
 export const ExerciseCard = React.memo(({ exercise }: ExerciseCardProps) => {
   const router = useRouter();
+  const { accent } = useTheme();
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -65,8 +68,8 @@ export const ExerciseCard = React.memo(({ exercise }: ExerciseCardProps) => {
               <View style={styles.bottomRow}>
                 <View style={styles.tagsContainer}>
                   {exercise.categories.slice(0, 2).map((category, index) => (
-                    <View key={index} style={styles.tag}>
-                      <Text style={styles.tagText}>{category}</Text>
+                    <View key={index} style={[styles.tag, { backgroundColor: colorWithOpacity(accent, 0.25), borderColor: colorWithOpacity(accent, 0.5) }]}>
+                      <Text style={[styles.tagText, { color: accent }]}>{category}</Text>
                     </View>
                   ))}
                 </View>
@@ -126,17 +129,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   tag: {
-    backgroundColor: 'rgba(255, 107, 85, 0.25)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 107, 85, 0.5)',
   },
   tagText: {
     fontSize: 11,
     fontWeight: '600' as const,
-    color: COLORS.accents.orange,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },
