@@ -1,4 +1,4 @@
-import { Flame, User } from 'lucide-react-native';
+import { User } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
 
@@ -18,9 +18,6 @@ export default function DashboardHeader({
   return (
     <View style={styles.container}>
       <View style={styles.brand}>
-        <View style={styles.iconBox}>
-          <Flame size={18} color={accent} strokeWidth={2.5} fill={accent} />
-        </View>
         <View>
           <Text style={styles.brandText}>FORM</Text>
           <Text style={styles.brandSubtitle}>POWERED BY OJ GYMS</Text>
@@ -56,15 +53,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: SPACING.sm,
   },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: 'rgba(168, 85, 247, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandText: {
+brandText: {
     fontSize: 20,
     fontWeight: '800',
     fontStyle: 'italic',

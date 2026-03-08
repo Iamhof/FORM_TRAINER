@@ -65,7 +65,7 @@ export default function CyberNoirAuthScreen({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <AuthHeader isSignUp={isSignUp} />
+          <AuthHeader />
 
           <AuthFormCard>
             <View style={styles.formFields}>
@@ -137,6 +137,8 @@ export default function CyberNoirAuthScreen({
               </View>
             </View>
           </AuthFormCard>
+
+          <Text style={styles.footerText}>POWERED BY OJ GYMS</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -169,5 +171,13 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     textAlign: 'center',
     letterSpacing: 1,
+  },
+  footerText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: COLORS.textTertiary,
+    textAlign: 'center',
+    letterSpacing: 1,
+    marginTop: SPACING.xl,
   },
 });

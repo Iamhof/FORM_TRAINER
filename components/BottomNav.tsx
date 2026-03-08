@@ -4,7 +4,7 @@ import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { COLORS, SPACING, BOTTOM_NAV_HEIGHT, colorWithOpacity } from '@/constants/theme';
+import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 
 type TabItem = {
@@ -44,18 +44,11 @@ function TabButton({
       style={styles.tab}
       testID={`tab-${tab.name}`}
     >
-      {isActive ? (
-        <View
-          style={[
-            styles.activeIconContainer,
-            { backgroundColor: colorWithOpacity(accent, 0.2) },
-          ]}
-        >
-          <Icon size={22} color={accent} strokeWidth={2.5} />
-        </View>
-      ) : (
-        <Icon size={24} color={COLORS.textTertiary} strokeWidth={2} />
-      )}
+      <Icon
+        size={24}
+        color={isActive ? accent : COLORS.textTertiary}
+        strokeWidth={isActive ? 2.5 : 2}
+      />
       <Text
         style={[
           styles.label,
@@ -154,14 +147,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     gap: 4,
   },
-  activeIconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: {
+label: {
     fontSize: 10,
     fontWeight: '600' as const,
     letterSpacing: 0.5,

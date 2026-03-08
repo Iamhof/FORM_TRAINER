@@ -1,7 +1,7 @@
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
 import { X, Check } from 'lucide-react-native';
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Dimensions, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Card from '@/components/Card';
@@ -46,7 +46,7 @@ export default function SessionScreen() {
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [showRestTimer, setShowRestTimer] = useState(false);
-  const [completedSets, setCompletedSets] = useState(0);
+  const [showExerciseList, setShowExerciseList] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [sessionData, setSessionData] = useState<{
@@ -58,6 +58,8 @@ export default function SessionScreen() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [workoutSummary, setWorkoutSummary] = useState<WorkoutSummary | null>(null);
   const sessionStartTime = useRef(Date.now());
+  const pagerRef = useRef<ScrollView>(null);
+  const screenWidth = Dimensions.get('window').width;
 
 
 
@@ -149,7 +151,6 @@ export default function SessionScreen() {
   }, [sessionId, programmes, allExercises, exercisesLoading, isWeekUnlocked, router]);
 
   const currentExercise = exercises[currentExerciseIndex];
-  const totalSets = currentExercise?.targetSets || 0;
   const globalProgress = useMemo(() => {
     const totalSetsAll = exercises.reduce((sum, ex) => sum + ex.targetSets, 0);
     const completedSetsAll = exercises.reduce((sum, ex) =>
@@ -175,8 +176,13 @@ export default function SessionScreen() {
     headerShown: true,
     headerStyle: { backgroundColor: COLORS.background },
     headerTintColor: COLORS.textPrimary,
-    headerTitle: `Exercise ${currentExerciseIndex + 1} of ${exercises.length}`,
-    headerTitleStyle: { fontSize: 14, fontWeight: '500' as const, color: COLORS.textSecondary },
+    headerTitle: () => (
+      <Pressable onPress={() => setShowExerciseList(true)} style={styles.headerTitleButton}>
+        <Text style={{ fontSize: 14, fontWeight: '500' as const, color: COLORS.textSecondary }}>
+          Exercise {currentExerciseIndex + 1} of {exercises.length} {'\u25BC'}
+        </Text>
+      </Pressable>
+    ),
     headerLeft,
   }), [currentExerciseIndex, exercises.length, headerLeft]);
 
@@ -186,13 +192,6 @@ export default function SessionScreen() {
   }, [currentExercise]);
 
   const isLastExercise = currentExerciseIndex === exercises.length - 1;
-
-  const hasCompletedAtLeastOneExercise = useMemo(() => {
-    return exercises.some((ex, idx) =>
-      idx < currentExerciseIndex ||
-      (idx === currentExerciseIndex && ex.sets.every(s => s.completed))
-    );
-  }, [exercises, currentExerciseIndex]);
 
   const handleSetComplete = (exerciseIndex: number, setIndex: number) => {
     const currentSet = exercises[exerciseIndex]?.sets[setIndex];
@@ -208,7 +207,6 @@ export default function SessionScreen() {
         }),
       };
     }));
-    setCompletedSets(completedSets + 1);
 
     const exercise = exercises[exerciseIndex];
     if (!exercise) return;
@@ -232,9 +230,25 @@ export default function SessionScreen() {
 
   const handleNextExercise = () => {
     if (currentExerciseIndex < exercises.length - 1) {
-      logger.debug('[SessionScreen] Moving to next exercise:', currentExerciseIndex + 1);
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-      setCompletedSets(0);
+      const nextIndex = currentExerciseIndex + 1;
+      logger.debug('[SessionScreen] Moving to next exercise:', nextIndex);
+      setCurrentExerciseIndex(nextIndex);
+      pagerRef.current?.scrollTo({ x: nextIndex * screenWidth, animated: true });
+    }
+  };
+
+  const jumpToExercise = (index: number) => {
+    if (index >= 0 && index < exercises.length) {
+      setCurrentExerciseIndex(index);
+      pagerRef.current?.scrollTo({ x: index * screenWidth, animated: true });
+    }
+  };
+
+  const handlePagerScroll = (event: any) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(offsetX / screenWidth);
+    if (newIndex !== currentExerciseIndex && newIndex >= 0 && newIndex < exercises.length) {
+      setCurrentExerciseIndex(newIndex);
     }
   };
 
@@ -537,127 +551,122 @@ export default function SessionScreen() {
           keyboardVerticalOffset={100}
         >
           <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={true}
-            keyboardShouldPersistTaps="handled"
+            ref={pagerRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handlePagerScroll}
+            scrollEventThrottle={16}
+            style={styles.pager}
           >
-            <Text style={styles.exerciseTitle}>{currentExercise.name}</Text>
-            <Text style={styles.exerciseSubtitle}>
-              {completedSets} of {totalSets} sets completed
-            </Text>
-
-            {currentExercise.sets.map((set, setIndex) => (
-              <Card
-                key={setIndex}
-                style={StyleSheet.flatten([
-                  styles.setCard,
-                  set.completed && { borderColor: accent, borderWidth: 2 },
-                ])}
+            {exercises.map((exercise, exerciseIndex) => (
+              <ScrollView
+                key={exerciseIndex}
+                style={[styles.exercisePage, { width: screenWidth }]}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={true}
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled={true}
               >
-                <View style={styles.setHeader}>
-                  <Text style={styles.setNumber}>{setIndex + 1}</Text>
-                  {set.completed ? (
-                    <View style={[styles.completedBadge, { backgroundColor: accent }]}>
-                      <Check size={16} color={COLORS.background} strokeWidth={3} />
+                <Text style={styles.exerciseTitle}>{exercise.name}</Text>
+                <Text style={styles.exerciseSubtitle}>
+                  {exercise.sets.filter(s => s.completed).length} of {exercise.targetSets} sets completed
+                </Text>
+
+                {exercise.sets.map((set, setIndex) => (
+                  <Card
+                    key={setIndex}
+                    style={StyleSheet.flatten([
+                      styles.setCard,
+                      set.completed && { borderColor: accent, borderWidth: 2 },
+                    ])}
+                  >
+                    <View style={styles.setHeader}>
+                      <Text style={styles.setNumber}>{setIndex + 1}</Text>
+                      {set.completed ? (
+                        <View style={[styles.completedBadge, { backgroundColor: accent }]}>
+                          <Check size={16} color={COLORS.background} strokeWidth={3} />
+                        </View>
+                      ) : (
+                        <Text style={styles.waitingText}>
+                          {setIndex === 0 || exercise.sets[setIndex - 1]?.completed
+                            ? ''
+                            : 'Waiting...'}
+                        </Text>
+                      )}
                     </View>
-                  ) : (
-                    <Text style={styles.waitingText}>
-                      {setIndex === 0 || currentExercise.sets[setIndex - 1]?.completed
-                        ? ''
-                        : 'Waiting...'}
-                    </Text>
-                  )}
-                </View>
 
-                <View style={styles.inputRow}>
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Weight (kg)</Text>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        set.completed && styles.inputDisabled,
-                      ]}
-                      value={set.weight}
-                      onChangeText={(value) => handleWeightChange(currentExerciseIndex, setIndex, value)}
-                      keyboardType="numeric"
-                      placeholder="0"
-                      placeholderTextColor={COLORS.textTertiary}
-                      editable={!set.completed}
-                    />
-                  </View>
+                    <View style={styles.inputRow}>
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Weight (kg)</Text>
+                        <TextInput
+                          style={[
+                            styles.input,
+                            set.completed && styles.inputDisabled,
+                          ]}
+                          value={set.weight}
+                          onChangeText={(value) => handleWeightChange(exerciseIndex, setIndex, value)}
+                          keyboardType="numeric"
+                          placeholder="0"
+                          placeholderTextColor={COLORS.textTertiary}
+                          editable={!set.completed}
+                        />
+                      </View>
 
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Reps</Text>
-                    <TextInput
-                      style={[
-                        styles.input,
-                        set.completed && styles.inputDisabled,
-                      ]}
-                      value={set.reps}
-                      onChangeText={(value) => handleRepsChange(currentExerciseIndex, setIndex, value)}
-                      keyboardType="numeric"
-                      placeholder="0"
-                      placeholderTextColor={COLORS.textTertiary}
-                      editable={!set.completed}
-                    />
-                  </View>
+                      <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Reps</Text>
+                        <TextInput
+                          style={[
+                            styles.input,
+                            set.completed && styles.inputDisabled,
+                          ]}
+                          value={set.reps}
+                          onChangeText={(value) => handleRepsChange(exerciseIndex, setIndex, value)}
+                          keyboardType="numeric"
+                          placeholder="0"
+                          placeholderTextColor={COLORS.textTertiary}
+                          editable={!set.completed}
+                        />
+                      </View>
 
-                  {!set.completed && (
-                    <Pressable
-                      style={[
-                        styles.checkButton,
-                        { backgroundColor: accent },
-                        (!set.weight || !set.reps) && styles.checkButtonDisabled,
-                      ]}
-                      onPress={() => handleSetComplete(currentExerciseIndex, setIndex)}
-                      disabled={!set.weight || !set.reps}
-                    >
-                      <Check size={20} color={COLORS.background} strokeWidth={3} />
-                    </Pressable>
-                  )}
-                </View>
-              </Card>
+                      {!set.completed && (
+                        <Pressable
+                          style={[
+                            styles.checkButton,
+                            { backgroundColor: accent },
+                            (!set.weight || !set.reps) && styles.checkButtonDisabled,
+                          ]}
+                          onPress={() => handleSetComplete(exerciseIndex, setIndex)}
+                          disabled={!set.weight || !set.reps}
+                        >
+                          <Check size={20} color={COLORS.background} strokeWidth={3} />
+                        </Pressable>
+                      )}
+                    </View>
+                  </Card>
+                ))}
+              </ScrollView>
             ))}
           </ScrollView>
         </KeyboardAvoidingView>
 
-        {(currentExerciseSetsCompleted || hasCompletedAtLeastOneExercise) && (
+        {currentExerciseSetsCompleted && (
           <View style={styles.stickyFooter}>
-            {!isLastExercise && currentExerciseSetsCompleted ? (
-              <View style={styles.footerRow}>
-                <Pressable
-                  style={[styles.nextButton, { borderColor: accent }]}
-                  onPress={() => {
-                    logger.debug('[SessionScreen] Next Exercise pressed:', {
-                      currentIndex: currentExerciseIndex,
-                      nextIndex: currentExerciseIndex + 1,
-                      totalExercises: exercises.length
-                    });
-                    handleNextExercise();
-                  }}
-                >
-                  <Text style={[styles.nextButtonText, { color: accent }]}>Next Exercise</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.completeButton, styles.completeButtonInRow, { backgroundColor: accent }, isSaving && styles.completeButtonDisabled]}
-                  onPress={() => {
-                    logger.debug('[SessionScreen] Finish early pressed');
-                    handleCompleteWorkout();
-                  }}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <ActivityIndicator size="small" color={COLORS.background} />
-                  ) : (
-                    <>
-                      <Check size={20} color={COLORS.background} strokeWidth={3} />
-                      <Text style={styles.completeButtonText}>Finish</Text>
-                    </>
-                  )}
-                </Pressable>
-              </View>
-            ) : isLastExercise && currentExerciseSetsCompleted ? (
+            {!isLastExercise ? (
+              <Pressable
+                style={[styles.nextButton, { borderColor: accent }]}
+                onPress={() => {
+                  logger.debug('[SessionScreen] Next Exercise pressed:', {
+                    currentIndex: currentExerciseIndex,
+                    nextIndex: currentExerciseIndex + 1,
+                    totalExercises: exercises.length
+                  });
+                  handleNextExercise();
+                }}
+              >
+                <Text style={[styles.nextButtonText, { color: accent }]}>Next Exercise</Text>
+              </Pressable>
+            ) : (
               <Pressable
                 style={[styles.completeButton, { backgroundColor: accent }, isSaving && styles.completeButtonDisabled]}
                 onPress={() => {
@@ -675,7 +684,7 @@ export default function SessionScreen() {
                   </>
                 )}
               </Pressable>
-            ) : null}
+            )}
           </View>
         )}
       </SafeAreaView>
@@ -698,6 +707,79 @@ export default function SessionScreen() {
           accentColor={accent}
         />
       )}
+
+      <Modal
+        visible={showExerciseList}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowExerciseList(false)}
+      >
+        <Pressable
+          style={styles.exerciseListOverlay}
+          onPress={() => setShowExerciseList(false)}
+        >
+          <View style={styles.exerciseListModal} onStartShouldSetResponder={() => true}>
+            <View style={styles.exerciseListHeader}>
+              <View style={styles.exerciseListHandle} />
+              <Text style={styles.exerciseListTitle}>Exercises</Text>
+            </View>
+            <ScrollView
+              style={styles.exerciseListScroll}
+              contentContainerStyle={styles.exerciseListScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {exercises.map((exercise, index) => {
+                const completedCount = exercise.sets.filter(s => s.completed).length;
+                const totalCount = exercise.targetSets;
+                const allDone = completedCount === totalCount;
+                const isCurrent = index === currentExerciseIndex;
+
+                return (
+                  <Pressable
+                    key={index}
+                    style={[
+                      styles.exerciseListItem,
+                      isCurrent && { borderColor: accent, borderWidth: 2 },
+                    ]}
+                    onPress={() => {
+                      jumpToExercise(index);
+                      setShowExerciseList(false);
+                    }}
+                  >
+                    <View style={styles.exerciseListItemContent}>
+                      <View style={styles.exerciseListItemLeft}>
+                        <Text
+                          style={[
+                            styles.exerciseListItemName,
+                            allDone && { color: COLORS.textSecondary },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {exercise.name}
+                        </Text>
+                        <Text style={styles.exerciseListItemSets}>
+                          {completedCount} / {totalCount} sets
+                        </Text>
+                      </View>
+                      {allDone ? (
+                        <View style={[styles.exerciseListCheck, { backgroundColor: accent }]}>
+                          <Check size={16} color={COLORS.background} strokeWidth={3} />
+                        </View>
+                      ) : completedCount > 0 ? (
+                        <View style={[styles.exerciseListPartial, { borderColor: accent }]}>
+                          <Text style={[styles.exerciseListPartialText, { color: accent }]}>
+                            {completedCount}/{totalCount}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -747,7 +829,17 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
   },
+  headerTitleButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
   keyboardAvoid: {
+    flex: 1,
+  },
+  pager: {
+    flex: 1,
+  },
+  exercisePage: {
     flex: 1,
   },
   scroll: {
@@ -842,10 +934,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.cardBorder,
   },
-  footerRow: {
-    flexDirection: 'row' as const,
-    gap: SPACING.md,
-  },
   nextButton: {
     flex: 1,
     alignItems: 'center' as const,
@@ -865,9 +953,6 @@ const styles = StyleSheet.create({
     gap: SPACING.sm,
     paddingVertical: SPACING.lg,
     borderRadius: 16,
-  },
-  completeButtonInRow: {
-    flex: 1,
   },
   completeButtonText: {
     fontSize: 18,
@@ -903,5 +988,86 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700' as const,
     color: COLORS.background,
+  },
+  exerciseListOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end' as const,
+  },
+  exerciseListModal: {
+    backgroundColor: '#1a1a1a',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '70%',
+    paddingTop: SPACING.lg,
+  },
+  exerciseListHeader: {
+    alignItems: 'center' as const,
+    paddingBottom: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.cardBorder,
+  },
+  exerciseListHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginBottom: SPACING.md,
+  },
+  exerciseListTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: COLORS.textPrimary,
+  },
+  exerciseListScroll: {
+    flex: 1,
+  },
+  exerciseListScrollContent: {
+    padding: SPACING.md,
+    paddingBottom: SPACING.xl + 40,
+  },
+  exerciseListItem: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 16,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.cardBorder,
+  },
+  exerciseListItemContent: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+  },
+  exerciseListItemLeft: {
+    flex: 1,
+    marginRight: SPACING.sm,
+  },
+  exerciseListItemName: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: COLORS.textPrimary,
+    marginBottom: 2,
+  },
+  exerciseListItemSets: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+  },
+  exerciseListCheck: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  exerciseListPartial: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 2,
+  },
+  exerciseListPartialText: {
+    fontSize: 12,
+    fontWeight: '700' as const,
   },
 });

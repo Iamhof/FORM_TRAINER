@@ -53,18 +53,18 @@ export const SPACING = {
 } as const;
 
 export const NEON = {
-  primary: '#FF7DFF',
-  primaryDark: '#CC44CC',
-  primaryLight: '#FFB3FF',
+  primary: '#A855F7',
+  primaryDark: '#7C3AED',
+  primaryLight: '#C084FC',
 
   glow: {
     border: {
-      idle: 'rgba(255, 125, 255, 0.15)',
-      focus: 'rgba(255, 125, 255, 0.6)',
+      idle: 'rgba(168, 85, 247, 0.15)',
+      focus: 'rgba(168, 85, 247, 0.6)',
     },
     shadow: {
-      idle: 'rgba(255, 125, 255, 0.05)',
-      focus: 'rgba(255, 125, 255, 0.35)',
+      idle: 'rgba(168, 85, 247, 0.05)',
+      focus: 'rgba(168, 85, 247, 0.35)',
     },
     radius: {
       idle: 4,
@@ -73,15 +73,15 @@ export const NEON = {
   },
 
   chromatic: {
-    red: '#FF3355',
-    blue: '#3355FF',
+    red: '#7C3AED',
+    blue: '#C084FC',
     offsetX: 2,
     offsetY: 1,
   },
 
   gradient: {
-    start: '#FF7DFF',
-    end: '#CC44CC',
+    start: '#A855F7',
+    end: '#7C3AED',
   },
 
   cardSurface: 'rgba(22, 22, 28, 0.9)',

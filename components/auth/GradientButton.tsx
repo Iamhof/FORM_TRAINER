@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useRef } from 'react';
-import { Animated, Pressable, StyleSheet, Text, ActivityIndicator } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View, Platform, ActivityIndicator } from 'react-native';
 
 import { COLORS, SPACING, TYPOGRAPHY, NEON } from '@/constants/theme';
 
@@ -49,16 +49,29 @@ export default function GradientButton({
         testID={testID}
       >
         <LinearGradient
-          colors={[NEON.gradient.start, NEON.gradient.end]}
+          colors={[`${NEON.primary}80`, 'transparent']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[styles.gradient, (disabled || loading) && styles.disabled]}
+          style={[styles.gradientBorder, (disabled || loading) && styles.disabled]}
         >
-          {loading ? (
-            <ActivityIndicator size="small" color={COLORS.textPrimary} />
-          ) : (
-            <Text style={styles.text}>{title}</Text>
-          )}
+          <View
+            style={[
+              styles.innerContainer,
+              Platform.select({
+                web: {
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                } as any,
+                default: {},
+              }),
+            ]}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color={COLORS.textPrimary} />
+            ) : (
+              <Text style={styles.text}>{title}</Text>
+            )}
+          </View>
         </LinearGradient>
       </Pressable>
     </Animated.View>
@@ -66,11 +79,20 @@ export default function GradientButton({
 }
 
 const styles = StyleSheet.create({
-  gradient: {
+  gradientBorder: {
+    borderRadius: 16,
+    padding: 1,
+  },
+  innerContainer: {
     paddingVertical: SPACING.md + 2,
-    borderRadius: 12,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: Platform.select({
+      web: 'rgba(255, 255, 255, 0.03)',
+      android: 'rgba(18, 18, 20, 0.85)',
+      default: 'rgba(255, 255, 255, 0.03)',
+    }),
   },
   text: {
     ...TYPOGRAPHY.button,
