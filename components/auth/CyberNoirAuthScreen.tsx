@@ -6,6 +6,7 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   Animated,
 } from 'react-native';
@@ -29,6 +30,7 @@ type CyberNoirAuthScreenProps = {
   setPassword: (value: string) => void;
   setConfirmPassword: (value: string) => void;
   handleAuth: () => void;
+  handleForgotPassword: () => void;
   toggleMode: () => void;
 };
 
@@ -42,6 +44,7 @@ export default function CyberNoirAuthScreen({
   setPassword,
   setConfirmPassword,
   handleAuth,
+  handleForgotPassword,
   toggleMode,
 }: CyberNoirAuthScreenProps) {
   const confirmOpacity = useRef(new Animated.Value(0)).current;
@@ -89,6 +92,12 @@ export default function CyberNoirAuthScreen({
                 secureTextEntry
                 autoCapitalize="none"
               />
+
+              {!isSignUp && (
+                <Pressable onPress={handleForgotPassword} style={styles.forgotPassword}>
+                  <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                </Pressable>
+              )}
 
               {isSignUp && (
                 <Animated.View style={{ opacity: confirmOpacity }}>
@@ -165,6 +174,15 @@ const styles = StyleSheet.create({
   buttonGroup: {
     gap: SPACING.md,
     marginTop: SPACING.sm,
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: -SPACING.sm,
+  },
+  forgotPasswordText: {
+    fontSize: 12,
+    color: NEON.primary,
+    letterSpacing: 0.5,
   },
   orText: {
     fontSize: 13,

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Alert, LayoutAnimation, Platform, UIManager } from 'react-native';
 
 import { useUser } from '@/contexts/UserContext';
+import { supabase } from '@/lib/supabase';
 
 if (
   Platform.OS === 'android' &&
@@ -70,6 +71,38 @@ export function useAuthForm() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Alert.alert('Email Required', 'Please enter your email address to reset your password.');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'formworkout://reset-password',
+      });
+
+      if (error) {
+        Alert.alert('Error', error.message);
+      } else {
+        Alert.alert(
+          'Check Your Email',
+          'If an account exists with this email, you will receive a password reset link.',
+        );
+      }
+    } catch {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleMode = () => {
     LayoutAnimation.configureNext(
       LayoutAnimation.create(
@@ -91,6 +124,7 @@ export function useAuthForm() {
     setPassword,
     setConfirmPassword,
     handleAuth,
+    handleForgotPassword,
     toggleMode,
   };
 }
