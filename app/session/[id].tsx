@@ -14,10 +14,9 @@ import { useSchedule } from '@/contexts/ScheduleContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
 import { useExercises } from '@/hooks/useExercises';
-import { getLocalDateString, getLocalWeekStart } from '@/lib/date-utils';
 import { logger } from '@/lib/logger';
 import { requireParam } from '@/lib/router-utils';
-import { supabase } from '@/lib/supabase';
+import { trpc } from '@/lib/trpc';
 
 type SetData = {
   weight: string;
@@ -43,6 +42,7 @@ export default function SessionScreen() {
   const { user } = useUser();
   const { refetch: refetchAnalytics } = useAnalytics();
   const { loadSchedule } = useSchedule();
+  const logWorkoutMutation = trpc.workouts.log.useMutation();
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [showRestTimer, setShowRestTimer] = useState(false);
@@ -350,131 +350,17 @@ export default function SessionScreen() {
       });
 
       const completedAt = new Date().toISOString();
-      const date = getLocalDateString(); // Use local date to prevent timezone issues
 
-      const { data: insertedWorkout, error } = await supabase
-        .from('workouts')
-        .insert({
-          user_id: user.id,
-          programme_id: sessionData.programmeId,
-          programme_name: sessionData.programmeName,
-          day: sessionData.day,
-          week: sessionData.week,
-          exercises: workoutExercises,
-          completed_at: completedAt,
-        })
-        .select()
-        .single();
+      const result = await logWorkoutMutation.mutateAsync({
+        programmeId: sessionData.programmeId,
+        programmeName: sessionData.programmeName,
+        day: sessionData.day,
+        week: sessionData.week,
+        exercises: workoutExercises,
+        completedAt,
+      });
 
-      if (error) {
-        logger.error('[SessionScreen] Supabase error:', error);
-        throw new Error(`Failed to save workout: ${error.message}`);
-      }
-
-      logger.debug('[SessionScreen] Workout logged successfully:', insertedWorkout?.id);
-      logger.debug('[SessionScreen] Now syncing analytics data...');
-
-      const analyticsRecords = workoutExercises
-        .map((exercise) => {
-          const completedSets = exercise.sets.filter((set) => set.completed);
-          if (completedSets.length === 0) return null;
-
-          const maxWeight = Math.max(...completedSets.map((set) => set.weight));
-          const totalVolume = completedSets.reduce((sum, set) => sum + set.weight * set.reps, 0);
-          const totalReps = completedSets.reduce((sum, set) => sum + set.reps, 0);
-
-          return {
-            user_id: user.id,
-            exercise_id: exercise.exerciseId,
-            date,
-            max_weight: maxWeight,
-            total_volume: totalVolume,
-            total_reps: totalReps,
-          };
-        })
-        .filter((record): record is NonNullable<typeof record> => record !== null);
-
-      if (analyticsRecords.length > 0) {
-        logger.debug('[SessionScreen] Inserting', analyticsRecords.length, 'analytics records');
-        
-        // Fetch existing analytics records for today to aggregate instead of overwrite
-        const { data: existingRecords, error: fetchError } = await supabase
-          .from('analytics')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('date', date)
-          .in('exercise_id', analyticsRecords.map(r => r.exercise_id));
-
-        if (fetchError) {
-          logger.error('[SessionScreen] Error fetching existing analytics:', fetchError);
-        }
-
-        // Aggregate new data with existing data (sum volumes/reps, max weight)
-        const aggregatedRecords = analyticsRecords.map(newRecord => {
-          const existingRecord = existingRecords?.find(
-            r => r.exercise_id === newRecord.exercise_id
-          );
-
-          if (existingRecord) {
-            logger.debug('[SessionScreen] Aggregating with existing record for exercise:', newRecord.exercise_id);
-            // Aggregate: sum volumes and reps, take max weight
-            return {
-              ...newRecord,
-              max_weight: Math.max(existingRecord.max_weight, newRecord.max_weight),
-              total_volume: existingRecord.total_volume + newRecord.total_volume,
-              total_reps: existingRecord.total_reps + newRecord.total_reps,
-            };
-          }
-
-          return newRecord;
-        });
-
-        const { error: analyticsError } = await supabase
-          .from('analytics')
-          .upsert(aggregatedRecords, {
-            onConflict: 'user_id,exercise_id,date',
-          });
-
-        if (analyticsError) {
-          logger.error('[SessionScreen] Analytics sync error:', analyticsError);
-        } else {
-          logger.debug('[SessionScreen] Analytics synced successfully');
-        }
-      }
-      
-      logger.debug('[SessionScreen] Updating schedule status to completed...');
-      const today = new Date();
-      const dayOfWeek = (today.getDay() + 6) % 7;
-      
-      // Use local timezone to calculate week start
-      const weekStart = getLocalWeekStart(today);
-
-      const { data: existingSchedule } = await supabase
-        .from('schedules')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('week_start', weekStart)
-        .maybeSingle();
-
-      if (existingSchedule) {
-        const updatedSchedule = existingSchedule.schedule.map((day: any, idx: number) => {
-          if (idx === dayOfWeek && (day.status === 'scheduled' || day.status === 'empty')) {
-            return { ...day, status: 'completed' };
-          }
-          return day;
-        });
-
-        const { error: scheduleError } = await supabase
-          .from('schedules')
-          .update({ schedule: updatedSchedule })
-          .eq('id', existingSchedule.id);
-
-        if (scheduleError) {
-          logger.error('[SessionScreen] Error updating schedule:', scheduleError);
-        } else {
-          logger.debug('[SessionScreen] Schedule updated successfully');
-        }
-      }
+      logger.debug('[SessionScreen] Workout logged via tRPC:', result);
       
       logger.debug('[SessionScreen] Refreshing programme context, analytics, and schedule...');
       
