@@ -40,11 +40,12 @@ export const getAnalyticsOverviewProcedure = protectedProcedure
       programmeDays: z.number().int().min(0).max(7).optional(),
     })
   )
-  .query(async ({ input }) => {
+  .query(async ({ ctx, input }) => {
     const months = input.months ?? 6;
     const programmeDays = input.programmeDays ?? 3;
 
     const { data, error } = await supabaseAdmin.rpc('get_strength_trend', {
+      p_user_id: ctx.userId,
       p_months: months,
     });
 

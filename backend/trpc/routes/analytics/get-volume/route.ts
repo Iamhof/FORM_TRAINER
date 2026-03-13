@@ -11,8 +11,9 @@ export const getVolumeProcedure = protectedProcedure
       period: z.enum(['week', 'month', 'total']),
     })
   )
-  .query(async ({ input }) => {
+  .query(async ({ ctx, input }) => {
     const { data, error } = await supabaseAdmin.rpc('get_volume', {
+      p_user_id: ctx.userId,
       p_period: input.period,
     });
 
