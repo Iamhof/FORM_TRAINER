@@ -1,5 +1,5 @@
 import { BlurView } from 'expo-blur';
-import { LayoutGrid, Dumbbell, BarChart3, Trophy } from 'lucide-react-native';
+import { LayoutGrid, Dumbbell } from 'lucide-react-native';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,8 +16,6 @@ type TabItem = {
 const TABS: TabItem[] = [
   { name: 'home', label: 'DASHBOARD', icon: LayoutGrid },
   { name: 'workouts', label: 'WORKOUTS', icon: Dumbbell },
-  { name: 'analytics', label: 'STATS', icon: BarChart3 },
-  { name: 'leaderboard', label: 'RANKS', icon: Trophy },
 ];
 
 type BottomNavProps = {

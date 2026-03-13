@@ -3,6 +3,7 @@ import { getAnalyticsProcedure } from "./routes/analytics/get/route.js";
 import { getVolumeProcedure } from "./routes/analytics/get-volume/route.js";
 import { getAnalyticsOverviewProcedure } from "./routes/analytics/overview/route.js";
 import { syncAnalyticsProcedure } from "./routes/analytics/sync/route.js";
+import { deleteAccountProcedure } from "./routes/auth/delete-account/route.js";
 import { meProcedure } from "./routes/auth/me/route.js";
 import { deleteBodyMetricsProcedure } from "./routes/body-metrics/delete/route.js";
 import { getLatestBodyMetricsProcedure } from "./routes/body-metrics/latest/route.js";
@@ -49,6 +50,7 @@ export const appRouter = createTRPCRouter({
   }),
   auth: createTRPCRouter({
     me: meProcedure,
+    deleteAccount: deleteAccountProcedure,
   }),
   exercises: createTRPCRouter({
     list: listExercisesProcedure,
