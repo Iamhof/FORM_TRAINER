@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "formworkout",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "runtimeVersion": {
       "policy": "appVersion"
@@ -25,7 +25,9 @@
       "buildNumber": "1",
       "infoPlist": {
         "NSFaceIDUsageDescription": "Use Face ID for secure authentication",
-        "NSPhotoLibraryUsageDescription": "Save workout progress photos to your library"
+        "NSPhotoLibraryUsageDescription": "Save workout progress photos to your library",
+        "NSCameraUsageDescription": "Take photos for your profile and workout progress",
+        "NSPhotoLibraryAddUsageDescription": "Save workout progress photos to your library"
       },
       "config": {
         "usesNonExemptEncryption": false
@@ -58,7 +60,14 @@
         }
       ],
       "expo-updates",
-      "expo-build-properties"
+      "expo-build-properties",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "formworkout",
+          "project": "form-mobile"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

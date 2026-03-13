@@ -69,8 +69,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <Text style={styles.title}>Oops! Something went wrong</Text>
             <Text style={styles.message}>{userMessage}</Text>
 
-            {/* TEMPORARY: Always show debug info to diagnose TestFlight crash */}
-            {error && (
+            {__DEV__ && error && (
               <View style={styles.debugContainer}>
                 <Text style={styles.debugTitle}>Debug Information:</Text>
                 <Text style={styles.debugText}>{error.toString()}</Text>

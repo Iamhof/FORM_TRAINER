@@ -249,6 +249,16 @@ export default function PaywallScreen() {
             end of the current period. You can manage and cancel your subscriptions in your
             App Store account settings.
           </Text>
+
+          <View style={styles.legalLinks}>
+            <Pressable onPress={() => router.push('/legal/terms')}>
+              <Text style={styles.legalLinkText}>Terms of Service</Text>
+            </Pressable>
+            <Text style={styles.legalSeparator}>|</Text>
+            <Pressable onPress={() => router.push('/legal/privacy')}>
+              <Text style={styles.legalLinkText}>Privacy Policy</Text>
+            </Pressable>
+          </View>
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -425,5 +435,21 @@ const styles = StyleSheet.create({
     color: COLORS.textTertiary,
     textAlign: 'center',
     lineHeight: 16,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: SPACING.sm,
+    gap: SPACING.sm,
+  },
+  legalLinkText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    textDecorationLine: 'underline',
+  },
+  legalSeparator: {
+    fontSize: 12,
+    color: COLORS.textTertiary,
   },
 });
