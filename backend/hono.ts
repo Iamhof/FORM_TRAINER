@@ -3,10 +3,10 @@ import { trpcServer } from "@hono/trpc-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-import { appRouter } from "./trpc/app-router.js";
-import { createContext } from "./trpc/create-context.js";
 import { logger } from "../lib/logger.js";
 import { isDevelopmentMode } from "./lib/runtime-utils.js";
+import { appRouter } from "./trpc/app-router.js";
+import { createContext } from "./trpc/create-context.js";
 
 // Note: Service keys are now validated lazily when Supabase client is first accessed
 // This reduces cold start time significantly
@@ -16,6 +16,41 @@ logger.info('[Hono] App router loaded:', !!appRouter);
 logger.info('[Hono] Create context loaded:', !!createContext);
 
 const app = new Hono();
+
+// Simple in-memory rate limiter (sliding window)
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 100; // per window per IP
+
+// Clean up stale entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of rateLimitStore) {
+    if (now > value.resetAt) {
+      rateLimitStore.delete(key);
+    }
+  }
+}, 300_000);
+
+app.use("*", async (c, next) => {
+  const ip = c.req.header('x-forwarded-for')?.split(',')[0]?.trim()
+    ?? c.req.header('x-real-ip')
+    ?? 'unknown';
+  const now = Date.now();
+  const entry = rateLimitStore.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitStore.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+  } else {
+    entry.count++;
+    if (entry.count > RATE_LIMIT_MAX_REQUESTS) {
+      c.header('Retry-After', String(Math.ceil((entry.resetAt - now) / 1000)));
+      return c.json({ error: 'Too many requests' }, 429);
+    }
+  }
+
+  await next();
+});
 
 app.use(
   "*",
@@ -132,19 +167,25 @@ app.use("/trpc/*", trpcMiddleware);
 app.use("/api/trpc/*", trpcMiddleware);
 
 app.get("/", (c) => {
-  return c.json({ 
-    status: "ok", 
+  const response: Record<string, unknown> = {
+    status: "ok",
     message: "API is running",
-    availableRoutes: Object.keys(appRouter._def.procedures),
-    timestamp: new Date().toISOString()
-  });
+    timestamp: new Date().toISOString(),
+  };
+  if (isDevelopmentMode()) {
+    response.availableRoutes = Object.keys(appRouter._def.procedures);
+  }
+  return c.json(response);
 });
 
 app.get("/health", (c) => {
-  return c.json({ 
-    status: "healthy", 
-    procedures: Object.keys(appRouter._def.procedures)
-  });
+  const response: Record<string, unknown> = {
+    status: "healthy",
+  };
+  if (isDevelopmentMode()) {
+    response.procedures = Object.keys(appRouter._def.procedures);
+  }
+  return c.json(response);
 });
 
 app.notFound((c) => {
