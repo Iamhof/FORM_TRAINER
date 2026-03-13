@@ -45,3 +45,12 @@ nul
 # Build artifacts
 .eslintcache
 supabase/.temp/
+
+# Binary archives
+*.zip
+
+# Screenshots / UI reference images
+FORM_Testflight_UI/
+
+# Binary documents
+*.docx
