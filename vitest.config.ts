@@ -36,7 +36,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov"],
     },
-    include: ["tests/**/*.test.{ts,tsx}", "tests/**/*.bench.{ts,tsx}", "backend/**/*.test.{ts,tsx}"],
+    include: ["tests/**/*.test.{ts,tsx}", "backend/**/*.test.{ts,tsx}"],
     watch: false,
     // Exclude React Native app files from test runs (but allow lib for benchmarks)
     exclude: [

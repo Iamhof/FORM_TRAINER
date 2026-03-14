@@ -117,92 +117,82 @@ export type NarrowedError = {
  * ```
  */
 export function narrowError(error: unknown): NarrowedError {
-  // 1. Try Supabase error
-  const supabaseResult = SupabaseErrorSchema.safeParse(error);
-  if (supabaseResult.success) {
-    return {
-      message: supabaseResult.data.message,
-      code: supabaseResult.data.code,
-      details: supabaseResult.data.details || supabaseResult.data.hint,
-      status: supabaseResult.data.status,
-      originalError: error,
-    };
+  // 1. Null
+  if (error === null) {
+    return { message: 'Null error', code: 'NULL_ERROR', originalError: error };
   }
 
-  // 2. Try tRPC error
-  const trpcResult = TRPCErrorSchema.safeParse(error);
-  if (trpcResult.success) {
-    return {
-      message: trpcResult.data.message,
-      code: trpcResult.data.code,
-      status: trpcResult.data.data?.httpStatus,
-      originalError: error,
-    };
+  // 2. Undefined
+  if (error === undefined) {
+    return { message: 'Undefined error', code: 'UNDEFINED_ERROR', originalError: error };
   }
 
-  // 3. Try Auth error
-  const authResult = AuthErrorSchema.safeParse(error);
-  if (authResult.success) {
-    return {
-      message: authResult.data.message,
-      code: authResult.data.name || 'AUTH_ERROR',
-      status: typeof authResult.data.status === 'number' ? authResult.data.status : undefined,
-      originalError: error,
-    };
+  // 3. String
+  if (typeof error === 'string') {
+    return { message: error, code: 'STRING_ERROR', originalError: error };
   }
 
-  // 4. Try Network error
-  const networkResult = NetworkErrorSchema.safeParse(error);
-  if (networkResult.success) {
-    return {
-      message: networkResult.data.message,
-      code: 'NETWORK_ERROR',
-      originalError: error,
-    };
+  // 4. Network error (TypeError — check before general Error)
+  if (error instanceof TypeError) {
+    return { message: error.message, code: 'NETWORK_ERROR', originalError: error };
   }
 
-  // 5. Standard JavaScript Error
+  // 5. Standard Error instance (before Zod schemas to prevent overly-permissive matching)
   if (error instanceof Error) {
+    // Prefer .code property if present (e.g. TRPCError, PostgrestError)
+    const code = 'code' in error && typeof (error as Record<string, unknown>).code === 'string'
+      ? (error as Record<string, unknown>).code as string
+      : error.name || 'ERROR';
     return {
       message: error.message,
-      code: error.name || 'ERROR',
+      code,
       details: error.stack,
       originalError: error,
     };
   }
 
-  // 6. String error
-  if (typeof error === 'string') {
-    return {
-      message: error,
-      code: 'STRING_ERROR',
-      originalError: error,
-    };
+  // 6. tRPC error (plain object with `data` property)
+  if (typeof error === 'object' && 'data' in error) {
+    const trpcResult = TRPCErrorSchema.safeParse(error);
+    if (trpcResult.success) {
+      return {
+        message: trpcResult.data.message,
+        code: trpcResult.data.code,
+        status: trpcResult.data.data?.httpStatus,
+        originalError: error,
+      };
+    }
   }
 
-  // 7. Null/undefined
-  if (error === null) {
-    return {
-      message: 'Null error',
-      code: 'NULL_ERROR',
-      originalError: error,
-    };
+  // 7. Auth error (plain object with `__isAuthError`)
+  if (typeof error === 'object' && error !== null && '__isAuthError' in error) {
+    const authResult = AuthErrorSchema.safeParse(error);
+    if (authResult.success) {
+      return {
+        message: authResult.data.message,
+        code: authResult.data.name || 'AUTH_ERROR',
+        status: typeof authResult.data.status === 'number' ? authResult.data.status : undefined,
+        originalError: error,
+      };
+    }
   }
 
-  if (error === undefined) {
-    return {
-      message: 'Undefined error',
-      code: 'UNDEFINED_ERROR',
-      originalError: error,
-    };
+  // 8. Supabase error (plain object with Supabase-specific fields)
+  if (typeof error === 'object' && error !== null && ('code' in error || 'details' in error || 'hint' in error)) {
+    const supabaseResult = SupabaseErrorSchema.safeParse(error);
+    if (supabaseResult.success) {
+      return {
+        message: supabaseResult.data.message,
+        code: supabaseResult.data.code,
+        details: supabaseResult.data.details || supabaseResult.data.hint,
+        status: supabaseResult.data.status,
+        originalError: error,
+      };
+    }
   }
 
-  // 8. Object with message property
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error
-  ) {
+  // 9. Object with message property
+  if (typeof error === 'object' && error !== null && 'message' in error) {
     const errorWithMessage = error as Record<string, unknown>;
     const message = typeof errorWithMessage.message === 'string'
       ? errorWithMessage.message
@@ -216,7 +206,7 @@ export function narrowError(error: unknown): NarrowedError {
     };
   }
 
-  // 9. Fallback for anything else
+  // 10. Fallback
   return {
     message: String(error),
     code: 'UNKNOWN_ERROR',

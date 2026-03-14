@@ -186,6 +186,7 @@ class MockQuery {
 
 describe("PT workflow", () => {
   const originalFrom = supabaseAdmin.from.bind(supabaseAdmin);
+  const originalRpc = (supabaseAdmin as any).rpc?.bind(supabaseAdmin);
   const originalRandomBytes = crypto.randomBytes.bind(crypto);
   let mockDb: MockSupabase;
 
@@ -220,12 +221,30 @@ describe("PT workflow", () => {
     });
 
     (supabaseAdmin as any).from = mockDb.from.bind(mockDb);
+    (supabaseAdmin as any).rpc = (fnName: string, params: Record<string, unknown>) => {
+      if (fnName === 'share_programme_atomic') {
+        const row = {
+          id: mockDb.generateId('shared_programmes'),
+          pt_id: params.p_pt_id,
+          programme_id: params.p_programme_id,
+          client_id: params.p_client_id,
+          created_at: new Date().toISOString(),
+        };
+        if (!mockDb.tables.shared_programmes) {
+          mockDb.tables.shared_programmes = [];
+        }
+        mockDb.tables.shared_programmes.push(row);
+        return { data: row, error: null };
+      }
+      return { data: null, error: { message: `Unknown RPC: ${fnName}`, code: 'UNKNOWN' } };
+    };
     (crypto.randomBytes as any) = () =>
       Buffer.from("0123456789abcdef0123456789abcdef");
   });
 
   afterEach(() => {
     (supabaseAdmin as any).from = originalFrom;
+    if (originalRpc) (supabaseAdmin as any).rpc = originalRpc;
     (crypto.randomBytes as any) = originalRandomBytes;
   });
 
