@@ -81,20 +81,27 @@ async function createDemoUser(): Promise<string> {
 }
 
 async function seedProfile(userId: string) {
-  const { error } = await supabase.from('profiles').upsert({
-    user_id: userId,
-    name: 'Demo Reviewer',
-    role: 'user',
-    is_pt: false,
-    accent_color: '#A855F7',
-    gender: 'prefer_not_to_say',
-    current_xp: 420,
-    current_level: 4,
-    leaderboard_enabled: true,
-    leaderboard_display_name: 'DemoReviewer',
-  });
+  const { error } = await supabase.from('profiles').upsert(
+    {
+      user_id: userId,
+      name: 'Demo Reviewer',
+      role: 'user',
+      is_pt: false,
+      accent_color: '#A855F7',
+    },
+    { onConflict: 'user_id' }
+  );
   if (error) throw new Error(`Failed to seed profile: ${error.message}`);
-  console.info('Seeded profile.');
+
+  // Set up leaderboard profile separately
+  const { error: lbError } = await supabase.from('leaderboard_profiles').upsert({
+    user_id: userId,
+    is_opted_in: true,
+    display_name: 'DemoReviewer',
+    show_real_name: false,
+  });
+  if (lbError) throw new Error(`Failed to seed leaderboard profile: ${lbError.message}`);
+  console.info('Seeded profile and leaderboard profile.');
 }
 
 async function seedProgramme(userId: string): Promise<string> {
@@ -502,22 +509,16 @@ async function seedBodyMetrics(userId: string) {
 }
 
 async function seedLeaderboardStats(userId: string) {
-  const { error } = await supabase.from('leaderboard_stats').upsert({
-    user_id: userId,
-    total_visits: 9,
-    current_month_visits: 9,
-    total_volume_kg: 22385,
-    current_month_volume_kg: 22385,
-    avg_strength_increase_percent: 8.5,
-    current_month_strength_increase_percent: 8.5,
-    current_streak_weeks: 3,
-    longest_streak_weeks: 3,
-    exercise_records: {
-      [EXERCISES.benchPress]: { weight: 72.5, reps: 8, date: dateOnly(7) },
-      [EXERCISES.squat]: { weight: 90, reps: 6, date: dateOnly(3) },
-      [EXERCISES.deadlift]: { weight: 100, reps: 5, date: dateOnly(5) },
+  const { error } = await supabase.from('leaderboard_stats').upsert(
+    {
+      user_id: userId,
+      total_volume_kg: 22385,
+      monthly_volume_kg: 22385,
+      total_sessions: 9,
+      monthly_sessions: 9,
     },
-  });
+    { onConflict: 'user_id' }
+  );
   if (error) throw new Error(`Failed to seed leaderboard stats: ${error.message}`);
   console.info('Seeded leaderboard stats.');
 }
