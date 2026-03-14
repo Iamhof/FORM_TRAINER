@@ -49,7 +49,7 @@ const [ScheduleProviderRaw, useSchedule] = createContextHook(() => {
     {
       enabled: isAuthenticated,
       refetchOnWindowFocus: false,
-      staleTime: 0,
+      staleTime: 1000 * 60 * 5, // 5 minutes — aligned with global default
     }
   );
 

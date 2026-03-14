@@ -7,6 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Card from '@/components/Card';
 import ActiveProgrammeCard from '@/components/dashboard/ActiveProgrammeCard';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import DashboardWeekStrip from '@/components/dashboard/DashboardWeekStrip';
 import ExerciseLibraryCard from '@/components/dashboard/ExerciseLibraryCard';
 import NewWeekBanner from '@/components/dashboard/NewWeekBanner';
@@ -26,6 +27,7 @@ export default function DashboardScreen() {
   const {
     activeProgramme,
     programmes,
+    isLoading: isProgrammesLoading,
     getProgrammeProgress,
     getNextSession,
     getCurrentWeekAndDay,
@@ -78,7 +80,9 @@ export default function DashboardScreen() {
           onProfilePress={() => router.push('/profile')}
         />
 
-        {activeProgramme ? (
+        {isProgrammesLoading ? (
+          <DashboardSkeleton />
+        ) : activeProgramme ? (
           <>
             {/* Week Setup Banner (when sessions remain to schedule) */}
             {canScheduleMore && (
