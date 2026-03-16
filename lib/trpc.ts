@@ -1,4 +1,4 @@
-import { httpBatchLink } from "@trpc/client";
+import { httpBatchLink, httpLink, splitLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import Constants from "expo-constants";
 import superjson from "superjson";
@@ -167,65 +167,51 @@ const getBaseUrl = () => {
   return fallbackUrl;
 };
 
-let trpcClient: ReturnType<typeof trpc.createClient>;
-try {
+// Shared fetch with timeout, error handling, and logging
+const createTrpcFetch = (): any => async (url: RequestInfo | URL, options?: RequestInit) => {
   const baseUrl = getBaseUrl();
-  
-  trpcClient = trpc.createClient({
-    links: [
-      httpBatchLink({
-        url: `${baseUrl}/api/trpc`,
-      transformer: superjson,
-      async headers() {
-        const authorization = await getCachedAuthToken();
-        return { authorization };
-      },
-      async fetch(url, options) {
-        const baseUrl = getBaseUrl();
 
-        // Check for operation-specific timeout in headers
-        // This allows routes to specify custom timeouts for heavy operations
-        const headers = options?.headers;
-        const customTimeout = headers && typeof headers === 'object' && 'x-trpc-timeout' in headers
-          ? String((headers as Record<string, unknown>)['x-trpc-timeout'])
-          : undefined;
-        const REQUEST_TIMEOUT = customTimeout && !isNaN(Number(customTimeout))
-          ? Number(customTimeout)
-          : getDefaultTimeout();
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          controller.abort();
-        }, REQUEST_TIMEOUT);
-        
-        logger.debug('[TRPC] Making request to:', url);
-        logger.debug('[TRPC] Base URL:', baseUrl);
-        logger.debug('[TRPC] Request method:', options?.method || 'GET');
-        logger.debug('[TRPC] Request headers:', JSON.stringify(options?.headers || {}));
-        
-        try {
-          const response = await fetch(url, {
-            ...options,
-            signal: controller.signal,
-          });
-          
-          clearTimeout(timeoutId);
-          
-          logger.debug('[TRPC] Response status:', response.status, response.statusText);
-          logger.debug('[TRPC] Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
-          
-          // Check content type before reading body
-          const contentType = response.headers.get('content-type');
-          logger.debug('[TRPC] Response content-type:', contentType);
-          
-          if (!response.ok) {
-            const text = await response.text();
-            logger.error('[TRPC] HTTP error:', response.status, response.statusText);
-            logger.error('[TRPC] Response body preview:', text.substring(0, 500));
-            
-            if (text.startsWith('<')) {
-              // Create detailed technical error for logging
-              const technicalError = new Error(`Server returned HTML instead of JSON. Status: ${response.status}. 
+  // Check for operation-specific timeout in headers
+  const headers = options?.headers;
+  const customTimeout = headers && typeof headers === 'object' && 'x-trpc-timeout' in headers
+    ? String((headers as Record<string, unknown>)['x-trpc-timeout'])
+    : undefined;
+  const REQUEST_TIMEOUT = customTimeout && !isNaN(Number(customTimeout))
+    ? Number(customTimeout)
+    : getDefaultTimeout();
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, REQUEST_TIMEOUT);
+
+  logger.debug('[TRPC] Making request to:', url);
+  logger.debug('[TRPC] Base URL:', baseUrl);
+  logger.debug('[TRPC] Request method:', options?.method || 'GET');
+  logger.debug('[TRPC] Request headers:', JSON.stringify(options?.headers || {}));
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    logger.debug('[TRPC] Response status:', response.status, response.statusText);
+    logger.debug('[TRPC] Response headers:', JSON.stringify(Object.fromEntries(response.headers.entries())));
+
+    // Check content type before reading body
+    const contentType = response.headers.get('content-type');
+    logger.debug('[TRPC] Response content-type:', contentType);
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error('[TRPC] HTTP error:', response.status, response.statusText);
+      logger.error('[TRPC] Response body preview:', text.substring(0, 500));
+
+      if (text.startsWith('<')) {
+        const technicalError = new Error(`Server returned HTML instead of JSON. Status: ${response.status}.
 This usually means:
 1. The API route was not found (check that /api/trpc/* routes are configured)
 2. The backend failed to initialize (check server logs for errors)
@@ -234,126 +220,145 @@ This usually means:
 Base URL: ${baseUrl}
 Request URL: ${url}
 Expected endpoint: ${baseUrl}/api/trpc/...`);
-              
-              // Transform to user-friendly error
-              throw transformTRPCError(technicalError, {
-                url,
-                baseUrl,
-                status: response.status,
-                statusText: response.statusText,
-                responseType: 'HTML',
-              });
-            }
-            
-            // Try to parse as JSON for better error message
-            let errorMessage = `HTTP ${response.status}: ${text.substring(0, 200)}`;
-            try {
-              const json = JSON.parse(text);
-              // Handle tRPC error response shape: {"error": {"message": "...", ...}}
-              // Also handle batched responses: [{"error": {"message": "..."}}]
-              const errObj = Array.isArray(json) ? json[0]?.error : json.error;
-              const msg = typeof json.message === 'string'
-                ? json.message
-                : typeof errObj?.message === 'string'
-                  ? errObj.message
-                  : typeof errObj?.data?.zodError?.fieldErrors === 'object'
-                    ? `Validation error: ${JSON.stringify(errObj.data.zodError.fieldErrors)}`
-                    : null;
-              if (msg) {
-                errorMessage = `HTTP ${response.status}: ${msg}`;
-              }
-            } catch {
-              // Not JSON, use text
-            }
-            
-            // Create technical error and transform it
-            const technicalError = new Error(errorMessage);
-            throw transformTRPCError(technicalError, {
-              url,
-              baseUrl,
-              status: response.status,
-              statusText: response.statusText,
-              responsePreview: text.substring(0, 200),
-            });
-          }
-          
-          // Verify response is JSON
-          if (contentType && !contentType.includes('application/json')) {
-            const text = await response.clone().text();
-            logger.warn('[TRPC] Response is not JSON. Content-Type:', contentType);
-            logger.warn('[TRPC] Response preview:', text.substring(0, 200));
-            
-            if (text.startsWith('<')) {
-              // Check if this is likely a tunnel mode issue
-              const isTunnelUrl = String(url).includes('.exp.direct') || 
-                                  String(url).includes('ngrok') || 
-                                  String(url).includes('tunnel');
-              
-              const tunnelWarning = isTunnelUrl 
-                ? `\n\n⚠️ You appear to be using TUNNEL MODE. Expo Router API routes do NOT work through tunnels.
+
+        throw transformTRPCError(technicalError, {
+          url,
+          baseUrl,
+          status: response.status,
+          statusText: response.statusText,
+          responseType: 'HTML',
+        });
+      }
+
+      let errorMessage = `HTTP ${response.status}: ${text.substring(0, 200)}`;
+      try {
+        const json = JSON.parse(text);
+        const errObj = Array.isArray(json) ? json[0]?.error : json.error;
+        const msg = typeof json.message === 'string'
+          ? json.message
+          : typeof errObj?.message === 'string'
+            ? errObj.message
+            : typeof errObj?.data?.zodError?.fieldErrors === 'object'
+              ? `Validation error: ${JSON.stringify(errObj.data.zodError.fieldErrors)}`
+              : null;
+        if (msg) {
+          errorMessage = `HTTP ${response.status}: ${msg}`;
+        }
+      } catch {
+        // Not JSON, use text
+      }
+
+      const technicalError = new Error(errorMessage);
+      throw transformTRPCError(technicalError, {
+        url,
+        baseUrl,
+        status: response.status,
+        statusText: response.statusText,
+        responsePreview: text.substring(0, 200),
+      });
+    }
+
+    // Verify response is JSON
+    if (contentType && !contentType.includes('application/json')) {
+      const text = await response.clone().text();
+      logger.warn('[TRPC] Response is not JSON. Content-Type:', contentType);
+      logger.warn('[TRPC] Response preview:', text.substring(0, 200));
+
+      if (text.startsWith('<')) {
+        const isTunnelUrl = String(url).includes('.exp.direct') ||
+                            String(url).includes('ngrok') ||
+                            String(url).includes('tunnel');
+
+        const tunnelWarning = isTunnelUrl
+          ? `\n\n⚠️ You appear to be using TUNNEL MODE. Expo Router API routes do NOT work through tunnels.
 FIX: Run "npx expo start" (without --tunnel) with your device on the same WiFi network.`
-                : '';
-              
-              // Create detailed technical error for logging
-              const technicalError = new Error(`Server returned HTML instead of JSON. Content-Type: ${contentType}.
+          : '';
+
+        const technicalError = new Error(`Server returned HTML instead of JSON. Content-Type: ${contentType}.
 This usually means the API route was not found or the backend failed to initialize.
 Base URL: ${baseUrl}
 Request URL: ${url}${tunnelWarning}`);
-              
-              // Transform to user-friendly error
-              throw transformTRPCError(technicalError, {
-                url,
-                baseUrl,
-                contentType,
-                responsePreview: text.substring(0, 200),
-                isTunnelMode: isTunnelUrl,
-              });
-            }
-          }
-          
-          logger.debug('[TRPC] Request successful');
-          return response;
-        } catch (error: unknown) {
-          clearTimeout(timeoutId);
 
-          if (error instanceof Error && error.name === 'AbortError') {
-            const timeoutSeconds = REQUEST_TIMEOUT / 1000;
-            // Create detailed technical error for logging
-            const technicalError = new Error(
-              `Request timeout after ${timeoutSeconds}s. This may indicate a slow network connection. Please check your internet and try again.`
-            );
-            
-            logger.warn('[TRPC] Request timed out after', timeoutSeconds, 'seconds');
-            
-            // Transform to user-friendly error (errorService.capture called inside transformTRPCError)
-            throw transformTRPCError(technicalError, {
-              url,
-              baseUrl,
-              timeout: REQUEST_TIMEOUT,
-              timeoutSeconds,
-            });
-          }
-          
-          if (error instanceof Error && error.message.includes('HTML instead of JSON')) {
-            // Already transformed earlier, just throw it
-            throw error;
-          }
-          
-          // Create technical error with full details for logging
-          const technicalError = error instanceof Error 
-            ? new Error(`${error.message}\n\nTroubleshooting:\n- Base URL: ${baseUrl}\n- Request URL: ${url}\n- Check server logs for backend initialization errors`)
-            : new Error(`Network error: ${String(error)}\n\nBase URL: ${baseUrl}\nRequest URL: ${url}`);
-          
-          // Transform to user-friendly error (errorService.capture called inside transformTRPCError)
-          throw transformTRPCError(technicalError, {
-            url,
-            baseUrl,
-            originalError: error instanceof Error ? error.message : String(error),
-          });
-        }
-      },
-    }),
-  ],
+        throw transformTRPCError(technicalError, {
+          url,
+          baseUrl,
+          contentType,
+          responsePreview: text.substring(0, 200),
+          isTunnelMode: isTunnelUrl,
+        });
+      }
+    }
+
+    logger.debug('[TRPC] Request successful');
+    return response;
+  } catch (error: unknown) {
+    clearTimeout(timeoutId);
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      const timeoutSeconds = REQUEST_TIMEOUT / 1000;
+      const technicalError = new Error(
+        `Request timeout after ${timeoutSeconds}s. This may indicate a slow network connection. Please check your internet and try again.`
+      );
+
+      logger.warn('[TRPC] Request timed out after', timeoutSeconds, 'seconds');
+
+      throw transformTRPCError(technicalError, {
+        url,
+        baseUrl,
+        timeout: REQUEST_TIMEOUT,
+        timeoutSeconds,
+      });
+    }
+
+    if (error instanceof Error && error.message.includes('HTML instead of JSON')) {
+      throw error;
+    }
+
+    const technicalError = error instanceof Error
+      ? new Error(`${error.message}\n\nTroubleshooting:\n- Base URL: ${baseUrl}\n- Request URL: ${url}\n- Check server logs for backend initialization errors`)
+      : new Error(`Network error: ${String(error)}\n\nBase URL: ${baseUrl}\nRequest URL: ${url}`);
+
+    throw transformTRPCError(technicalError, {
+      url,
+      baseUrl,
+      originalError: error instanceof Error ? error.message : String(error),
+    });
+  }
+};
+
+// Shared link config
+const sharedHeaders = async () => {
+  const authorization = await getCachedAuthToken();
+  return { authorization };
+};
+
+let trpcClient: ReturnType<typeof trpc.createClient>;
+try {
+  const baseUrl = getBaseUrl();
+  const trpcUrl = `${baseUrl}/api/trpc`;
+  const trpcFetch = createTrpcFetch();
+
+  trpcClient = trpc.createClient({
+    links: [
+      // Mutations get their own isolated HTTP request (httpLink) so they
+      // never stall behind a slow batched query.  Queries stay batched
+      // for efficiency.
+      splitLink({
+        condition: (op) => op.type === 'mutation',
+        true: httpLink({
+          url: trpcUrl,
+          transformer: superjson,
+          headers: sharedHeaders,
+          fetch: trpcFetch,
+        }),
+        false: httpBatchLink({
+          url: trpcUrl,
+          transformer: superjson,
+          headers: sharedHeaders,
+          fetch: trpcFetch,
+        }),
+      }),
+    ],
   });
 } catch (error) {
   logger.error('[TRPC] Failed to create trpcClient:', error);
