@@ -23,7 +23,11 @@
       "mcp__claude_ai_Supabase__execute_sql",
       "mcp__claude_ai_Supabase__apply_migration",
       "Bash(EXPO_PUBLIC_SUPABASE_URL=\"https://yshbcfifmkflhahjengk.supabase.co\" SUPABASE_SERVICE_ROLE_KEY=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzaGJjZmlmbWtmbGhhaGplbmdrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTY2Mjc2NywiZXhwIjoyMDc1MjM4NzY3fQ.H52cvIeL5fYTrVZXIGa6jC_fECfuUFr3BPT84Jkaoqk\" bunx tsx scripts/seed-demo-account.ts)",
-      "Bash(ls -la /Users/iamhof/Projects/FORM_TRAINER/app/\\\\\\(tabs\\\\\\)/)"
+      "Bash(ls -la /Users/iamhof/Projects/FORM_TRAINER/app/\\\\\\(tabs\\\\\\)/)",
+      "Bash(find /Users/iamhof/Projects/FORM_TRAINER -type f -name *muscle* -o -name *body-part*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(grep -r \"visualization\\\\|chart\\\\|graph\" /Users/iamhof/Projects/FORM_TRAINER --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"rpc\\\\|get_strength_trend\\\\|get_volume\" /Users/iamhof/Projects/FORM_TRAINER/supabase --include=*.sql)"
     ]
   }
 }

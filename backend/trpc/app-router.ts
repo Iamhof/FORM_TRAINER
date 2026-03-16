@@ -1,6 +1,7 @@
 import { createTRPCRouter } from "./create-context.js";
 import { getAnalyticsProcedure } from "./routes/analytics/get/route.js";
 import { getVolumeProcedure } from "./routes/analytics/get-volume/route.js";
+import { muscleVolumeProcedure } from "./routes/analytics/muscle-volume/route.js";
 import { getAnalyticsOverviewProcedure } from "./routes/analytics/overview/route.js";
 import { syncAnalyticsProcedure } from "./routes/analytics/sync/route.js";
 import { deleteAccountProcedure } from "./routes/auth/delete-account/route.js";
@@ -69,6 +70,7 @@ export const appRouter = createTRPCRouter({
     get: getAnalyticsProcedure,
     sync: syncAnalyticsProcedure,
     getVolume: getVolumeProcedure,
+    muscleVolume: muscleVolumeProcedure,
     overview: getAnalyticsOverviewProcedure,
   }),
   pt: createTRPCRouter({
