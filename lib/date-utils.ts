@@ -75,3 +75,45 @@ export const getWeekDates = (weekStart: string): WeekDateEntry[] => {
   });
 };
 
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+const WEEK_MS = 7 * DAY_MS;
+
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
+
+/**
+ * Formats a date string into a human-readable relative time.
+ * Examples: "Just now", "3 hours ago", "2 days ago", "Last Monday", "3 weeks ago"
+ */
+export function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+
+  if (diffMs < 0 || diffMs < HOUR_MS) {
+    return 'Just now';
+  }
+
+  if (diffMs < DAY_MS) {
+    const hours = Math.floor(diffMs / HOUR_MS);
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`;
+  }
+
+  if (diffMs < WEEK_MS) {
+    const days = Math.floor(diffMs / DAY_MS);
+    if (days === 1) {
+      return 'Yesterday';
+    }
+    return `${days} days ago`;
+  }
+
+  if (diffMs < 2 * WEEK_MS) {
+    const dayIndex = date.getDay();
+    const weekday = WEEKDAYS[dayIndex];
+    return `Last ${weekday}`;
+  }
+
+  const weeks = Math.floor(diffMs / WEEK_MS);
+  return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+}
+

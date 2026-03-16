@@ -44,6 +44,7 @@ import { toggleScheduleDayProcedure } from "./routes/schedules/toggle-day/route.
 import { updateScheduleProcedure } from "./routes/schedules/update/route.js";
 import { getWorkoutHistoryProcedure } from "./routes/workouts/history/route.js";
 import { logWorkoutProcedure } from "./routes/workouts/log/route.js";
+import { previousPerformanceProcedure } from "./routes/workouts/previous-performance/route.js";
 
 export const appRouter = createTRPCRouter({
   example: createTRPCRouter({
@@ -65,6 +66,7 @@ export const appRouter = createTRPCRouter({
   workouts: createTRPCRouter({
     log: logWorkoutProcedure,
     history: getWorkoutHistoryProcedure,
+    previousPerformance: previousPerformanceProcedure,
   }),
   analytics: createTRPCRouter({
     get: getAnalyticsProcedure,

@@ -1,22 +1,28 @@
+import * as Haptics from 'expo-haptics';
 import { useRouter, Stack, useLocalSearchParams } from 'expo-router';
-import { X, Check } from 'lucide-react-native';
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { X, Check, Flame, Trophy } from 'lucide-react-native';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Dimensions, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Card from '@/components/Card';
 import RestTimerModal from '@/components/RestTimerModal';
+import { PreviousPerformanceBanner } from '@/components/session/PreviousPerformanceBanner';
+import { ProFeatureTeaser } from '@/components/session/ProFeatureTeaser';
 import WorkoutCompleteModal, { WorkoutSummary } from '@/components/WorkoutCompleteModal';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useAnalytics } from '@/contexts/AnalyticsContext';
 import { useProgrammes } from '@/contexts/ProgrammeContext';
 import { useSchedule } from '@/contexts/ScheduleContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
 import { useExercises } from '@/hooks/useExercises';
+import { usePreviousPerformance } from '@/hooks/usePreviousPerformance';
 import { logger } from '@/lib/logger';
 import { requireParam } from '@/lib/router-utils';
 import { trpc } from '@/lib/trpc';
+import { getPRProximity } from '@/lib/weight-suggestion';
 
 type SetData = {
   weight: string;
@@ -42,6 +48,7 @@ export default function SessionScreen() {
   const { user } = useUser();
   const { refetch: refetchAnalytics } = useAnalytics();
   const { loadSchedule } = useSchedule();
+  const { isPremium } = useSubscription();
   const logWorkoutMutation = trpc.workouts.log.useMutation();
   const [exercises, setExercises] = useState<ExerciseData[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -62,7 +69,33 @@ export default function SessionScreen() {
   const pagerRef = useRef<ScrollView>(null);
   const screenWidth = Dimensions.get('window').width;
 
+  // Derive data for previous performance hook
+  const exerciseIds = useMemo(() => exercises.map(e => e.exerciseId), [exercises]);
+  const exerciseTargetReps = useMemo(() => {
+    const map: Record<string, string> = {};
+    if (sessionData) {
+      const programme = programmes.find(p => p.id === sessionData.programmeId);
+      programme?.exercises
+        .filter(e => e.day === sessionData.day)
+        .forEach(e => { map[e.exerciseId] = e.reps; });
+    }
+    return map;
+  }, [sessionData, programmes]);
 
+  const programmeCategory = useMemo(() => {
+    if (!sessionData) return null;
+    return programmes.find(p => p.id === sessionData.programmeId)?.category ?? null;
+  }, [sessionData, programmes]);
+
+  const { data: previousPerformance, isLoading: perfLoading } = usePreviousPerformance({
+    exerciseIds,
+    programmeId: sessionData?.programmeId ?? '',
+    day: sessionData?.day ?? 1,
+    programmeCategory,
+    exerciseTargetReps,
+    isPremium,
+    enabled: !!sessionData && exerciseIds.length > 0,
+  });
 
   // Track if we've already initialized to prevent re-running on every allExercises change
   const hasInitialized = useRef(false);
@@ -198,6 +231,21 @@ export default function SessionScreen() {
     const currentSet = exercises[exerciseIndex]?.sets[setIndex];
     if (!currentSet || currentSet.completed || !currentSet.weight || !currentSet.reps) return;
 
+    // Check for PR proximity before marking complete
+    if (isPremium) {
+      const exercise = exercises[exerciseIndex];
+      if (exercise) {
+        const perf = previousPerformance[exercise.exerciseId];
+        const weight = parseFloat(currentSet.weight);
+        if (perf?.pr && weight > 0) {
+          const proximity = getPRProximity(weight, perf.pr);
+          if (proximity === 'exceeded') {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          }
+        }
+      }
+    }
+
     setExercises(prev => prev.map((ex, i) => {
       if (i !== exerciseIndex) return ex;
       return {
@@ -265,6 +313,20 @@ export default function SessionScreen() {
       };
     }));
   };
+
+  const handleWeightFocus = useCallback((exerciseIndex: number, setIndex: number) => {
+    if (!isPremium) return;
+    const exercise = exercises[exerciseIndex];
+    if (!exercise) return;
+    const set = exercise.sets[setIndex];
+    if (!set || set.weight) return; // Only auto-fill if empty
+
+    const perf = previousPerformance[exercise.exerciseId];
+    const suggested = perf?.suggestedWeights[setIndex];
+    if (suggested != null) {
+      handleWeightChange(exerciseIndex, setIndex, suggested.toString());
+    }
+  }, [exercises, isPremium, previousPerformance]);
 
   const handleRepsChange = (exerciseIndex: number, setIndex: number, value: string) => {
     setExercises(prev => prev.map((ex, i) => {
@@ -464,78 +526,112 @@ export default function SessionScreen() {
                   {exercise.sets.filter(s => s.completed).length} of {exercise.targetSets} sets completed
                 </Text>
 
-                {exercise.sets.map((set, setIndex) => (
-                  <Card
-                    key={setIndex}
-                    style={StyleSheet.flatten([
-                      styles.setCard,
-                      set.completed && { borderColor: accent, borderWidth: 2 },
-                    ])}
-                  >
-                    <View style={styles.setHeader}>
-                      <Text style={styles.setNumber}>{setIndex + 1}</Text>
-                      {set.completed ? (
-                        <View style={[styles.completedBadge, { backgroundColor: accent }]}>
-                          <Check size={16} color={COLORS.background} strokeWidth={3} />
+                {isPremium ? (
+                  <PreviousPerformanceBanner
+                    lastSets={previousPerformance[exercise.exerciseId]?.lastSets ?? null}
+                    timeAgo={previousPerformance[exercise.exerciseId]?.timeAgo ?? ''}
+                    pr={previousPerformance[exercise.exerciseId]?.pr ?? null}
+                    isLoading={perfLoading}
+                    accent={accent}
+                  />
+                ) : (
+                  <ProFeatureTeaser
+                    onUpgrade={() => router.push('/paywall')}
+                    accent={accent}
+                  />
+                )}
+
+                {exercise.sets.map((set, setIndex) => {
+                  const perf = previousPerformance[exercise.exerciseId];
+                  const suggestedWeight = isPremium ? perf?.suggestedWeights[setIndex] : null;
+                  const weightPlaceholder = suggestedWeight != null ? suggestedWeight.toString() : '0';
+                  const currentWeight = parseFloat(set.weight) || 0;
+                  const prProximity = isPremium && currentWeight > 0 && perf?.pr
+                    ? getPRProximity(currentWeight, perf.pr)
+                    : 'none';
+
+                  return (
+                    <Card
+                      key={setIndex}
+                      style={StyleSheet.flatten([
+                        styles.setCard,
+                        set.completed && { borderColor: accent, borderWidth: 2 },
+                      ])}
+                    >
+                      <View style={styles.setHeader}>
+                        <View style={styles.setNumberRow}>
+                          <Text style={styles.setNumber}>{setIndex + 1}</Text>
+                          {prProximity === 'approaching' && (
+                            <Flame size={16} color="#F97316" />
+                          )}
+                          {(prProximity === 'matched' || prProximity === 'exceeded') && (
+                            <Trophy size={16} color="#EAB308" />
+                          )}
                         </View>
-                      ) : (
-                        <Text style={styles.waitingText}>
-                          {setIndex === 0 || exercise.sets[setIndex - 1]?.completed
-                            ? ''
-                            : 'Waiting...'}
-                        </Text>
-                      )}
-                    </View>
-
-                    <View style={styles.inputRow}>
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Weight (kg)</Text>
-                        <TextInput
-                          style={[
-                            styles.input,
-                            set.completed && styles.inputDisabled,
-                          ]}
-                          value={set.weight}
-                          onChangeText={(value) => handleWeightChange(exerciseIndex, setIndex, value)}
-                          keyboardType="numeric"
-                          placeholder="0"
-                          placeholderTextColor={COLORS.textTertiary}
-                          editable={!set.completed}
-                        />
+                        {set.completed ? (
+                          <View style={[styles.completedBadge, { backgroundColor: accent }]}>
+                            <Check size={16} color={COLORS.background} strokeWidth={3} />
+                          </View>
+                        ) : (
+                          <Text style={styles.waitingText}>
+                            {setIndex === 0 || exercise.sets[setIndex - 1]?.completed
+                              ? ''
+                              : 'Waiting...'}
+                          </Text>
+                        )}
                       </View>
 
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Reps</Text>
-                        <TextInput
-                          style={[
-                            styles.input,
-                            set.completed && styles.inputDisabled,
-                          ]}
-                          value={set.reps}
-                          onChangeText={(value) => handleRepsChange(exerciseIndex, setIndex, value)}
-                          keyboardType="numeric"
-                          placeholder="0"
-                          placeholderTextColor={COLORS.textTertiary}
-                          editable={!set.completed}
-                        />
-                      </View>
+                      <View style={styles.inputRow}>
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Weight (kg)</Text>
+                          <TextInput
+                            style={[
+                              styles.input,
+                              set.completed && styles.inputDisabled,
+                            ]}
+                            value={set.weight}
+                            onChangeText={(value) => handleWeightChange(exerciseIndex, setIndex, value)}
+                            onFocus={() => handleWeightFocus(exerciseIndex, setIndex)}
+                            keyboardType="numeric"
+                            placeholder={weightPlaceholder}
+                            placeholderTextColor={COLORS.textTertiary}
+                            editable={!set.completed}
+                          />
+                        </View>
 
-                      {!set.completed && (
-                        <Pressable
-                          style={[
-                            styles.checkButton,
-                            { backgroundColor: accent },
-                            (!set.weight || !set.reps) && styles.checkButtonDisabled,
-                          ]}
-                          onPress={() => handleSetComplete(exerciseIndex, setIndex)}
-                          disabled={!set.weight || !set.reps}
-                        >
-                          <Check size={20} color={COLORS.background} strokeWidth={3} />
-                        </Pressable>
-                      )}
-                    </View>
-                  </Card>
-                ))}
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Reps</Text>
+                          <TextInput
+                            style={[
+                              styles.input,
+                              set.completed && styles.inputDisabled,
+                            ]}
+                            value={set.reps}
+                            onChangeText={(value) => handleRepsChange(exerciseIndex, setIndex, value)}
+                            keyboardType="numeric"
+                            placeholder="0"
+                            placeholderTextColor={COLORS.textTertiary}
+                            editable={!set.completed}
+                          />
+                        </View>
+
+                        {!set.completed && (
+                          <Pressable
+                            style={[
+                              styles.checkButton,
+                              { backgroundColor: accent },
+                              (!set.weight || !set.reps) && styles.checkButtonDisabled,
+                            ]}
+                            onPress={() => handleSetComplete(exerciseIndex, setIndex)}
+                            disabled={!set.weight || !set.reps}
+                          >
+                            <Check size={20} color={COLORS.background} strokeWidth={3} />
+                          </Pressable>
+                        )}
+                      </View>
+                    </Card>
+                  );
+                })}
               </ScrollView>
             ))}
           </ScrollView>
@@ -760,6 +856,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: SPACING.md,
+  },
+  setNumberRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: SPACING.xs,
   },
   setNumber: {
     fontSize: 20,
