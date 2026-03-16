@@ -1,12 +1,19 @@
 -- Step 2+3: Workout idempotency constraint + analytics accumulation fix
 -- Prevents duplicate workout submissions and fixes volume/reps overwrite bug
 
--- 1. Add unique constraint to prevent duplicate workouts
+-- 0. Immutable helper for extracting date from timestamptz (UTC)
+-- Required because timestamptz::date is not immutable (timezone-dependent)
+CREATE OR REPLACE FUNCTION public.completed_at_date(ts timestamptz)
+RETURNS date
+LANGUAGE sql
+IMMUTABLE
+AS $$ SELECT (ts AT TIME ZONE 'UTC')::date; $$;
+
+-- 1. Add unique index to prevent duplicate workouts
 -- Allows the same day/week on different calendar days (re-doing a session)
 -- but prevents exact duplicates on the same calendar day
-ALTER TABLE workouts
-  ADD CONSTRAINT workouts_no_duplicate
-  UNIQUE (user_id, programme_id, day, week, (completed_at::date));
+CREATE UNIQUE INDEX IF NOT EXISTS workouts_no_duplicate
+  ON workouts (user_id, programme_id, day, week, completed_at_date(completed_at));
 
 -- 2. Replace log_workout_transaction to:
 --    a) Handle duplicate inserts gracefully (return existing workout)
@@ -86,7 +93,7 @@ BEGIN
       AND programme_id = p_programme_id
       AND day = p_day
       AND week = p_week
-      AND completed_at::date = p_completed_at::date;
+      AND completed_at_date(completed_at) = completed_at_date(p_completed_at);
 
     v_is_duplicate := true;
   END;
