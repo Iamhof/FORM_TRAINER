@@ -210,7 +210,7 @@ export default function EditProfileScreen() {
 
           const colorName = colorMap[normalizedSelectedColor] || 'orange';
           logger.debug('[EditProfile] Setting accent color to:', colorName, 'from hex:', normalizedSelectedColor);
-          await setAccentColor(colorName);
+          await setAccentColor(colorName, { skipDbSync: true });
         }
 
         Alert.alert('Success', 'Profile updated successfully', [

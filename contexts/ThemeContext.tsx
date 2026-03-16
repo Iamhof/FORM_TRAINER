@@ -131,29 +131,31 @@ const [ThemeProviderRaw, useTheme] = createContextHook(() => {
     loadAccentColor();
   }, [loadAccentColor]);
 
-  const setAccentColor = useCallback(async (color: AccentColor) => {
+  const setAccentColor = useCallback(async (color: AccentColor, options?: { skipDbSync?: boolean }) => {
     logger.debug('[ThemeContext] Setting accent color:', color);
-    
+
     try {
       setAccentColorState(color);
-      
+
       await AsyncStorage.setItem(THEME_STORAGE_KEY, color);
       logger.debug('[ThemeContext] Saved to AsyncStorage');
-      
-      if (user) {
+
+      if (user && !options?.skipDbSync) {
         const hexColor = accentColorToHex(color);
         logger.debug('[ThemeContext] Saving to database:', hexColor);
-        
+
         // Use ref to access current updateProfile without causing re-renders
         const result = await updateProfileRef.current({ accentColor: hexColor });
-        
+
         if (result.success) {
           logger.debug('[ThemeContext] Database sync successful');
         } else {
           logger.error('[ThemeContext] Database sync failed:', result.error);
         }
-      } else {
+      } else if (!user) {
         logger.debug('[ThemeContext] No user, skipping database sync');
+      } else {
+        logger.debug('[ThemeContext] Skipping database sync (skipDbSync option)');
       }
     } catch (error) {
       logger.error('[ThemeContext] Failed to save accent color:', error);
