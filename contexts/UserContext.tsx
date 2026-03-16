@@ -119,12 +119,20 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
   const loadUserProfile = async (authUser: User) => {
     try {
       logger.debug('[UserContext] Loading profile for user:', authUser.id);
-      
-      const { data: profile, error } = await supabase
+
+      const profileQuery = supabase
         .from('profiles')
         .select('name, role, is_pt, accent_color, gender, height_cm, weight_kg, age, current_xp, current_level')
         .eq('user_id', authUser.id)
         .maybeSingle();
+
+      // Timeout guard: if the profile query hangs (network, cold-start, etc.),
+      // don't block the app forever — fall through after 8 seconds
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Profile query timed out after 8s')), 8000),
+      );
+
+      const { data: profile, error } = await Promise.race([profileQuery, timeout]);
 
       if (error) {
         errorService.capture(new Error(error.message), { 
