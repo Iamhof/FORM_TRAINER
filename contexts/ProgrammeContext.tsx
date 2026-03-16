@@ -57,7 +57,7 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
     { 
       enabled: !!isAuthenticated && !!user,
       staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1, // Only retry once since tunnel mode will consistently fail
+      retry: false, // Fail fast — warm-up ping handles cold starts, retries double the delay
     }
   );
 
@@ -66,7 +66,7 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
     {
       enabled: !!isAuthenticated && !!user,
       staleTime: 1000 * 60 * 5, // 5 minutes - aligned with global default
-      retry: 1,
+      retry: false, // Fail fast — warm-up ping handles cold starts, retries double the delay
     }
   );
 

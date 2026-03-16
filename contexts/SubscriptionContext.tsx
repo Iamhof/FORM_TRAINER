@@ -29,26 +29,44 @@ const [SubscriptionProviderRaw, useSubscription] = createContextHook(() => {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const hasInitialized = useRef(false);
 
-  // Initialize RevenueCat when user authenticates
+  // Initialize RevenueCat when user authenticates (with 5s timeout guard)
   useEffect(() => {
+    const RC_TIMEOUT_MS = 5_000;
+
     const init = async () => {
       if (!isAuthenticated || !user || hasInitialized.current) return;
 
       try {
-        await configureRevenueCat(user.id);
-        await identifyUser(user.id);
+        const rcTimeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('RevenueCat timed out')), RC_TIMEOUT_MS),
+        );
 
-        const [premium, currentOfferings] = await Promise.all([
-          checkSubscription(),
-          getOfferings(),
+        await Promise.race([
+          (async () => {
+            await configureRevenueCat(user.id);
+            await identifyUser(user.id);
+
+            const [premium, currentOfferings] = await Promise.all([
+              checkSubscription(),
+              getOfferings(),
+            ]);
+
+            setIsPremium(premium);
+            setOfferings(currentOfferings);
+            hasInitialized.current = true;
+            logger.info('[Subscription] Initialized, premium:', premium);
+          })(),
+          rcTimeout,
         ]);
-
-        setIsPremium(premium);
-        setOfferings(currentOfferings);
-        hasInitialized.current = true;
-        logger.info('[Subscription] Initialized, premium:', premium);
       } catch (error) {
-        logger.error('[Subscription] Init failed:', error);
+        const msg = error instanceof Error ? error.message : String(error);
+        if (msg.includes('timed out')) {
+          logger.warn('[Subscription] Init timed out after', RC_TIMEOUT_MS, 'ms — continuing with defaults');
+        } else {
+          logger.error('[Subscription] Init failed:', error);
+        }
+        // isPremium defaults to false, offerings stay null.
+        // The customerInfo listener will update when RevenueCat eventually responds.
       } finally {
         setIsLoading(false);
       }

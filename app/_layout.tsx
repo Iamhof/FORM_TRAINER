@@ -14,6 +14,7 @@ import { ScheduleProvider } from "@/contexts/ScheduleContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { UserProvider } from "@/contexts/UserContext";
+import { useWarmBackend } from "@/hooks/useWarmBackend";
 import { initCrashProtection } from "@/lib/crash-protection";
 import { logger } from "@/lib/logger";
 import { trpc, trpcClient } from "@/lib/trpc";
@@ -55,6 +56,9 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+  // Wake Railway backend from cold sleep while auth/profile loads in parallel
+  useWarmBackend();
+
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
