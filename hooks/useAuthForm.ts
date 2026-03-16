@@ -52,7 +52,7 @@ export function useAuthForm() {
     setLoading(true);
     try {
       const result = isSignUp
-        ? await signup(email, password, '')
+        ? await signup(email, password)
         : await signin(email, password);
 
       if (result.success) {

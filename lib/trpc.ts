@@ -1,4 +1,4 @@
-import { httpLink } from "@trpc/client";
+import { httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import Constants from "expo-constants";
 import superjson from "superjson";
@@ -173,7 +173,7 @@ try {
   
   trpcClient = trpc.createClient({
     links: [
-      httpLink({
+      httpBatchLink({
         url: `${baseUrl}/api/trpc`,
       transformer: superjson,
       async headers() {
@@ -361,7 +361,7 @@ Request URL: ${url}${tunnelWarning}`);
   // This client won't work, but it allows the app to start and show error messages
   trpcClient = trpc.createClient({
     links: [
-      httpLink({
+      httpBatchLink({
         url: 'http://localhost:8081/api/trpc',
         transformer: superjson,
         async headers() {

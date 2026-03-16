@@ -10,17 +10,17 @@ import { protectedProcedure } from '../../../create-context.js';
 const exerciseSchema = z.object({
   day: z.number(),
   exerciseId: z.string(),
-  sets: z.number(),
+  sets: z.number().int().min(1).max(30),
   reps: z.string(),
-  rest: z.number(),
+  rest: z.number().int().min(0).max(600),
 });
 
 export const createProgrammeProcedure = protectedProcedure
   .input(
     z.object({
-      name: z.string().min(1),
-      days: z.number().min(1),
-      weeks: z.number().min(1),
+      name: z.string().min(1).max(100).trim(),
+      days: z.number().int().min(1).max(7),
+      weeks: z.number().int().min(1).max(52),
       category: z.string().optional(),
       exercises: z.array(exerciseSchema),
     })

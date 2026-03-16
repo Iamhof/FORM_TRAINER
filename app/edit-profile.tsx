@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { X, Check, Lock } from 'lucide-react-native';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -62,8 +62,14 @@ export default function EditProfileScreen() {
 
   const updateProfileMutation = trpc.profile.update.useMutation();
 
+  // Populate form fields only once when user data first becomes available.
+  // Re-running on every user/accent change overwrites in-progress edits
+  // (e.g. during save when setUser/setAccentColor trigger state changes,
+  // or when a background token refresh reloads the profile).
+  const hasPopulatedForm = useRef(false);
   useEffect(() => {
-    if (user) {
+    if (user && !hasPopulatedForm.current) {
+      hasPopulatedForm.current = true;
       const nameParts = splitName(user.name);
       setFirstName(nameParts.first);
       setLastName(nameParts.last);
@@ -181,11 +187,22 @@ export default function EditProfileScreen() {
         return;
       }
 
+      // 1. Authoritative DB write via tRPC (uses supabaseAdmin, bypasses RLS)
       const result = await updateProfileMutation.mutateAsync(updates);
 
       if (result.success) {
-        await updateProfile(updates);
+        // 2. Sync local UserContext state (also writes to DB via client supabase,
+        //    but the primary purpose here is updating the local user object).
+        //    If the client-side write fails (RLS, network), we still proceed
+        //    because the tRPC mutation already persisted the change.
+        const profileResult = await updateProfile(updates);
+        if (!profileResult.success) {
+          logger.warn('[EditProfile] Client-side profile sync failed (tRPC already persisted):', profileResult.error);
+        }
 
+        // 3. Update ThemeContext so the accent color propagates across the app.
+        //    setAccentColor updates local state + AsyncStorage + triggers its own
+        //    updateProfile call internally — that's a redundant DB write but harmless.
         if (updates.accentColor) {
           const colorMap = Object.fromEntries(
             Object.entries(COLORS.accents).map(([name, hex]) => [hex.toUpperCase(), name])
@@ -193,7 +210,7 @@ export default function EditProfileScreen() {
 
           const colorName = colorMap[normalizedSelectedColor] || 'orange';
           logger.debug('[EditProfile] Setting accent color to:', colorName, 'from hex:', normalizedSelectedColor);
-          setAccentColor(colorName);
+          await setAccentColor(colorName);
         }
 
         Alert.alert('Success', 'Profile updated successfully', [

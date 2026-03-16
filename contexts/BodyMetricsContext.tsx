@@ -19,24 +19,26 @@ const [BodyMetricsProviderRaw, useBodyMetrics] = createContextHook(() => {
   const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>([]);
   const [isLoadingMetrics, setIsLoadingMetrics] = useState<boolean>(true);
   const [isLoadingPRs, setIsLoadingPRs] = useState<boolean>(true);
+  // Defer queries until body metrics data is actually needed
+  const [hasAccessed, setHasAccessed] = useState(false);
 
   const bodyMetricsQuery = trpc.bodyMetrics.list.useQuery(
     {
       limit: 12,
     },
     {
-      enabled: isAuthenticated,
+      enabled: isAuthenticated && hasAccessed,
     }
   );
 
   const latestMetricsQuery = trpc.bodyMetrics.latest.useQuery(undefined, {
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && hasAccessed,
   });
 
   const personalRecordsQuery = trpc.personalRecords.list.useQuery(
     {},
     {
-      enabled: isAuthenticated,
+      enabled: isAuthenticated && hasAccessed,
     }
   );
 
@@ -81,6 +83,11 @@ const [BodyMetricsProviderRaw, useBodyMetrics] = createContextHook(() => {
     }
   }, [personalRecordsQuery.data]);
 
+  // Enable body metrics queries — call when user accesses body metrics features
+  const enableBodyMetricsQueries = useCallback(() => {
+    setHasAccessed(true);
+  }, []);
+
   const logBodyMetrics = useCallback(
     async (data: {
       date: string;
@@ -94,6 +101,7 @@ const [BodyMetricsProviderRaw, useBodyMetrics] = createContextHook(() => {
         return;
       }
 
+      setHasAccessed(true);
       try {
         logger.debug('[BodyMetricsContext] Logging body metrics:', data);
         await logMetricsMutationRef.current.mutateAsync(data);
@@ -174,6 +182,7 @@ const [BodyMetricsProviderRaw, useBodyMetrics] = createContextHook(() => {
       isLoadingPRs,
       logBodyMetrics,
       deleteBodyMetrics,
+      enableBodyMetricsQueries,
       refetchMetrics,
       refetchPRs,
       isLoggingMetrics: logMetricsMutation.isPending,
@@ -187,6 +196,7 @@ const [BodyMetricsProviderRaw, useBodyMetrics] = createContextHook(() => {
       isLoadingPRs,
       logBodyMetrics,
       deleteBodyMetrics,
+      enableBodyMetricsQueries,
       refetchMetrics,
       refetchPRs,
       logMetricsMutation.isPending,

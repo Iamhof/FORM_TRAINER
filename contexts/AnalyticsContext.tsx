@@ -49,6 +49,8 @@ const [AnalyticsProviderRaw, useAnalytics] = createContextHook(() => {
 
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>(emptyAnalytics);
   const [volumePeriod, setVolumePeriod] = useState<'week' | 'month' | 'total'>('week');
+  // Defer queries until analytics data is actually needed (tab visit or post-workout sync)
+  const [hasAccessed, setHasAccessed] = useState(false);
 
   const overviewQuery = trpc.analytics.overview.useQuery(
     {
@@ -56,18 +58,18 @@ const [AnalyticsProviderRaw, useAnalytics] = createContextHook(() => {
       programmeDays: activeProgramme?.days ?? 3,
     },
     {
-      enabled: isAuthenticated,
+      enabled: isAuthenticated && hasAccessed,
       refetchOnWindowFocus: false,
-      staleTime: 0,
+      staleTime: 1000 * 60 * 5,
     }
   );
 
   const volumeQuery = trpc.analytics.getVolume.useQuery(
     { period: volumePeriod },
     {
-      enabled: isAuthenticated,
+      enabled: isAuthenticated && hasAccessed,
       refetchOnWindowFocus: false,
-      staleTime: 0,
+      staleTime: 1000 * 60 * 5,
     }
   );
 
@@ -98,8 +100,15 @@ const [AnalyticsProviderRaw, useAnalytics] = createContextHook(() => {
     [] // No dependencies needed - ref is stable
   );
 
+  // Enable analytics queries — call when user accesses analytics features
+  const enableAnalyticsQueries = useCallback(() => {
+    setHasAccessed(true);
+  }, []);
+
   // refetch methods are stable references, so no dependencies needed
+  // Also enables queries so post-workout syncs work even if analytics tab wasn't visited
   const refresh = useCallback(() => {
+    setHasAccessed(true);
     overviewQuery.refetch();
     volumeQuery.refetch();
   // eslint-disable-next-line react-hooks/exhaustive-deps -- tRPC query.refetch methods are stable references
@@ -137,6 +146,7 @@ const [AnalyticsProviderRaw, useAnalytics] = createContextHook(() => {
       totalVolumeThisMonth,
       syncAnalytics,
       refetch: refresh,
+      enableAnalyticsQueries,
       volumePeriod,
       setVolumePeriod,
       volumeData,
@@ -153,6 +163,7 @@ const [AnalyticsProviderRaw, useAnalytics] = createContextHook(() => {
       totalVolumeThisMonth,
       syncAnalytics,
       refresh,
+      enableAnalyticsQueries,
       volumePeriod,
       volumeData,
       volumeLoading,

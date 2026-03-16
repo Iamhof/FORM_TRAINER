@@ -58,6 +58,7 @@ export default function SessionScreen() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [workoutSummary, setWorkoutSummary] = useState<WorkoutSummary | null>(null);
   const sessionStartTime = useRef(Date.now());
+  const hasSubmittedRef = useRef(false);
   const pagerRef = useRef<ScrollView>(null);
   const screenWidth = Dimensions.get('window').width;
 
@@ -279,6 +280,8 @@ export default function SessionScreen() {
   };
 
   const handleCompleteWorkout = async () => {
+    if (hasSubmittedRef.current) return;
+
     if (!sessionData || !user) {
       logger.error('[SessionScreen] No session data or user available');
       Alert.alert(
@@ -309,6 +312,7 @@ export default function SessionScreen() {
     }
 
     try {
+      hasSubmittedRef.current = true;
       setIsSaving(true);
       logger.debug('[SessionScreen] Completing workout...', sessionData);
 
@@ -375,8 +379,9 @@ export default function SessionScreen() {
       setWorkoutSummary(summaryData);
       setShowCompleteModal(true);
     } catch (error) {
+      hasSubmittedRef.current = false;
       logger.error('[SessionScreen] Error completing workout:', error);
-      
+
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       
       Alert.alert(

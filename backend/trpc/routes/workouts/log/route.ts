@@ -7,8 +7,8 @@ import { awardXP } from '../../../../services/xp.service.js';
 import { protectedProcedure } from '../../../create-context.js';
 
 const workoutSetSchema = z.object({
-  weight: z.number(),
-  reps: z.number(),
+  weight: z.number().min(0).max(2000),
+  reps: z.number().int().min(0).max(999),
   completed: z.boolean(),
 });
 
@@ -22,10 +22,10 @@ export const logWorkoutProcedure = protectedProcedure
     z.object({
       programmeId: z.string(),
       programmeName: z.string(),
-      day: z.number(),
-      week: z.number(),
+      day: z.number().int().min(1).max(7),
+      week: z.number().int().min(1).max(52),
       exercises: z.array(workoutExerciseSchema),
-      completedAt: z.string(),
+      completedAt: z.string().datetime(),
     })
   )
   .mutation(async ({ ctx, input }) => {

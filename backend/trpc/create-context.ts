@@ -16,10 +16,32 @@ function isZodError(cause: unknown): cause is ZodError {
   );
 }
 
+// In-memory auth token cache to avoid redundant supabaseAdmin.auth.getUser() calls
+// for the same token within a short window (e.g. batched tRPC requests)
+const AUTH_CACHE_TTL_MS = 30_000;
+const authCache = new Map<string, { userId: string; userEmail: string | null; expiresAt: number }>();
+
+// Clean up expired entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of authCache) {
+    if (now > value.expiresAt) {
+      authCache.delete(key);
+    }
+  }
+}, 60_000);
+
 const resolveUserFromToken = async (token?: string | null) => {
   if (!token) {
     logger.debug('[Auth] No token provided, request will be unauthenticated');
     return { userId: null, userEmail: null };
+  }
+
+  // Check cache first
+  const cached = authCache.get(token);
+  if (cached && Date.now() < cached.expiresAt) {
+    logger.debug('[Auth] User authenticated (cached):', { userId: cached.userId });
+    return { userId: cached.userId, userEmail: cached.userEmail };
   }
 
   try {
@@ -37,6 +59,13 @@ const resolveUserFromToken = async (token?: string | null) => {
       logger.warn('[Auth] Token valid but no user returned');
       return { userId: null, userEmail: null };
     }
+
+    // Cache the validated token
+    authCache.set(token, {
+      userId: user.id,
+      userEmail: user.email ?? null,
+      expiresAt: Date.now() + AUTH_CACHE_TTL_MS,
+    });
 
     logger.debug('[Auth] User authenticated:', { userId: user.id });
     return {

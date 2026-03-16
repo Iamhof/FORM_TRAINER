@@ -203,7 +203,7 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
     }
   }, []);
 
-  const signup = useCallback(async (email: string, password: string, name: string) => {
+  const signup = useCallback(async (email: string, password: string) => {
     try {
       logger.debug('[UserContext] Signing up:', email);
       const { data, error } = await supabase.auth.signUp({
@@ -220,16 +220,8 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
         return { success: false, error: 'Failed to create user' };
       }
 
-      logger.debug('[UserContext] User created, updating profile with name:', name);
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ name })
-        .eq('user_id', data.user.id);
-
-      if (profileError) {
-        errorService.capture(new Error(profileError.message), { context: 'UserContext.signup.updateProfile' });
-      }
-
+      // Note: profile name is set later in /profile-setup via updateProfile(),
+      // after the handle_new_user() trigger has created the profile row.
       logger.debug('[UserContext] Sign up successful');
       return { success: true };
     } catch (error: unknown) {

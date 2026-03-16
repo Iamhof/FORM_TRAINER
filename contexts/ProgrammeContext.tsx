@@ -62,8 +62,8 @@ const [ProgrammeProviderRaw, useProgrammes] = createContextHook(() => {
   );
 
   const workoutHistoryQuery = trpc.workouts.history.useQuery(
-    {},
-    { 
+    { limit: 500 },
+    {
       enabled: !!isAuthenticated && !!user,
       staleTime: 1000 * 60 * 5, // 5 minutes - aligned with global default
       retry: 1,
