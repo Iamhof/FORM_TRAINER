@@ -9,12 +9,12 @@ const EMPTY_DATA: Record<MuscleRegion, MuscleVolumeData> = Object.fromEntries(
   MUSCLE_REGIONS.map((r) => [r, { volume: 0, sets: 0, intensity: 0 }]),
 ) as Record<MuscleRegion, MuscleVolumeData>;
 
-export function useHeatmapData() {
-  const [period, setPeriod] = useState<HeatmapPeriod>('month');
+export function useHeatmapData(initialPeriod: HeatmapPeriod = 'month', enabled = true) {
+  const [period, setPeriod] = useState<HeatmapPeriod>(initialPeriod);
 
   const { data, isLoading } = trpc.analytics.muscleVolume.useQuery(
     { period },
-    { staleTime: 5 * 60 * 1000 },
+    { staleTime: 5 * 60 * 1000, enabled },
   );
 
   const muscleData: Record<MuscleRegion, MuscleVolumeData> = data ?? EMPTY_DATA;

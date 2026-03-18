@@ -66,7 +66,7 @@ export default function ProfileScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
 
-            <Pressable onPress={() => router.push('/edit-profile')}>
+            <Pressable onPress={() => router.push('/(tabs)/edit-profile' as any)}>
               <Card style={styles.menuCard}>
                 <View style={styles.menuItem}>
                   <View style={[styles.menuIcon, { backgroundColor: `${accent}20` }]}>
@@ -97,7 +97,7 @@ export default function ProfileScreen() {
                 </Card>
               </Pressable>
             ) : (
-              <Pressable onPress={() => router.push('/client/my-pt')}>
+              <Pressable onPress={() => router.push('/(tabs)/my-pt' as any)}>
                 <Card style={styles.menuCard}>
                   <View style={styles.menuItem}>
                     <View style={[styles.menuIcon, { backgroundColor: `${accent}20` }]}>
@@ -113,7 +113,7 @@ export default function ProfileScreen() {
               </Pressable>
             )}
 
-            <Pressable onPress={() => router.push('/settings')}>
+            <Pressable onPress={() => router.push('/(tabs)/settings' as any)}>
               <Card style={styles.menuCard}>
                 <View style={styles.menuItem}>
                   <View style={[styles.menuIcon, { backgroundColor: `${accent}20` }]}>

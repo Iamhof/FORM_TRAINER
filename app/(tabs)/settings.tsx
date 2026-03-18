@@ -1,11 +1,11 @@
 import { Stack, useRouter } from 'expo-router';
 import { FileText, ChevronRight, Bug, Trash2 } from 'lucide-react-native';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable, Alert, Share } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Card from '@/components/Card';
-import { COLORS, SPACING } from '@/constants/theme';
+import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
 import { narrowError } from '@/lib/error-utils';
@@ -16,6 +16,11 @@ export default function SettingsScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const { signout } = useUser();
+  const insets = useSafeAreaInsets();
+
+  const scrollPaddingBottom = useMemo(() => {
+    return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
+  }, [insets.bottom]);
   const deleteAccountMutation = trpc.auth.deleteAccount.useMutation();
 
   // Hidden debug menu: tap version text 5 times to reveal
@@ -108,7 +113,7 @@ export default function SettingsScreen() {
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.section}>

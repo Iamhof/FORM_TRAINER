@@ -1,12 +1,12 @@
 import { useRouter } from 'expo-router';
-import { UserCheck, Mail, Calendar, Dumbbell, ChevronRight, Clock4 } from 'lucide-react-native';
-import React, { useEffect } from 'react';
+import { ChevronLeft, UserCheck, Mail, Calendar, Dumbbell, ChevronRight, Clock4 } from 'lucide-react-native';
+import React, { useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Card from '@/components/Card';
 import { ScreenState } from '@/components/ScreenState';
-import { COLORS, SPACING } from '@/constants/theme';
+import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { logger } from '@/lib/logger';
 import { trpc } from '@/lib/trpc';
@@ -14,6 +14,11 @@ import { trpc } from '@/lib/trpc';
 export default function MyPTScreen() {
   const { accent } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+
+  const scrollPaddingBottom = useMemo(() => {
+    return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
+  }, [insets.bottom]);
 
   useEffect(() => {
     logger.debug('[MyPT] Component mounted');
@@ -46,6 +51,9 @@ export default function MyPTScreen() {
     <View style={styles.background}>
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header} accessibilityRole="header">
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <ChevronLeft size={24} color={COLORS.textPrimary} strokeWidth={2} />
+          </Pressable>
           <View style={styles.titleRow}>
             <UserCheck
               size={28}
@@ -60,7 +68,7 @@ export default function MyPTScreen() {
 
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
           showsVerticalScrollIndicator={false}
           accessibilityLabel="Personal trainer content"
         >
@@ -160,11 +168,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: SPACING.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xs,
     paddingVertical: SPACING.md,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.cardBorder,
     backgroundColor: COLORS.background,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleRow: {
     flexDirection: 'row',
@@ -181,7 +197,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: 100,
   },
   emptyCard: {
     padding: SPACING.xl,

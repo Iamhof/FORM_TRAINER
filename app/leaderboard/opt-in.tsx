@@ -119,7 +119,7 @@ export default function OptInScreen() {
             text: 'Update Profile',
             onPress: () => {
               // Navigate to profile/settings to update gender
-              router.push('/edit-profile');
+              router.push('/(tabs)/edit-profile' as any);
             },
           },
         ]

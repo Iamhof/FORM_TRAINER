@@ -1,10 +1,12 @@
 import { Stack, useRouter } from 'expo-router';
 import {
+  Activity,
   Check,
   Crown,
   Dumbbell,
   BarChart3,
   Trophy,
+  UserCheck,
   Zap,
   X,
 } from 'lucide-react-native';
@@ -40,8 +42,10 @@ const FEATURES: FeatureItem[] = [
   { icon: Zap, title: 'Exercise Library (100+)', free: true, premium: true },
   { icon: Dumbbell, title: 'Workout Logging', free: true, premium: true },
   { icon: Crown, title: 'Unlimited Programmes', free: false, premium: true },
+  { icon: Activity, title: 'Muscle Activity Heatmap', free: false, premium: true },
   { icon: BarChart3, title: 'Advanced Analytics', free: false, premium: true },
   { icon: Trophy, title: 'Global Leaderboard', free: false, premium: true },
+  { icon: UserCheck, title: '1x Free PT Session / 3 Months', free: false, premium: true },
 ];
 
 export default function PaywallScreen() {

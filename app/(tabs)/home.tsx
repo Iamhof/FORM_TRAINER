@@ -10,6 +10,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 import DashboardWeekStrip from '@/components/dashboard/DashboardWeekStrip';
 import ExerciseLibraryCard from '@/components/dashboard/ExerciseLibraryCard';
+import { MuscleHeatmapCard } from '@/components/dashboard/MuscleHeatmapCard';
 import NewWeekBanner from '@/components/dashboard/NewWeekBanner';
 import { ScreenState } from '@/components/ScreenState';
 import { COLORS, SPACING, BOTTOM_NAV_HEIGHT } from '@/constants/theme';
@@ -90,6 +91,7 @@ export default function DashboardScreen() {
                 scheduledCount={scheduledCount}
                 targetCount={activeProgramme.days}
                 onPress={() => router.push(`/programme/${activeProgramme.id}` as any)}
+                accent={accent}
               />
             )}
 
@@ -120,6 +122,19 @@ export default function DashboardScreen() {
                   onNextSession={(sessionId) => router.push(`/session/${sessionId}` as any)}
                 />
               )}
+            </View>
+
+            {/* Muscle Activity Heatmap */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>MUSCLE ACTIVITY</Text>
+              </View>
+              <MuscleHeatmapCard
+                accent={accent}
+                isPremium={isPremium}
+                onUpgrade={() => router.push('/paywall' as any)}
+                onSeeMore={() => router.push('/(tabs)/progress' as any)}
+              />
             </View>
 
             {/* Exercise Library */}
@@ -162,6 +177,19 @@ export default function DashboardScreen() {
                 </Card>
               </View>
             )}
+
+            {/* Muscle Activity Heatmap */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>MUSCLE ACTIVITY</Text>
+              </View>
+              <MuscleHeatmapCard
+                accent={accent}
+                isPremium={isPremium}
+                onUpgrade={() => router.push('/paywall' as any)}
+                onSeeMore={() => router.push('/(tabs)/progress' as any)}
+              />
+            </View>
 
             {/* Exercise Library (always visible) */}
             <View style={styles.section}>

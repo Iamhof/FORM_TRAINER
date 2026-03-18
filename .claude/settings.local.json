@@ -27,7 +27,22 @@
       "Bash(find /Users/iamhof/Projects/FORM_TRAINER -type f -name *muscle* -o -name *body-part*)",
       "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
       "Bash(grep -r \"visualization\\\\|chart\\\\|graph\" /Users/iamhof/Projects/FORM_TRAINER --include=*.ts --include=*.tsx)",
-      "Bash(grep -r \"rpc\\\\|get_strength_trend\\\\|get_volume\" /Users/iamhof/Projects/FORM_TRAINER/supabase --include=*.sql)"
+      "Bash(grep -r \"rpc\\\\|get_strength_trend\\\\|get_volume\" /Users/iamhof/Projects/FORM_TRAINER/supabase --include=*.sql)",
+      "Bash(find /Users/iamhof/Projects/FORM_TRAINER -name *feature*flag* -o -name *feature-flag*)",
+      "Bash(grep -r \"featureFlag\\\\|FEATURE\\\\|feature.flag\" /Users/iamhof/Projects/FORM_TRAINER --include=*.ts --include=*.tsx)",
+      "Bash(grep -r \"heatmap\\\\|muscleVolume\\\\|muscle-volume\" /Users/iamhof/Projects/FORM_TRAINER/tests --include=*.ts)",
+      "Bash(grep -r router.push.*paywall /Users/iamhof/Projects/FORM_TRAINER/app /Users/iamhof/Projects/FORM_TRAINER/components)",
+      "Bash(grep -r \"MuscleRegion\\\\|MuscleView\\\\|HeatmapPeriod\" /Users/iamhof/Projects/FORM_TRAINER --include=*.ts --include=*.tsx)",
+      "Bash(find /Users/iamhof/Projects/FORM_TRAINER -name *heatmap* -o -name *Heatmap*)",
+      "Bash(ls -la /Users/iamhof/Projects/FORM_TRAINER/.expo*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(grep -l \"personal_records\\\\|personal.record\" /Users/iamhof/Projects/FORM_TRAINER/supabase/migrations/*.sql)",
+      "Bash(bun run:*)",
+      "Bash(npx eslint:*)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(grep -E \"\\\\.tsx?$\")",
+      "Bash(ls -1 /Users/iamhof/Projects/FORM_TRAINER/app/\\\\\\(tabs\\\\\\)/*.tsx)",
+      "Bash(cat /Users/iamhof/Projects/FORM_TRAINER/app/\\\\\\(tabs\\\\\\)/_layout.tsx)"
     ]
   }
 }

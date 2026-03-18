@@ -24,6 +24,13 @@ export default function TabLayout() {
         <Stack.Screen name="home" />
         <Stack.Screen name="workouts" />
         <Stack.Screen name="exercises" options={{ headerShown: false }} />
+        <Stack.Screen name="progress" />
+        <Stack.Screen name="analytics" />
+        <Stack.Screen name="leaderboard" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="edit-profile" />
+        <Stack.Screen name="my-pt" />
+        <Stack.Screen name="settings" />
       </Stack>
       <BottomNav currentRoute={currentRoute} onNavigate={handleNavigate} />
     </View>

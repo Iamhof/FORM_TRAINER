@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
-import { X, Check, Lock } from 'lucide-react-native';
-import React, { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, Check, Lock } from 'lucide-react-native';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,16 +14,15 @@ import {
   Platform,
   Pressable,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ColorPicker from '@/components/ColorPicker';
 import GlowCard from '@/components/GlowCard';
-import { COLORS, SPACING, AccentColor } from '@/constants/theme';
+import { COLORS, SPACING, BOTTOM_NAV_HEIGHT, AccentColor } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
 import { narrowError } from '@/lib/error-utils';
 import { logger } from '@/lib/logger';
-import { trpc } from '@/lib/trpc';
 
 // Color normalization helper function
 const normalizeHexColor = (color: string): string => {
@@ -47,6 +46,11 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const { user, updateProfile } = useUser();
   const { accent, setAccentColor } = useTheme();
+  const insets = useSafeAreaInsets();
+
+  const scrollPaddingBottom = useMemo(() => {
+    return BOTTOM_NAV_HEIGHT + insets.bottom + SPACING.md;
+  }, [insets.bottom]);
 
   const initialName = splitName(user?.name || '');
   const [firstName, setFirstName] = useState(initialName.first);
@@ -59,8 +63,6 @@ export default function EditProfileScreen() {
   const [weightKg, setWeightKg] = useState(user?.weightKg?.toString() || '');
   const [age, setAge] = useState(user?.age?.toString() || '');
   const [isSaving, setIsSaving] = useState(false);
-
-  const updateProfileMutation = trpc.profile.update.useMutation();
 
   // Populate form fields only once when user data first becomes available.
   // Re-running on every user/accent change overwrites in-progress edits
@@ -181,45 +183,37 @@ export default function EditProfileScreen() {
         updates.age = parsedAge;
       }
 
-      // Guard: if no fields actually changed, skip the mutation
+      // Guard: if no fields actually changed, skip the save
       if (Object.keys(updates).length === 0) {
         router.back();
         return;
       }
 
-      // 1. Authoritative DB write via tRPC (uses supabaseAdmin, bypasses RLS)
-      const result = await updateProfileMutation.mutateAsync(updates);
-
-      if (result.success) {
-        // 2. Sync local UserContext state (also writes to DB via client supabase,
-        //    but the primary purpose here is updating the local user object).
-        //    If the client-side write fails (RLS, network), we still proceed
-        //    because the tRPC mutation already persisted the change.
-        const profileResult = await updateProfile(updates);
-        if (!profileResult.success) {
-          logger.warn('[EditProfile] Client-side profile sync failed (tRPC already persisted):', profileResult.error);
-        }
-
-        // 3. Update ThemeContext so the accent color propagates across the app.
-        //    setAccentColor updates local state + AsyncStorage + triggers its own
-        //    updateProfile call internally — that's a redundant DB write but harmless.
-        if (updates.accentColor) {
-          const colorMap = Object.fromEntries(
-            Object.entries(COLORS.accents).map(([name, hex]) => [hex.toUpperCase(), name])
-          ) as Record<string, AccentColor>;
-
-          const colorName = colorMap[normalizedSelectedColor] || 'orange';
-          logger.debug('[EditProfile] Setting accent color to:', colorName, 'from hex:', normalizedSelectedColor);
-          await setAccentColor(colorName, { skipDbSync: true });
-        }
-
-        Alert.alert('Success', 'Profile updated successfully', [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]);
+      // 1. Write to DB via UserContext (direct Supabase, same pattern as profile-setup.tsx)
+      const profileResult = await updateProfile(updates);
+      if (!profileResult.success) {
+        Alert.alert('Error', profileResult.error || 'Failed to update profile');
+        return;
       }
+
+      // 2. Update ThemeContext so the accent color propagates across the app.
+      //    skipDbSync: true because updateProfile already persisted the change.
+      if (updates.accentColor) {
+        const colorMap = Object.fromEntries(
+          Object.entries(COLORS.accents).map(([name, hex]) => [hex.toUpperCase(), name])
+        ) as Record<string, AccentColor>;
+
+        const colorName = colorMap[normalizedSelectedColor] || 'orange';
+        logger.debug('[EditProfile] Setting accent color to:', colorName, 'from hex:', normalizedSelectedColor);
+        await setAccentColor(colorName, { skipDbSync: true });
+      }
+
+      Alert.alert('Success', 'Profile updated successfully', [
+        {
+          text: 'OK',
+          onPress: () => router.back(),
+        },
+      ]);
     } catch (error: unknown) {
       const typedError = narrowError(error);
       logger.error('[EditProfile] Error updating profile:', typedError);
@@ -265,7 +259,7 @@ export default function EditProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handleCancel} style={styles.headerButton}>
-            <X size={24} color={COLORS.textPrimary} strokeWidth={2} />
+            <ChevronLeft size={24} color={COLORS.textPrimary} strokeWidth={2} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>EDIT PROFILE</Text>
           <TouchableOpacity
@@ -291,7 +285,7 @@ export default function EditProfileScreen() {
         >
           <ScrollView
             style={styles.scroll}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
@@ -488,7 +482,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.lg,
-    paddingBottom: SPACING.xl * 2,
   },
 
   // Sections

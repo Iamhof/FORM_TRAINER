@@ -3,18 +3,20 @@ import { Calendar, ChevronRight } from 'lucide-react-native';
 import React from 'react';
 import { Platform, StyleSheet, Text, View, Pressable } from 'react-native';
 
-import { COLORS, SPACING } from '@/constants/theme';
+import { COLORS, SPACING, colorWithOpacity } from '@/constants/theme';
 
 type NewWeekBannerProps = {
   scheduledCount: number;
   targetCount: number;
   onPress: () => void;
+  accent: string;
 };
 
 export default function NewWeekBanner({
   scheduledCount,
   targetCount,
   onPress,
+  accent,
 }: NewWeekBannerProps) {
   const remaining = targetCount - scheduledCount;
   const message = `Pick ${remaining} more training days`;
@@ -22,7 +24,7 @@ export default function NewWeekBanner({
   return (
     <Pressable onPress={onPress} style={styles.wrapper}>
       <LinearGradient
-        colors={['rgba(168, 85, 247, 0.5)', 'transparent']}
+        colors={[colorWithOpacity(accent, 0.5), 'transparent']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradientBorder}
@@ -39,14 +41,14 @@ export default function NewWeekBanner({
             }),
           ]}
         >
-          <View style={styles.iconBox}>
-            <Calendar size={18} color="#A855F7" strokeWidth={2} />
+          <View style={[styles.iconBox, { backgroundColor: colorWithOpacity(accent, 0.1) }]}>
+            <Calendar size={18} color={accent} strokeWidth={2} />
           </View>
           <View style={styles.textArea}>
             <Text style={styles.title}>WEEK SETUP</Text>
             <Text style={styles.subtitle}>{message}</Text>
           </View>
-          <ChevronRight size={18} color="#A855F7" strokeWidth={2.5} />
+          <ChevronRight size={18} color={accent} strokeWidth={2.5} />
         </View>
       </LinearGradient>
     </Pressable>
@@ -78,7 +80,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: 'rgba(168, 85, 247, 0.1)',
+    backgroundColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
   },
