@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "formworkout",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -61,14 +61,7 @@
         }
       ],
       "expo-updates",
-      "expo-build-properties",
-      [
-        "@sentry/react-native/expo",
-        {
-          "organization": "bh3-dq",
-          "project": "form-mobile"
-        }
-      ]
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true
