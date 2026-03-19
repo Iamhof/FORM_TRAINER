@@ -5,82 +5,18 @@ type ErrorContext = Record<string, any>;
 
 /**
  * ErrorService handles application error logging and tracking.
- * 
- * Sentry Integration: ✅ ENABLED
- * - Automatically initializes in production when EXPO_PUBLIC_SENTRY_DSN is set
- * - Captures exceptions with context
- * - Sanitizes sensitive data before sending
- * - Works with logger service for comprehensive debugging
- * 
- * Setup:
- * 1. ✅ @sentry/react-native installed
- * 2. Set EXPO_PUBLIC_SENTRY_DSN in your .env file
- * 3. Test in production mode to verify errors are captured
+ *
+ * Logs errors locally via the logger service.
+ * Remote error tracking (e.g. Sentry) has been removed.
  */
 class ErrorService {
   private initialized = false;
-  private sentryAvailable = false;
 
   init() {
     if (this.initialized) return;
-    
+
     this.initialized = true;
     logger.info('[ErrorService] Initialized');
-
-    // Use type-safe runtime utility for development mode detection
-    const isDev = isDevelopmentMode();
-    const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
-    
-    // Only initialize Sentry in production with DSN configured
-    if (!isDev && sentryDsn) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports -- Conditional require for optional React Native dependency
-        const Sentry = require('@sentry/react-native');
-
-        // Check if Sentry is already initialized (by logger service)
-        const existingClient = (Sentry as any).getCurrentHub?.()?.getClient();
-        if (existingClient) {
-          this.sentryAvailable = true;
-          logger.info('[ErrorService] Using existing Sentry instance from logger');
-          return;
-        }
-
-        // Initialize Sentry
-        Sentry.init({
-          dsn: sentryDsn,
-          environment: process.env.NODE_ENV || 'production',
-          tracesSampleRate: 0.1,
-          // Enable automatic error tracking
-          enableAutoSessionTracking: true,
-          sessionTrackingIntervalMillis: 30000,
-          // Capture unhandled promise rejections
-          enableNative: true,
-          beforeSend(event: any) {
-            // Sanitize sensitive data
-            if (event.request?.headers) {
-              delete event.request.headers.authorization;
-            }
-            // Remove sensitive query params
-            if (event.request?.query_string) {
-              event.request.query_string = event.request.query_string.replace(
-                /([?&])(token|key|password|secret)=[^&]*/gi,
-                '$1$2=[REDACTED]'
-              );
-            }
-            return event;
-          },
-        });
-        
-        this.sentryAvailable = true;
-        logger.info('[ErrorService] Sentry initialized successfully');
-      } catch (error) {
-        logger.warn('[ErrorService] Failed to initialize Sentry:', error);
-      }
-    } else if (isDev) {
-      logger.info('[ErrorService] Sentry disabled in development mode');
-    } else {
-      logger.info('[ErrorService] Sentry disabled - no DSN configured');
-    }
   }
 
   capture(error: unknown, context?: ErrorContext) {
@@ -88,48 +24,12 @@ class ErrorService {
     const stack = error instanceof Error ? error.stack : undefined;
     const sanitizedContext = context ? logger.sanitize(context) : undefined;
 
-    // Always log errors locally
+    // Log errors locally
     logger.error(`[Error] ${message}`, {
       context: sanitizedContext,
       stack,
       originalError: error
     });
-
-    // Send to Sentry in production if available
-    if (this.sentryAvailable) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports -- Conditional require for optional React Native dependency
-        const Sentry = require('@sentry/react-native');
-
-        // Add context as tags and extras
-        if (sanitizedContext) {
-          Sentry.withScope((scope: any) => {
-            // Add relevant context as tags for better filtering
-            if (sanitizedContext.userId) {
-              scope.setUser({ id: sanitizedContext.userId });
-            }
-            if (sanitizedContext.route) {
-              scope.setTag('route', sanitizedContext.route);
-            }
-            if (sanitizedContext.action) {
-              scope.setTag('action', sanitizedContext.action);
-            }
-            
-            // Add all context as extra data
-            scope.setExtras(sanitizedContext);
-            
-            // Capture the exception
-            Sentry.captureException(error);
-          });
-        } else {
-          // Capture without context
-          Sentry.captureException(error);
-        }
-      } catch (err) {
-        // Silently fail - already logged locally
-        logger.warn('[ErrorService] Failed to send to Sentry:', err);
-      }
-    }
   }
 
   // Helper for user-facing messages

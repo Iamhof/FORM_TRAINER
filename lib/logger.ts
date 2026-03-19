@@ -1,16 +1,14 @@
 /**
  * Enhanced Logger with Remote Logging Support
- * 
+ *
  * Features:
  * - Console logging for development
- * - Sentry breadcrumbs for production debugging
  * - Log buffering and batch sending
  * - Automatic sensitive data sanitization
  * - Configurable log levels
- * 
+ *
  * Environment Variables:
  * - EXPO_PUBLIC_LOG_LEVEL: debug|info|warn|error (default: debug in dev, error in prod)
- * - EXPO_PUBLIC_SENTRY_DSN: Sentry DSN for remote logging
  */
 
 // Import type-safe runtime utility for development mode detection
@@ -20,7 +18,6 @@ const isDev = isDevelopmentMode();
 const logLevel = (process.env.EXPO_PUBLIC_LOG_LEVEL || (isDev ? 'debug' : 'error')) as 'debug' | 'info' | 'warn' | 'error';
 
 // Detect if running in serverless/Node.js environment (not React Native)
-// This prevents trying to load @sentry/react-native in Vercel functions
 function isServerless(): boolean {
   return typeof process !== 'undefined' && (
     process.env.VERCEL === '1' ||
@@ -68,7 +65,6 @@ class LoggerService {
   private readonly MAX_BUFFER_SIZE = 100;
   private readonly FLUSH_INTERVAL = 30000; // 30 seconds
   private flushTimer: ReturnType<typeof setInterval> | null = null;
-  private sentryInitialized = false;
 
   // In-memory ring buffer for on-device log inspection (TestFlight debugging).
   // Always active regardless of log level so production issues can be diagnosed
@@ -77,60 +73,10 @@ class LoggerService {
   private readonly RING_BUFFER_SIZE = 200;
 
   constructor() {
-    // Initialize Sentry integration if available
-    // Skip in serverless - @sentry/react-native won't work in Node.js
-    if (!isServerlessEnv) {
-      this.initSentry();
-    }
-
     // Start periodic flush in production
     // Skip in serverless - functions are stateless, no point buffering
     if (!isDev && !isServerlessEnv) {
       this.startPeriodicFlush();
-    }
-  }
-
-  private initSentry() {
-    // Only initialize in production with DSN configured
-    if (isDev) return;
-
-    // Skip in serverless environments - @sentry/react-native doesn't work in Node.js
-    if (isServerlessEnv) return;
-
-    const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
-    if (!sentryDsn) return;
-
-    try {
-      // Dynamically import Sentry to avoid errors if not installed
-      // eslint-disable-next-line @typescript-eslint/no-require-imports -- Conditional require for optional React Native dependency
-      const Sentry = require('@sentry/react-native');
-      
-      // Check if Sentry is already initialized (by error.service.ts)
-      if ((Sentry as any).getCurrentHub?.().getClient()) {
-        this.sentryInitialized = true;
-        return;
-      }
-
-      // Initialize Sentry if not already done
-      Sentry.init({
-        dsn: sentryDsn,
-        environment: process.env.NODE_ENV || 'production',
-        tracesSampleRate: 0.1,
-        // Enable breadcrumbs for better debugging
-        maxBreadcrumbs: 100,
-        beforeSend(event: any) {
-          // Sanitize sensitive data in events
-          if (event.request?.headers) {
-            delete event.request.headers.authorization;
-          }
-          return event;
-        },
-      });
-
-      this.sentryInitialized = true;
-    } catch (error) {
-      // Silently fail if Sentry is not available
-      console.warn('[Logger] Sentry initialization skipped:', error);
     }
   }
 
@@ -151,27 +97,8 @@ class LoggerService {
 
   private flush() {
     if (this.buffer.length === 0) return;
-    
-    // Send buffered logs to Sentry as breadcrumbs
-    if (this.sentryInitialized) {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports -- Conditional require for optional React Native dependency
-        const Sentry = require('@sentry/react-native');
 
-        this.buffer.forEach(entry => {
-          Sentry.addBreadcrumb({
-            level: entry.level,
-            message: entry.message,
-            data: entry.data,
-            timestamp: entry.timestamp / 1000, // Sentry uses seconds
-          });
-        });
-      } catch {
-        // Silently fail
-      }
-    }
-
-    // Clear buffer
+    // Clear buffer (remote log shipping removed — logs are console-only for now)
     this.buffer = [];
   }
 

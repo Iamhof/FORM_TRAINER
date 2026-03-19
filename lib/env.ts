@@ -11,7 +11,6 @@ const envSchema = z.object({
   EXPO_PUBLIC_WEB_URL: z.string().url().optional(),
   EXPO_PUBLIC_TRPC_TIMEOUT: z.string().regex(/^\d+$/, 'TRPC timeout must be a number in milliseconds').optional(),
   EXPO_PUBLIC_REVENUECAT_API_KEY: z.string().min(1, 'RevenueCat API key required').optional(),
-  EXPO_PUBLIC_SENTRY_DSN: z.string().url('Invalid Sentry DSN URL').optional(),
 
   // Server-side only
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'Service role key required').optional(),
@@ -34,7 +33,6 @@ export function validateEnv(): Env {
       EXPO_PUBLIC_WEB_URL: process.env.EXPO_PUBLIC_WEB_URL,
       EXPO_PUBLIC_TRPC_TIMEOUT: process.env.EXPO_PUBLIC_TRPC_TIMEOUT,
       EXPO_PUBLIC_REVENUECAT_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY,
-      EXPO_PUBLIC_SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN,
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
       NODE_ENV: process.env.NODE_ENV || 'development',
     });
@@ -83,7 +81,6 @@ try {
     EXPO_PUBLIC_WEB_URL: process.env.EXPO_PUBLIC_WEB_URL,
     EXPO_PUBLIC_TRPC_TIMEOUT: process.env.EXPO_PUBLIC_TRPC_TIMEOUT,
     EXPO_PUBLIC_REVENUECAT_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY,
-    EXPO_PUBLIC_SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     NODE_ENV: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
   } as Env;
