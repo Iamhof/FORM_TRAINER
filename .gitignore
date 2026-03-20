@@ -54,3 +54,13 @@ FORM_Testflight_UI/
 
 # Binary documents
 *.docx
+
+# Generated native directories
+android/
+ios/
+
+# Non-bun lockfiles
+package-lock.json
+
+# Claude Code local
+.claude/
