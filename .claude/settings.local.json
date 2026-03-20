@@ -42,7 +42,25 @@
       "Bash(xargs -I {} basename {})",
       "Bash(grep -E \"\\\\.tsx?$\")",
       "Bash(ls -1 /Users/iamhof/Projects/FORM_TRAINER/app/\\\\\\(tabs\\\\\\)/*.tsx)",
-      "Bash(cat /Users/iamhof/Projects/FORM_TRAINER/app/\\\\\\(tabs\\\\\\)/_layout.tsx)"
+      "Bash(cat /Users/iamhof/Projects/FORM_TRAINER/app/\\\\\\(tabs\\\\\\)/_layout.tsx)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER log --oneline -20)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER diff HEAD~5 --name-only)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER diff HEAD~1 -- 'app/_layout.tsx' 'app/\\(tabs\\)/_layout.tsx')",
+      "Bash(ls /Users/iamhof/Projects/FORM_TRAINER/app/\\\\\\(tabs\\\\\\)/)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER show HEAD --stat)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER diff HEAD~1 -- app/_layout.tsx)",
+      "Bash(ls /Users/iamhof/Projects/FORM_TRAINER/app/programme-create* /Users/iamhof/Projects/FORM_TRAINER/app/create-programme*)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER log --all --oneline --diff-filter=D -- app/edit-profile.tsx app/settings.tsx app/client/my-pt.tsx)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER log --oneline --all -5 -- app/_layout.tsx)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER diff HEAD~2..HEAD~1 -- app/_layout.tsx)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER show HEAD -- app/_layout.tsx)",
+      "Bash(npx eas:*)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER status)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER diff app.json tasks/lessons.md)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER log --oneline -5)",
+      "Bash(git -C /Users/iamhof/Projects/FORM_TRAINER add app.json tasks/lessons.md)",
+      "Bash(git -C:*)",
+      "Bash(xargs ls:*)"
     ]
   }
 }

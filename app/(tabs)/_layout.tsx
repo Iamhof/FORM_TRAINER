@@ -25,8 +25,9 @@ export default function TabLayout() {
         <Stack.Screen name="workouts" />
         <Stack.Screen name="exercises" options={{ headerShown: false }} />
         <Stack.Screen name="progress" />
-        <Stack.Screen name="analytics" />
-        <Stack.Screen name="leaderboard" />
+        {/* Hidden for launch — re-enable as pro features later */}
+        {/* <Stack.Screen name="analytics" /> */}
+        {/* <Stack.Screen name="leaderboard" /> */}
         <Stack.Screen name="profile" />
         <Stack.Screen name="edit-profile" />
         <Stack.Screen name="my-pt" />
