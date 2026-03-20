@@ -59,8 +59,5 @@ FORM_Testflight_UI/
 android/
 ios/
 
-# Non-bun lockfiles
-package-lock.json
-
 # Claude Code local
 .claude/
