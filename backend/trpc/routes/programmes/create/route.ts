@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { logger } from '../../../../../lib/logger.js';
 import { supabaseAdmin } from '../../../../lib/auth.js';
+import { checkUserSubscription } from '../../../../lib/revenuecat-server.js';
 import { awardXP } from '../../../../services/xp.service.js';
 import { protectedProcedure } from '../../../create-context.js';
 
@@ -11,7 +12,7 @@ const exerciseSchema = z.object({
   day: z.number(),
   exerciseId: z.string(),
   sets: z.number().int().min(1).max(30),
-  reps: z.string(),
+  reps: z.coerce.string(),
   rest: z.number().int().min(0).max(600),
 });
 
@@ -67,6 +68,37 @@ export const createProgrammeProcedure = protectedProcedure
         code: 'BAD_REQUEST',
         message: 'A programme with this name already exists',
       });
+    }
+
+    // Enforce programme limit: free users get 1 programme
+    const { count: programmeCount, error: countError } = await supabaseAdmin
+      .from('programmes')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', ctx.userId);
+
+    if (countError) {
+      logger.error('[Programme] Error counting user programmes', {
+        userId: ctx.userId,
+        error: countError.message,
+      });
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to check programme limit',
+      });
+    }
+
+    if ((programmeCount ?? 0) >= 1) {
+      const isPremium = await checkUserSubscription(ctx.userId);
+      if (!isPremium) {
+        logger.info('[Programme] Free user hit programme limit', {
+          userId: ctx.userId,
+          currentCount: programmeCount,
+        });
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Free accounts are limited to 1 programme. Upgrade to Premium for unlimited programmes.',
+        });
+      }
     }
 
     const { data: programme, error } = await supabaseAdmin

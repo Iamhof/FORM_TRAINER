@@ -135,7 +135,7 @@ export function addCustomerInfoListener(
   if (!isConfigured) return () => {};
   Purchases.addCustomerInfoUpdateListener(listener);
   return () => {
-    // RevenueCat SDK manages listener cleanup internally
+    Purchases.removeCustomerInfoUpdateListener(listener);
   };
 }
 

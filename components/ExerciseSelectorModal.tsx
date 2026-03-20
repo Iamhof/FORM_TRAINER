@@ -6,6 +6,7 @@ import { Exercise } from '@/constants/exercises';
 import { COLORS, SPACING } from '@/constants/theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useExercises } from '@/hooks/useExercises';
+import { logger } from '@/lib/logger';
 
 type ExerciseSelectorModalProps = {
   visible: boolean;
@@ -48,7 +49,7 @@ export default function ExerciseSelectorModal({
       await onSelectExercise(exercise);
       // Note: We don't close the modal here as the parent might want to add multiple exercises
     } catch (error) {
-      console.error('[ExerciseSelectorModal] Error adding exercise:', error);
+      logger.error('[ExerciseSelectorModal] Error adding exercise:', error);
       // Keep modal open on error so user can retry
     } finally {
       setAddingExerciseId(null);

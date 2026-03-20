@@ -33,7 +33,7 @@ export default function DashboardScreen() {
     getNextSession,
     getCurrentWeekAndDay,
   } = useProgrammes();
-  const { isPremium } = useSubscription();
+  const { isPremium, isLoading: isSubscriptionLoading } = useSubscription();
   const { schedule, scheduledCount, canScheduleMore, currentWeekStart, toggleDay } = useSchedule();
   const insets = useSafeAreaInsets();
 
@@ -42,7 +42,7 @@ export default function DashboardScreen() {
   }, [insets.bottom]);
 
   const handleCreateProgramme = () => {
-    if (programmes.length >= 1 && !isPremium) {
+    if (programmes.length >= 1 && !isSubscriptionLoading && !isPremium) {
       router.push('/paywall' as any);
       return;
     }

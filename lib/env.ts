@@ -14,6 +14,7 @@ const envSchema = z.object({
 
   // Server-side only
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, 'Service role key required').optional(),
+  REVENUECAT_SECRET_API_KEY: z.string().min(1).optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });
 
@@ -34,6 +35,7 @@ export function validateEnv(): Env {
       EXPO_PUBLIC_TRPC_TIMEOUT: process.env.EXPO_PUBLIC_TRPC_TIMEOUT,
       EXPO_PUBLIC_REVENUECAT_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY,
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      REVENUECAT_SECRET_API_KEY: process.env.REVENUECAT_SECRET_API_KEY,
       NODE_ENV: process.env.NODE_ENV || 'development',
     });
     return validatedEnv;
@@ -82,6 +84,7 @@ try {
     EXPO_PUBLIC_TRPC_TIMEOUT: process.env.EXPO_PUBLIC_TRPC_TIMEOUT,
     EXPO_PUBLIC_REVENUECAT_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    REVENUECAT_SECRET_API_KEY: process.env.REVENUECAT_SECRET_API_KEY,
     NODE_ENV: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
   } as Env;
 }

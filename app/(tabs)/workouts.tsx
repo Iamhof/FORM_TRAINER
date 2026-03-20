@@ -18,13 +18,13 @@ export default function WorkoutsScreen() {
   const { accent } = useTheme();
   const router = useRouter();
   const { programmes, deleteProgramme, getProgrammeProgress } = useProgrammes();
-  const { isPremium } = useSubscription();
+  const { isPremium, isLoading: isSubscriptionLoading } = useSubscription();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
   const insets = useSafeAreaInsets();
 
   const handleCreateProgramme = () => {
-    if (programmes.length >= 1 && !isPremium) {
+    if (programmes.length >= 1 && !isSubscriptionLoading && !isPremium) {
       router.push('/paywall' as any);
       return;
     }

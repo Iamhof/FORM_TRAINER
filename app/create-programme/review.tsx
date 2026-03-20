@@ -37,7 +37,13 @@ export default function ReviewProgrammeScreen() {
   const category = params.category as string || 'General';
   const frequency = parseInt(params.frequency as string) || 3;
   const duration = parseInt(params.duration as string) || 4;
-  const days: TrainingDay[] = JSON.parse(params.days as string || '[]');
+  let days: TrainingDay[] = [];
+  try {
+    days = JSON.parse(params.days as string || '[]');
+  } catch (error) {
+    logger.error('[ReviewScreen] Failed to parse days param:', error);
+    Alert.alert('Error', 'Failed to load programme days. Please go back and try again.');
+  }
 
   const handleSave = async () => {
     if (isSaving) return;
@@ -128,7 +134,7 @@ export default function ReviewProgrammeScreen() {
         visible={showToast}
         onHide={() => setShowToast(false)}
         accentColor={accent}
-        duration={500}
+        duration={2500}
       />
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <ScrollView

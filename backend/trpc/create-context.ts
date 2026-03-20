@@ -5,6 +5,7 @@ import { ZodError } from 'zod';
 
 import { logger } from '../../lib/logger.js';
 import { supabaseAdmin } from '../lib/auth.js';
+import { checkUserSubscription } from '../lib/revenuecat-server.js';
 
 // Type guard for Zod errors
 function isZodError(cause: unknown): cause is ZodError {
@@ -218,5 +219,17 @@ export const protectedProcedure = validatedProcedure.use(async ({ ctx, next }) =
       userId: ctx.userId,
     },
   });
+});
+
+export const premiumProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const isPremium = await checkUserSubscription(ctx.userId);
+  if (!isPremium) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'This feature requires a premium subscription',
+    });
+  }
+
+  return next({ ctx });
 });
 

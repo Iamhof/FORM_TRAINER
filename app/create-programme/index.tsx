@@ -178,6 +178,7 @@ export default function CreateProgrammeScreen() {
                 placeholderTextColor={COLORS.textTertiary}
                 value={programmeName}
                 onChangeText={setProgrammeName}
+                maxLength={100}
                 autoFocus
               />
             </>

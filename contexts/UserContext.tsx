@@ -1,5 +1,6 @@
 import createContextHook from '@nkzw/create-context-hook';
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import { AppState } from 'react-native';
 
 import { narrowError } from '@/lib/error-utils';
 import { logger } from '@/lib/logger';
@@ -100,8 +101,11 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
         if (session?.user) {
           if (!isLoadingProfileRef.current) {
             isLoadingProfileRef.current = true;
-            await loadUserProfile(session.user);
-            isLoadingProfileRef.current = false;
+            try {
+              await loadUserProfile(session.user);
+            } finally {
+              isLoadingProfileRef.current = false;
+            }
           }
         } else {
           setUser(null);
@@ -113,6 +117,38 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
     return () => {
       clearTimeout(safetyTimer);
       subscription.unsubscribe();
+    };
+  }, []);
+
+  // Refresh session when app returns to foreground (30s debounce)
+  useEffect(() => {
+    let lastRefresh = 0;
+    const appStateSubscription = AppState.addEventListener('change', async (nextState) => {
+      if (nextState !== 'active') return;
+      const now = Date.now();
+      if (now - lastRefresh < 30_000) return;
+      lastRefresh = now;
+
+      try {
+        const { error } = await supabase.auth.refreshSession();
+        if (error) {
+          logger.warn('[UserContext] Session refresh failed on foreground:', error.message);
+          // If token is expired/invalid, sign out
+          const isAuthError = error.message.toLowerCase().includes('expired') ||
+            error.message.toLowerCase().includes('invalid') ||
+            error.status === 401;
+          if (isAuthError) {
+            logger.info('[UserContext] Auth error on refresh — signing out');
+            await supabase.auth.signOut();
+          }
+        }
+      } catch (error) {
+        logger.error('[UserContext] Unexpected error refreshing session:', error);
+      }
+    });
+
+    return () => {
+      appStateSubscription.remove();
     };
   }, []);
 
@@ -231,7 +267,10 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
       // Note: profile name is set later in /profile-setup via updateProfile(),
       // after the handle_new_user() trigger has created the profile row.
       logger.debug('[UserContext] Sign up successful');
-      return { success: true };
+
+      // If no session was returned but user exists, email confirmation is required
+      const emailConfirmationRequired = !data.session && !!data.user;
+      return { success: true, emailConfirmationRequired };
     } catch (error: unknown) {
       const typedError = narrowError(error);
       errorService.capture(error, { context: 'UserContext.signup' });

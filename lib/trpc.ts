@@ -206,6 +206,11 @@ const createTrpcFetch = (): any => async (url: RequestInfo | URL, options?: Requ
     logger.debug('[TRPC] Response content-type:', contentType);
 
     if (!response.ok) {
+      // Auto-logout on 401 (expired/invalid token) — NOT 403 (used for premium gating)
+      if (response.status === 401) {
+        supabase.auth.signOut().catch(() => {/* fire-and-forget */});
+      }
+
       const text = await response.text();
       logger.error('[TRPC] HTTP error:', response.status, response.statusText);
       logger.error('[TRPC] Response body preview:', text.substring(0, 500));

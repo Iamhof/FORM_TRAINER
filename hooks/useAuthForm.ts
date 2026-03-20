@@ -27,6 +27,14 @@ export function useAuthForm() {
     return emailRegex.test(emailValue);
   };
 
+  const validatePassword = (pw: string): string | null => {
+    if (pw.length < 8) return 'Password must be at least 8 characters';
+    if (!/[A-Z]/.test(pw)) return 'Password must contain at least one uppercase letter';
+    if (!/[a-z]/.test(pw)) return 'Password must contain at least one lowercase letter';
+    if (!/[0-9]/.test(pw)) return 'Password must contain at least one number';
+    return null;
+  };
+
   const handleAuth = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
@@ -39,6 +47,11 @@ export function useAuthForm() {
     }
 
     if (isSignUp) {
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        Alert.alert('Error', passwordError);
+        return;
+      }
       if (!confirmPassword) {
         Alert.alert('Error', 'Please confirm your password');
         return;
@@ -57,7 +70,11 @@ export function useAuthForm() {
 
       if (result.success) {
         if (isSignUp) {
-          router.replace('/profile-setup' as any);
+          if ('emailConfirmationRequired' in result && result.emailConfirmationRequired) {
+            router.replace({ pathname: '/verify-email', params: { email } } as any);
+          } else {
+            router.replace('/profile-setup' as any);
+          }
         } else {
           router.replace('/(tabs)/home' as any);
         }

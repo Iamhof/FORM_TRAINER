@@ -6,7 +6,6 @@ import {
   Dumbbell,
   BarChart3,
   Trophy,
-  UserCheck,
   Zap,
   X,
 } from 'lucide-react-native';
@@ -14,6 +13,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -45,7 +45,6 @@ const FEATURES: FeatureItem[] = [
   { icon: Activity, title: 'Muscle Activity Heatmap', free: false, premium: true },
   { icon: BarChart3, title: 'Advanced Analytics', free: false, premium: true },
   { icon: Trophy, title: 'Global Leaderboard', free: false, premium: true },
-  { icon: UserCheck, title: '1x Free PT Session / 3 Months', free: false, premium: true },
 ];
 
 export default function PaywallScreen() {
@@ -248,10 +247,9 @@ export default function PaywallScreen() {
 
           {/* Legal */}
           <Text style={styles.legalText}>
-            Payment will be charged to your Apple ID account at confirmation of purchase.
+            Payment will be charged to your {Platform.OS === 'ios' ? 'Apple ID account' : 'Google Play account'} at confirmation of purchase.
             Subscription automatically renews unless cancelled at least 24 hours before the
-            end of the current period. You can manage and cancel your subscriptions in your
-            App Store account settings.
+            end of the current period. You can manage and cancel your subscriptions in your {Platform.OS === 'ios' ? 'App Store' : 'Google Play'} account settings.
           </Text>
 
           <View style={styles.legalLinks}>
