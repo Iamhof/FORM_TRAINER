@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "formworkout",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "runtimeVersion": {
       "policy": "appVersion"
     },
