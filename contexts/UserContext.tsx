@@ -180,7 +180,7 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
       // Timeout guard: if the profile query hangs (network, cold-start, etc.),
       // don't block the app forever — fall through after 8 seconds
       const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Profile query timed out after 8s')), 8000),
+        setTimeout(() => reject(new Error('Profile query timed out after 15s')), 15_000),
       );
 
       const { data: profile, error } = await Promise.race([profileQuery, timeout]);

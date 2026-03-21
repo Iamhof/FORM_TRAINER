@@ -12,6 +12,7 @@ import {
   identifyUser,
   logoutRevenueCat,
   purchasePackage,
+  resetConfigured,
   restorePurchases,
   ENTITLEMENT_ID,
 } from '@/lib/revenuecat';
@@ -28,10 +29,13 @@ const [SubscriptionProviderRaw, useSubscription] = createContextHook(() => {
   const [isRestoring, setIsRestoring] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const hasInitialized = useRef(false);
+  const listenerCleanupRef = useRef<(() => void) | null>(null);
+  const retryCountRef = useRef(0);
+  const MAX_RETRIES = 2;
 
-  // Initialize RevenueCat when user authenticates (with 5s timeout guard)
+  // Initialize RevenueCat when user authenticates (with 15s timeout guard)
   useEffect(() => {
-    const RC_TIMEOUT_MS = 5_000;
+    const RC_TIMEOUT_MS = 15_000;
 
     const init = async () => {
       if (!isAuthenticated || !user || hasInitialized.current) return;
@@ -54,47 +58,55 @@ const [SubscriptionProviderRaw, useSubscription] = createContextHook(() => {
             setIsPremium(premium);
             setOfferings(currentOfferings);
             hasInitialized.current = true;
+            retryCountRef.current = 0;
             logger.info('[Subscription] Initialized, premium:', premium);
+            listenerCleanupRef.current = addCustomerInfoListener((info) => {
+              const premium = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
+              setIsPremium(premium);
+              logger.debug('[Subscription] Status updated, premium:', premium);
+            });
           })(),
           rcTimeout,
         ]);
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         if (msg.includes('timed out')) {
-          logger.warn('[Subscription] Init timed out after', RC_TIMEOUT_MS, 'ms — continuing with defaults');
+          logger.warn('[Subscription] Init timed out after', RC_TIMEOUT_MS, 'ms');
         } else {
           logger.error('[Subscription] Init failed:', error);
         }
-        // isPremium defaults to false, offerings stay null.
-        // The customerInfo listener will update when RevenueCat eventually responds.
+
+        if (retryCountRef.current < MAX_RETRIES) {
+          retryCountRef.current += 1;
+          const backoffMs = 3000 * Math.pow(2, retryCountRef.current - 1);
+          logger.info('[Subscription] Retrying init in', backoffMs, 'ms (attempt', retryCountRef.current, 'of', MAX_RETRIES, ')');
+          resetConfigured();
+          setTimeout(() => { init(); }, backoffMs);
+          return;
+        }
+
+        logger.warn('[Subscription] Max retries exhausted, continuing with defaults');
       } finally {
         setIsLoading(false);
       }
     };
 
     init();
+
+    return () => {
+      listenerCleanupRef.current?.();
+    };
   }, [isAuthenticated, user]);
-
-  // Listen for subscription status changes
-  useEffect(() => {
-    if (!hasInitialized.current) return;
-
-    const remove = addCustomerInfoListener((info) => {
-      const premium = info.entitlements.active[ENTITLEMENT_ID] !== undefined;
-      setIsPremium(premium);
-      logger.debug('[Subscription] Status updated, premium:', premium);
-    });
-
-    return remove;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- hasInitialized is a ref; we intentionally re-run when it changes
-  }, [hasInitialized.current]);
 
   // Reset on logout
   useEffect(() => {
     if (!isAuthenticated && hasInitialized.current) {
+      listenerCleanupRef.current?.();
+      listenerCleanupRef.current = null;
       logoutRevenueCat();
       setIsPremium(false);
       setOfferings(null);
+      retryCountRef.current = 0;
       hasInitialized.current = false;
       setIsLoading(true);
     }
@@ -124,6 +136,8 @@ const [SubscriptionProviderRaw, useSubscription] = createContextHook(() => {
       if (result.isPremium) {
         setIsPremium(true);
         Alert.alert('Restored', 'Your premium subscription has been restored.');
+      } else if (!result.success) {
+        Alert.alert('Restore Failed', 'Unable to restore purchases. Please check your internet connection and try again.');
       } else {
         Alert.alert('No Subscription Found', 'No active subscription was found for this account.');
       }

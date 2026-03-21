@@ -29,7 +29,7 @@ export async function configureRevenueCat(userId?: string): Promise<void> {
   }
 
   try {
-    if (__DEV__) {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
       Purchases.setLogLevel(LOG_LEVEL.DEBUG);
     }
 
@@ -145,6 +145,10 @@ export function addCustomerInfoListener(
   return () => {
     Purchases.removeCustomerInfoUpdateListener(listener);
   };
+}
+
+export function resetConfigured(): void {
+  isConfigured = false;
 }
 
 export { ENTITLEMENT_ID };
