@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import Purchases, {
   type CustomerInfo,
   type PurchasesOfferings,
@@ -14,6 +15,13 @@ let isConfigured = false;
 
 export async function configureRevenueCat(userId?: string): Promise<void> {
   if (isConfigured) return;
+
+  // RevenueCat Browser Mode requires a separate Web Billing API key.
+  // Skip on web until web billing is configured.
+  if (Platform.OS === 'web') {
+    logger.debug('[RevenueCat] Skipping configuration on web platform');
+    return;
+  }
 
   if (!REVENUECAT_API_KEY) {
     logger.warn('[RevenueCat] API key not set, skipping configuration');

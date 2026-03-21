@@ -75,6 +75,8 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
 
   // Guard against concurrent loadUserProfile calls from rapid auth events
   const isLoadingProfileRef = useRef(false);
+  // Track which user's profile we've already loaded to skip redundant reloads
+  const lastLoadedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     logger.debug('[UserContext] Initializing auth state...');
@@ -99,16 +101,29 @@ const [UserProviderRaw, useUser] = createContextHook(() => {
         setSession(session);
 
         if (session?.user) {
-          if (!isLoadingProfileRef.current) {
+          // Only load profile when the user identity may have changed.
+          // TOKEN_REFRESHED is a token-only event — no need to re-fetch the profile.
+          const shouldLoadProfile =
+            event === 'INITIAL_SESSION' ||
+            event === 'SIGNED_IN' ||
+            event === 'USER_UPDATED' ||
+            lastLoadedUserIdRef.current !== session.user.id;
+
+          if (shouldLoadProfile && !isLoadingProfileRef.current) {
             isLoadingProfileRef.current = true;
             try {
               await loadUserProfile(session.user);
+              lastLoadedUserIdRef.current = session.user.id;
             } finally {
               isLoadingProfileRef.current = false;
             }
+          } else {
+            logger.debug('[UserContext] Skipping profile reload for event:', event);
+            setIsLoading(false);
           }
         } else {
           setUser(null);
+          lastLoadedUserIdRef.current = null;
           setIsLoading(false);
         }
       }

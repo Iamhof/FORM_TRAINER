@@ -38,7 +38,7 @@ function RootLayoutNav() {
       <Stack.Screen name="profile-setup" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
-        name="programme-create"
+        name="create-programme"
         options={{
           presentation: 'modal',
           headerShown: false,

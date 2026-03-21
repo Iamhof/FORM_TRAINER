@@ -5,6 +5,55 @@ import { Platform } from 'react-native';
 import { env } from './env';
 import { logger } from './logger';
 
+// In-process mutual exclusion lock for Supabase auth operations.
+// This replaces navigatorLock (which throws unhandled AbortErrors on web)
+// and processLock (which logs noisy console.warn on acquireTimeout=0).
+// Same semantics as processLock but without the console.warn noise.
+const PROCESS_LOCKS: Record<string, Promise<unknown>> = {};
+
+async function appLock<R>(
+  name: string,
+  acquireTimeout: number,
+  fn: () => Promise<R>,
+): Promise<R> {
+  const prev = PROCESS_LOCKS[name] ?? Promise.resolve();
+  const racePromises: Promise<unknown>[] = [prev.catch(() => null)];
+
+  if (acquireTimeout >= 0) {
+    racePromises.push(
+      new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          const err = new Error(
+            `Acquiring process lock with name "${name}" timed out`,
+          );
+          (err as Error & { isAcquireTimeout: boolean }).isAcquireTimeout = true;
+          reject(err,
+          );
+        }, acquireTimeout);
+      }),
+    );
+  }
+
+  const current = Promise.race(racePromises)
+    .catch((e: unknown) => {
+      if (e && typeof e === 'object' && 'isAcquireTimeout' in e && e.isAcquireTimeout) {
+        throw e;
+      }
+      return null;
+    })
+    .then(() => fn());
+
+  PROCESS_LOCKS[name] = current.catch(async (e: unknown) => {
+    if (e && typeof e === 'object' && 'isAcquireTimeout' in e && e.isAcquireTimeout) {
+      await prev;
+      return null;
+    }
+    throw e;
+  });
+
+  return await current;
+}
+
 const SecureStoreAdapter = {
   getItem: async (key: string) => {
     if (Platform.OS === 'web') {
@@ -138,6 +187,9 @@ if (!isUrlValid || !isKeyValid) {
           autoRefreshToken: true,
           persistSession: true,
           detectSessionInUrl: false,
+          // Use in-process lock to avoid navigator.locks AbortError on web
+          // ("signal is aborted without reason").
+          lock: appLock,
         },
         global: {
           headers: {
