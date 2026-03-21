@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS public.analytics (
     max_weight numeric NOT NULL,
     total_volume numeric NOT NULL,
     total_reps integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now()
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
 );
 
 -- ===========================================
