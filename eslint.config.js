@@ -5,7 +5,7 @@ const reactHooksPlugin = require('eslint-plugin-react-hooks');
 module.exports = defineConfig([
   ...expoConfig,
   {
-    ignores: ["dist/*", "supabase/migrations/**"],
+    ignores: ["dist/*", ".expo/*", "supabase/migrations/**"],
   },
   {
     plugins: {

@@ -41,6 +41,7 @@
       "distribution": "store",
       "autoIncrement": true,
       "env": {
+        "NODE_ENV": "production",
         "CI": "true",
         "EAS_BUILD": "true",
         "EAS_BUILD_NO_EXPO_GO_WARNING": "true",
